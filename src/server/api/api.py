@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
-import uvicorn
-from server.api.acontext_server.api.api_v1_router import V1_ROUTER
+from acontext_server.api.routers import V1_ROUTER
 from acontext_server.env import LOG
 from acontext_server.client.db import init_database, close_database
+from acontext_server.client.redis import init_redis, close_redis
 
 
 def configure_logging():
@@ -30,8 +30,10 @@ async def lifespan(app: FastAPI):
     # Configure logging on startup
     configure_logging()
     await init_database()
+    await init_redis()
     yield
     await close_database()
+    await close_redis()
 
 
 app = FastAPI(lifespan=lifespan)
