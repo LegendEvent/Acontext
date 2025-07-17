@@ -13,11 +13,11 @@ class Promise(BaseModel, Generic[T]):
     errmsg: str
 
     @classmethod
-    def ok(cls, data: T):
+    def ok(cls, data: T) -> "Promise[T]":
         return cls(data=data, status=Code.SUCCESS, errmsg="")
 
     @classmethod
-    def error(cls, status: Code, errmsg: str):
+    def error(cls, status: Code, errmsg: str) -> "Promise[T]":
         assert status != Code.SUCCESS, "status must not be SUCCESS"
         return cls(data=None, status=status, errmsg=errmsg)
 

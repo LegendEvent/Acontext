@@ -2,20 +2,12 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
 import uvicorn
-from acontext_server.api.api_v1 import router as api_v1_router
-from acontext_server.telemetry.log import LOG
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Configure logging on startup
-    configure_logging()
-    yield
+from server.api.acontext_server.api.api_v1_router import V1_ROUTER
+from acontext_server.env import LOG
+from acontext_server.client.db import init_database, close_database
 
 
 def configure_logging():
-    """Configure logging for FastAPI and uvicorn"""
-
     # Configure uvicorn's loggers to use your format
     uvicorn_access = logging.getLogger("uvicorn.access")
 
@@ -33,5 +25,14 @@ def configure_logging():
     uvicorn_access.setLevel(logging.INFO)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Configure logging on startup
+    configure_logging()
+    await init_database()
+    yield
+    await close_database()
+
+
 app = FastAPI(lifespan=lifespan)
-app.include_router(api_v1_router, prefix="/api/v1")
+app.include_router(V1_ROUTER, prefix="/api/v1")
