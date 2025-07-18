@@ -27,16 +27,13 @@ async def test_db():
 
     async with DB_CLIENT.get_session_context() as session:
         # Use select() instead of session.query()
-        se_result = await session.execute(select(Session).filter(Session.id == seid))
-        se = se_result.scalar_one_or_none()
-        print(se)
+        se_result = await session.get(Session, (pid, seid))
+        print(se_result)
         p = Session.validate_data(configs=se.configs)
         print(p.unpack())
 
-        s_result = await session.execute(select(Space).filter(Space.id == sid))
-        s = s_result.scalar_one_or_none()
-        print(s)
+        s_result = await session.get(Space, (pid, sid))
+        print(s_result)
 
-        p_result = await session.execute(select(Project).filter(Project.id == pid))
-        p = p_result.scalar_one_or_none()
-        print(p)
+        p_result = await session.get(Project, pid)
+        print(p_result)
