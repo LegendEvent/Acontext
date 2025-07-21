@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "asyncpg>=0.30.0",
+    "clickhouse-connect>=0.8.18",
     "elasticsearch>=9.0.2",
     "fastapi[standard]>=0.116.1",
     "openai>=1.95.1",

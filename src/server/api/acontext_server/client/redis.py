@@ -11,6 +11,7 @@ from redis.exceptions import (
 )
 
 from ..env import LOG as logger
+from ..env import ENV
 
 
 class RedisClient:
@@ -34,8 +35,8 @@ class RedisClient:
 
         logger.info(f"Redis URL: {self._build_redis_url()}")
 
-        self._pool: Optional[ConnectionPool] = None
-        self._client: Optional[Redis] = None
+        self._pool: ConnectionPool = self._create_pool()
+        self._client: Redis = self._create_client()
 
     def _build_redis_url(self) -> str:
         """Build Redis URL from environment variables."""
@@ -45,15 +46,11 @@ class RedisClient:
     @property
     def pool(self) -> ConnectionPool:
         """Get the Redis connection pool, creating it if necessary."""
-        if self._pool is None:
-            self._pool = self._create_pool()
         return self._pool
 
     @property
     def client(self) -> Redis:
         """Get the Redis client, creating it if necessary."""
-        if self._client is None:
-            self._client = Redis(connection_pool=self.pool, decode_responses=True)
         return self._client
 
     def _create_pool(self) -> ConnectionPool:
@@ -61,7 +58,7 @@ class RedisClient:
         pool = ConnectionPool.from_url(
             self.redis_url,
             # Connection pool settings
-            max_connections=50,  # Maximum number of connections in the pool
+            max_connections=ENV.redis_pool_size,  # Maximum number of connections in the pool
             retry_on_timeout=True,  # Retry on timeout errors
             retry_on_error=[ConnectionError, TimeoutError],  # Retry on these errors
             # Connection settings
@@ -77,6 +74,12 @@ class RedisClient:
 
         logger.info("Redis connection pool created")
         return pool
+
+    def _create_client(self) -> Redis:
+        """Create the Redis client with optimal settings."""
+        client = Redis(connection_pool=self.pool, decode_responses=True)
+        logger.info("Redis client created")
+        return client
 
     async def get_client(self) -> Redis:
         """
@@ -174,7 +177,9 @@ async def get_redis_client() -> Redis:
 async def init_redis() -> None:
     """Initialize Redis connection (perform health check)."""
     if await REDIS_CLIENT.health_check():
-        logger.info("Redis connection initialized successfully")
+        logger.info(
+            f"Redis connection initialized successfully {REDIS_CLIENT.get_pool_status()}"
+        )
     else:
         logger.error("Failed to initialize Redis connection")
         raise ConnectionError("Could not connect to Redis")

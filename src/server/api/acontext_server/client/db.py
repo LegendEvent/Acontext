@@ -13,6 +13,7 @@ from sqlalchemy import event, text
 from sqlalchemy.exc import DisconnectionError, OperationalError
 from ..schema.orm import Base
 from ..env import LOG as logger
+from ..env import ENV
 
 
 class DatabaseClient:
@@ -44,27 +45,23 @@ class DatabaseClient:
                 "postgres://", "postgresql+asyncpg://", 1
             )
 
-        self._engine: Optional[AsyncEngine] = None
-        self._sessionmaker: Optional[async_sessionmaker[AsyncSession]] = None
+        self._engine: AsyncEngine = self._create_engine()
+        self._sessionmaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
+            bind=self.engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=True,
+            autocommit=False,
+        )
 
     @property
     def engine(self) -> AsyncEngine:
         """Get the database engine, creating it if necessary."""
-        if self._engine is None:
-            self._engine = self._create_engine()
         return self._engine
 
     @property
     def sessionmaker(self) -> async_sessionmaker[AsyncSession]:
         """Get the session maker, creating it if necessary."""
-        if self._sessionmaker is None:
-            self._sessionmaker = async_sessionmaker(
-                bind=self.engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-                autoflush=True,
-                autocommit=False,
-            )
         return self._sessionmaker
 
     def _create_engine(self) -> AsyncEngine:
@@ -73,8 +70,8 @@ class DatabaseClient:
             self.database_url,
             # Connection pool settings
             poolclass=AsyncAdaptedQueuePool,
-            pool_size=50,  # Number of connections to maintain
-            max_overflow=50,  # Additional connections beyond pool_size
+            pool_size=ENV.database_pool_size,  # Number of connections to maintain
+            max_overflow=ENV.database_pool_size,  # Additional connections beyond pool_size
             pool_timeout=30,  # Seconds to wait for a connection
             pool_recycle=600,  # Recycle connections after 10 minutes
             pool_pre_ping=True,  # Verify connections before use
@@ -235,7 +232,8 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_database() -> None:
     """Initialize the database (create tables)."""
     await DB_CLIENT.create_tables()
-    logger.info("Database initialized")
+    assert await DB_CLIENT.health_check(), "Database health check failed"
+    logger.info(f"Database created successfully {DB_CLIENT.get_pool_status()}")
 
 
 async def close_database() -> None:

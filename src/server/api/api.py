@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
-from acontext_server.api.routers import V1_ROUTER
+from acontext_server.api import V1_ROUTER
 from acontext_server.env import LOG
 from acontext_server.client.db import init_database, close_database
 from acontext_server.client.redis import init_redis, close_redis
+from acontext_server.client.clickhouse import init_clickhouse, close_clickhouse
 
 
 def configure_logging():
@@ -31,9 +32,11 @@ async def lifespan(app: FastAPI):
     configure_logging()
     await init_database()
     await init_redis()
+    await init_clickhouse()
     yield
     await close_database()
     await close_redis()
+    await close_clickhouse()
 
 
 app = FastAPI(lifespan=lifespan)
