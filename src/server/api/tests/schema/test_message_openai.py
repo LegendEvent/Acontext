@@ -1,4 +1,4 @@
-from acontext_server.schema.message.openai import OpenAIMessages
+from acontext_server.schema.pydantic.message.openai import OpenAIMessages
 
 
 def test_schema_message_openai():
