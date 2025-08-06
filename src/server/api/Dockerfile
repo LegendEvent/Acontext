@@ -20,10 +20,10 @@ COPY ./api.py /app
 
 
 # Expose port 8029 (FastAPI default)
-EXPOSE 8029
+EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
 # Run the FastAPI server using uvicorn
-CMD ["/app/.venv/bin/uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8029"]
+CMD ["/app/.venv/bin/uvicorn", "api:app", "--host", "0.0.0.0"]
