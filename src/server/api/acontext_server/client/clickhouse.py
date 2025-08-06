@@ -1,3 +1,5 @@
+raise NotImplementedError("This module is not used currently")
+
 import os
 from typing import Optional, Dict, Any, List, AsyncGenerator, Union
 from contextlib import asynccontextmanager
