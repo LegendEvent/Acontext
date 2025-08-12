@@ -7,7 +7,7 @@ class BasePrompt(ABC):
         pass
 
     @abstractmethod
-    def user_prompt(self, *args, **kwargs) -> str:
+    def task_input_prompt(self, *args, **kwargs) -> str:
         pass
 
     @abstractmethod

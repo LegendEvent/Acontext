@@ -1,25 +1,4 @@
 services:
-  # acontext-server-clickhouse:
-  #   image: clickhouse/clickhouse-server:25.4
-  #   restart: unless-stopped
-  #   container_name: acontext-server-clickhouse
-  #   ports:
-  #     - '${CLICKHOUSE_EXPORT_PORT}:8123'  # HTTP interface (was 18123)
-  #     # - '9000:9000'  # Native client interface
-  #   volumes:
-  #     - ${CLICKHOUSE_LOCATION}:/var/lib/clickhouse
-  #     # - ${CLICKHOUSE_LOGS_LOCATION}:/var/log/clickhouse-server  # Optional: for logs
-  #   environment:
-  #     - CLICKHOUSE_DB=${CLICKHOUSE_DB}
-  #     - CLICKHOUSE_USER=${CLICKHOUSE_USER}
-  #     - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
-  #     # - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1  # Enable user management
-  #   healthcheck:
-  #     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 3
-
   acontext-server-pg:
     image: postgres:16
     restart: unless-stopped
