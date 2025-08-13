@@ -1,8 +1,17 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+from typing import Any
 from enum import StrEnum
 from ...message.openai import OpenAIMessages
 from ...utils import UUID
+
+
+class Config(BaseModel):
+    configs: dict[str, Any] = Field(..., description="json configs")
+
+
+class SemanticQuery(BaseModel):
+    query: str
 
 
 class LocateProject(BaseModel):
@@ -12,6 +21,27 @@ class LocateProject(BaseModel):
 class LocateSession(BaseModel):
     session_id: UUID = Field(..., description="id of the session")
     project_id: UUID = Field(..., description="id of the project")
+
+
+class LocateSpace(BaseModel):
+    space_id: UUID = Field(..., description="id of the space")
+    project_id: UUID = Field(..., description="id of the project")
+
+
+class SpaceUpdateConfig(LocateSpace, Config):
+    pass
+
+
+class SpaceFind(LocateSpace, SemanticQuery):
+    pass
+
+
+class SessionConnectToSpace(LocateSession, LocateSpace):
+    pass
+
+
+class SessionUpdateConfig(LocateSession, Config):
+    pass
 
 
 class SessionTasksParams(BaseModel):

@@ -1,6 +1,11 @@
 from pydantic import BaseModel
+from datetime import datetime
 from ...utils import UUID
 from .data import SessionMessageStatus, SessionTaskStatus
+
+
+class SimpleId(BaseModel):
+    id: UUID
 
 
 class MQTaskData(BaseModel):
@@ -26,3 +31,9 @@ class SessionTask(BaseModel):
 class SessionTasks(BaseModel):
     plan: str
     tasks: list[SessionTask]
+
+
+class SpaceStatusCheck(BaseModel):
+    already_blocks: int
+    session_connection_num: int
+    last_updated_at: datetime

@@ -42,6 +42,3 @@ class Space(Base, CommonMixin):
     project: Mapped["Project"] = relationship(  # type: ignore
         "Project", back_populates="spaces"
     )
-    sessions: Mapped[list["Session"]] = relationship(  # type: ignore
-        "Session", back_populates="space", cascade="all, delete-orphan"
-    )

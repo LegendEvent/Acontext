@@ -12,18 +12,8 @@ from ..pydantic.result import Result, Code, Error
 class Base(DeclarativeBase):
     """Base class for all ORM models with Pydantic integration"""
 
-    # Pydantic configuration for all models
-    # __pydantic_config__ = ConfigDict(
-    #     from_attributes=True,
-    #     validate_assignment=True,
-    #     arbitrary_types_allowed=True,
-    #     str_strip_whitespace=True,
-    #     validate_default=True,
-    # )
-
     @classmethod
     def validate_data(cls, **kwargs) -> Result[None]:
-        """Override __new__ to add validation before object creation"""
         # Get the Pydantic model for validation
         pydantic_model = getattr(cls, "__use_pydantic__", None)
         if pydantic_model is None:
@@ -37,7 +27,6 @@ class Base(DeclarativeBase):
                 Code.BAD_REQUEST, f"{model_name} validation failed: {e}"
             )
 
-        # Create the instance normally
         return Result.resolve(None)
 
 

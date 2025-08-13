@@ -13,11 +13,15 @@ async def test_db():
     async with DB_CLIENT.get_session_context() as session:
         p = Project(configs={"name": "Test Project"})
         session.add(p)
+        await session.flush()
+
         s = Space(configs={"name": "asdasd"})
         s.project = p
         session.add(s)
-        se = Session(configs={"name": "asdasd"})
-        se.space = s
+        await session.flush()
+
+        se = Session(configs={"name": "asdasd"}, project_id=p.id)
+        se.space_id = s.id
         session.add(se)
         await session.commit()
 

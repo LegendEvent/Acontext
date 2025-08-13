@@ -1,3 +1,4 @@
+from typing import Optional
 from .base import Base, CommonMixin
 import uuid
 from sqlalchemy import (
@@ -24,8 +25,8 @@ class Session(Base, CommonMixin):
         # This ensures id is unique within each project
         UniqueConstraint("project_id", "id"),
         ForeignKeyConstraint(
-            ["project_id", "space_id"],
-            ["spaces.project_id", "spaces.id"],
+            ["project_id"],
+            ["projects.id"],
             ondelete="CASCADE",
         ),
     )
@@ -35,18 +36,13 @@ class Session(Base, CommonMixin):
         nullable=False,
         primary_key=True,
     )
-    space_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        nullable=False,
-    )
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
 
     configs: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
-    space: Mapped["Space"] = relationship(  # type: ignore
-        "Space",
-        foreign_keys=[project_id, space_id],
-        back_populates="sessions",
+    space_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
     )
