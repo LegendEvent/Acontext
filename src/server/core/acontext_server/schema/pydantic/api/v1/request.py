@@ -4,10 +4,19 @@ from typing import Any
 from enum import StrEnum
 from ...message.openai import OpenAIMessages
 from ...utils import UUID
+from ..basic import BlockType
 
 
 class JSONConfig(BaseModel):
     configs: dict[str, Any] = Field(..., description="JSON for configs or properties")
+
+
+class JSONProperty(BaseModel):
+    properties: dict[str, Any] = Field(..., description="JSON for properties")
+
+
+class BlockData(JSONProperty):
+    type: BlockType
 
 
 class SemanticQuery(BaseModel):
@@ -41,8 +50,16 @@ class SpaceFind(LocateSpace, SemanticQuery):
     pass
 
 
-class SpaceCreateBlock(LocateSpaceParentPage, JSONConfig):
-    par_block_id: Optional[UUID] = Field(..., description="id of the parent block")
+class SpaceCreatePage(JSONProperty):
+    par_page_id: Optional[UUID] = Field(..., description="id of the parent page")
+
+
+class SpaceCreateBlock(BlockData):
+    par_page_id: Optional[UUID] = Field(..., description="id of the parent page")
+    par_block_id: Optional[UUID] = Field(
+        ...,
+        description="id of the parent block. Either `par_page_id` or `par_block_id` is not null",
+    )
 
 
 class SessionConnectToSpace(LocateSpace):
