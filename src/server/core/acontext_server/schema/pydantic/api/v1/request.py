@@ -6,41 +6,50 @@ from ...message.openai import OpenAIMessages
 from ...utils import UUID
 
 
-class Config(BaseModel):
-    configs: dict[str, Any] = Field(..., description="json configs")
+class JSONConfig(BaseModel):
+    configs: dict[str, Any] = Field(..., description="JSON for configs or properties")
 
 
 class SemanticQuery(BaseModel):
     query: str
 
 
-class LocateProject(BaseModel):
-    project_id: UUID = Field(..., description="id of the project")
-
-
 class LocateSession(BaseModel):
     session_id: UUID = Field(..., description="id of the session")
-    project_id: UUID = Field(..., description="id of the project")
 
 
 class LocateSpace(BaseModel):
     space_id: UUID = Field(..., description="id of the space")
-    project_id: UUID = Field(..., description="id of the project")
 
 
-class SpaceUpdateConfig(LocateSpace, Config):
-    pass
+class LocateSpacePage(BaseModel):
+    space_id: UUID = Field(..., description="id of the space")
+    page_id: UUID = Field(..., description="id of the page")
+
+
+class LocateSpaceParentPage(BaseModel):
+    space_id: UUID = Field(..., description="id of the space")
+    par_page_id: Optional[UUID] = Field(..., description="id of the parent page")
+
+
+class LocateSpaceBlock(BaseModel):
+    space_id: UUID = Field(..., description="id of the space")
+    block_id: UUID = Field(..., description="id of the page")
 
 
 class SpaceFind(LocateSpace, SemanticQuery):
     pass
 
 
-class SessionConnectToSpace(LocateSession, LocateSpace):
+class SpaceCreateBlock(LocateSpaceParentPage, JSONConfig):
+    par_block_id: Optional[UUID] = Field(..., description="id of the parent block")
+
+
+class SessionConnectToSpace(LocateSpace):
     pass
 
 
-class SessionUpdateConfig(LocateSession, Config):
+class SessionUpdateConfig(LocateSession, JSONConfig):
     pass
 
 
@@ -66,11 +75,3 @@ class SessionScratchpadParams(SessionTasksParams):
         False,
         description="wait for unprocessed messages to finish before returning the scratchpad",
     )
-
-
-class SessionPushOpenAIMessage(OpenAIMessages, LocateSession):
-    pass
-
-
-class SessionGetScratchpad(LocateSession, SessionScratchpadParams):
-    pass

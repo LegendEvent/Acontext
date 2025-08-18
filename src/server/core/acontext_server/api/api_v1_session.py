@@ -1,3 +1,4 @@
+from re import I
 from fastapi import APIRouter, Request, Body, Query
 from ..schema.pydantic.api.basic import BasicResponse
 from ..schema.pydantic.api.v1.response import (
@@ -7,67 +8,73 @@ from ..schema.pydantic.api.v1.response import (
     SimpleId,
 )
 from ..schema.pydantic.api.v1.request import (
-    LocateProject,
+    UUID,
+    JSONConfig,
     LocateSession,
     SessionConnectToSpace,
     SessionUpdateConfig,
-    SessionPushOpenAIMessage,
-    SessionGetScratchpad,
+    OpenAIMessages,
+    SessionScratchpadParams,
     SessionTasksParams,
+    LocateSpace,
 )
 
 V1_SESSION_ROUTER = APIRouter()
 
 
-@V1_SESSION_ROUTER.post("/session")
+@V1_SESSION_ROUTER.post("/")
 def create_session(
     request: Request,
-    body: LocateProject = Body(...),
+    body: JSONConfig = Body(...),
 ) -> BasicResponse[SimpleId]:
     """Create a new session for a project"""
     pass
 
 
-@V1_SESSION_ROUTER.delete("/session")
-def create_session(
+@V1_SESSION_ROUTER.delete("/{session_id}")
+def delete_session(
     request: Request,
-    body: LocateSession = Body(...),
+    session_id: UUID,
 ) -> BasicResponse[bool]:
     """Delete a session and its related data"""
     pass
 
 
-@V1_SESSION_ROUTER.put("/config")
+@V1_SESSION_ROUTER.put("/{session_id}/configs")
 def update_session_config(
     request: Request,
-    body: SessionUpdateConfig = Body(...),
+    session_id: UUID,
+    body: JSONConfig = Body(...),
 ) -> BasicResponse[bool]:
     """Create a new session for a project"""
     pass
 
 
-@V1_SESSION_ROUTER.post("/connect_session_to_space")
+@V1_SESSION_ROUTER.post("/{session_id}/connect_to_space")
 def connect_session_to_space(
     request: Request,
-    body: SessionConnectToSpace = Body(...),
+    session_id: UUID,
+    body: LocateSpace = Body(...),
 ) -> BasicResponse[bool]:
     """Connect the session to a space, so the learning of this session will be synced to the space"""
     pass
 
 
-@V1_SESSION_ROUTER.post("/push_openai_messages")
+@V1_SESSION_ROUTER.post("/{session_id}/push_openai_messages")
 def push_openai_messages_to_session(
     request: Request,
-    body: SessionPushOpenAIMessage = Body(...),
+    session_id: UUID,
+    body: OpenAIMessages = Body(...),
 ) -> BasicResponse[MQTaskData]:
     """Push OpenAI-format messages into this session"""
     pass
 
 
-@V1_SESSION_ROUTER.get("/session_scratchpad")
+@V1_SESSION_ROUTER.get("/{session_id}/session_scratchpad")
 def get_session_scratchpad(
     request: Request,
-    param: SessionGetScratchpad = Query(...),
+    session_id: UUID,
+    param: SessionScratchpadParams = Query(...),
 ) -> BasicResponse[str]:
     """A helper function to pack all the session context so far into a meaningful string"""
     return BasicResponse[str](
@@ -77,17 +84,17 @@ def get_session_scratchpad(
     )
 
 
-@V1_SESSION_ROUTER.get("/check_messages_status")
+@V1_SESSION_ROUTER.get("/{session_id}/check_messages_status")
 def check_messages_status(
-    request: Request,
-    param: LocateSession = Query(...),
+    request: Request, session_id: UUID
 ) -> BasicResponse[SessionMessageStatusCheck]:
     pass
 
 
-@V1_SESSION_ROUTER.get("/fetch_tasks")
+@V1_SESSION_ROUTER.get("/{session_id}/fetch_tasks")
 def fetch_tasks(
     request: Request,
+    session_id: UUID,
     param: SessionTasksParams = Query(...),
 ) -> BasicResponse[SessionTasks]:
     pass
