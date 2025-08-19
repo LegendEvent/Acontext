@@ -4,6 +4,8 @@ import logging
 import structlog
 from ..util.terminal_color import TerminalColorMarks
 
+bound_logging_vars = structlog.contextvars.bound_contextvars
+
 
 def __get_json_logger():
     shared_processors = [
@@ -50,13 +52,14 @@ def __get_json_logger():
 
 
 def __get_text_logger():
+    logger = logging.getLogger("acontext-core")
+    logger.setLevel(logging.INFO)
+
     formatter = logging.Formatter(
         f"{TerminalColorMarks.BOLD}{TerminalColorMarks.BLUE}%(name)s |{TerminalColorMarks.END} %(asctime)s - %(levelname)s - %(message)s"
     )
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
-    logger = logging.getLogger("acontext-core")
-    logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     return logger
 
