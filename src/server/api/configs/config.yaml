@@ -1,0 +1,34 @@
+app:
+  name: acontext-api
+  env: debug # available mode: debug release test
+  host: 0.0.0.0
+  port: 8080
+
+log:
+  level: info  # debug/info/warn/error
+
+database:
+  dsn: "host=127.0.0.1 user=acontext password=helloworld dbname=acontext port=15432 sslmode=disable TimeZone=Asia/Shanghai"
+  maxOpen: 20
+  maxIdle: 10
+  autoMigrate: true
+
+redis:
+  addr: "127.0.0.1:16379"
+  password: "helloworld"
+  db: 0
+  poolSize: 10
+
+rabbitmq:
+  url: "amqp://guest:guest@127.0.0.1:5672/"
+  prefetch: 10
+
+s3:
+  endpoint: "http://127.0.0.1:9000"
+  region: "auto"
+  accessKey: ""
+  secretKey: ""
+  bucket: "my-bucket"
+  usePathStyle: true
+  presignExpireSec: 900
+  # sse: "aws:kms"

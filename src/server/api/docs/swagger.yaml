@@ -1,0 +1,115 @@
+basePath: /api/v1
+definitions:
+  handler.CreateSpaceReq:
+    properties:
+      project_id:
+        example: de305d54-75b4-431b-adb2-eb6b9e546014
+        format: uuid
+        type: string
+    required:
+    - project_id
+    type: object
+  model.Project:
+    properties:
+      configs:
+        type: object
+      createdAt:
+        type: string
+      id:
+        type: string
+      spaces:
+        items:
+          $ref: '#/definitions/model.Space'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  model.Space:
+    properties:
+      configs:
+        type: object
+      createdAt:
+        type: string
+      id:
+        type: string
+      project:
+        $ref: '#/definitions/model.Project'
+      projectID:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  serializer.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      error:
+        type: string
+      msg:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for Acontext.
+  title: Acontext API
+  version: "1.0"
+paths:
+  /space:
+    post:
+      consumes:
+      - application/json
+      description: Create a new space under a project
+      parameters:
+      - description: CreateSpace payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateSpaceReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Space'
+              type: object
+      summary: Create space
+      tags:
+      - space
+  /space/{space_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a space by its ID
+      parameters:
+      - description: Space ID
+        format: uuid
+        in: path
+        name: space_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Delete space
+      tags:
+      - space
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
