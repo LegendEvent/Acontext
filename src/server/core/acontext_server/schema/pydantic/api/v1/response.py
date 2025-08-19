@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 from ...utils import UUID
-from .data import SessionMessageStatus, SessionTaskStatus
+from .data import SessionMessageStatus, SessionTaskStatus, BlockType
+from .request import JSONProperty
 
 
 class SimpleId(BaseModel):
@@ -37,3 +38,21 @@ class SpaceStatusCheck(BaseModel):
     already_blocks: int
     session_connection_num: int
     last_updated_at: datetime
+
+
+class ReturnPage(JSONProperty):
+    page_id: UUID
+
+
+class ReturnBlock(JSONProperty):
+    block_id: UUID
+    type: BlockType
+
+
+class PageChildren(BaseModel):
+    child_pages: list[ReturnPage]
+    child_blocks: list[ReturnBlock]
+
+
+class BlockChildren(BaseModel):
+    child_blocks: list[ReturnBlock]

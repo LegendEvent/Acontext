@@ -6,8 +6,9 @@ from ..schema.pydantic.api.v1.request import (
     SpaceCreatePage,
     SpaceMoveChildrenPages,
     SpaceMoveChildrenBlocks,
+    Pagination,
 )
-from ..schema.pydantic.api.v1.response import SimpleId, SpaceStatusCheck
+from ..schema.pydantic.api.v1.response import SimpleId, PageChildren
 
 V1_SPACE_PAGE_ROUTER = APIRouter()
 
@@ -38,6 +39,17 @@ def update_page_properties(
     page_id: UUID,
     body: JSONProperty = Body(...),
 ) -> BasicResponse[bool]:
+    pass
+
+
+@V1_SPACE_PAGE_ROUTER.get("/{page_id}/children")
+def get_page_children(
+    request: Request,
+    space_id: UUID,
+    page_id: UUID | str,
+    param: Pagination = Query(default_factory=Pagination),
+) -> BasicResponse[PageChildren]:
+    """page_id can be a uuid or `root`"""
     pass
 
 

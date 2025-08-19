@@ -6,8 +6,9 @@ from ..schema.pydantic.api.v1.request import (
     SpaceCreateBlock,
     SpaceMoveChildrenBlocks,
     JSONProperty,
+    Pagination,
 )
-from ..schema.pydantic.api.v1.response import SimpleId, SpaceStatusCheck
+from ..schema.pydantic.api.v1.response import SimpleId, BlockChildren
 
 V1_SPACE_BLOCK_ROUTER = APIRouter()
 
@@ -40,6 +41,16 @@ def update_block_properties(
     block_id: UUID,
     body: JSONProperty = Body(...),
 ) -> BasicResponse[bool]:
+    pass
+
+
+@V1_SPACE_BLOCK_ROUTER.get("/{block_id}/children")
+def get_block_children(
+    request: Request,
+    space_id: UUID,
+    block_id: UUID | str,
+    param: Pagination = Query(default_factory=Pagination),
+) -> BasicResponse[BlockChildren]:
     pass
 
 
