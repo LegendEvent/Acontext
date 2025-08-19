@@ -60,7 +60,7 @@ def connect_session_to_space(
     pass
 
 
-@V1_SESSION_ROUTER.post("/{session_id}/push_openai_messages")
+@V1_SESSION_ROUTER.post("/{session_id}/push_openai_messages", tags=["async"])
 def push_openai_messages_to_session(
     request: Request,
     session_id: UUID,
