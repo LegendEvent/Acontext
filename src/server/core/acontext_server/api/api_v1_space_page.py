@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Request, Body, Query
 from ..schema.pydantic.api.basic import BasicResponse
-from ..schema.pydantic.api.v1.request import UUID, JSONProperty, SpaceCreatePage
+from ..schema.pydantic.api.v1.request import (
+    UUID,
+    JSONProperty,
+    SpaceCreatePage,
+    SpaceMoveChildrenPages,
+    SpaceMoveChildrenBlocks,
+)
 from ..schema.pydantic.api.v1.response import SimpleId, SpaceStatusCheck
 
 V1_SPACE_PAGE_ROUTER = APIRouter()
@@ -25,12 +31,31 @@ def get_page_properties(
     pass
 
 
-@V1_SPACE_PAGE_ROUTER.put("/{page_id}/properties/{property_key}")
-def update_page_properties_by_key(
+@V1_SPACE_PAGE_ROUTER.patch("/{page_id}/properties")
+def update_page_properties(
     request: Request,
     space_id: UUID,
     page_id: UUID,
-    property_key: str,
     body: JSONProperty = Body(...),
+) -> BasicResponse[bool]:
+    pass
+
+
+@V1_SPACE_PAGE_ROUTER.patch("/{page_id}/move_children_pages")
+def move_children_pages(
+    request: Request,
+    space_id: UUID,
+    page_id: UUID,
+    body: SpaceMoveChildrenPages = Body(...),
+) -> BasicResponse[bool]:
+    pass
+
+
+@V1_SPACE_PAGE_ROUTER.patch("/{page_id}/move_children_blocks")
+def move_children_blocks(
+    request: Request,
+    space_id: UUID,
+    page_id: UUID,
+    body: SpaceMoveChildrenBlocks = Body(...),
 ) -> BasicResponse[bool]:
     pass

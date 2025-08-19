@@ -4,6 +4,7 @@ from ..schema.pydantic.api.v1.request import (
     UUID,
     JSONConfig,
     SpaceCreateBlock,
+    SpaceMoveChildrenBlocks,
     JSONProperty,
 )
 from ..schema.pydantic.api.v1.response import SimpleId, SpaceStatusCheck
@@ -32,13 +33,22 @@ def get_block_properties(
     pass
 
 
-@V1_SPACE_BLOCK_ROUTER.put("/{block_id}/properties/{property_key}")
-def update_block_properties_by_key(
+@V1_SPACE_BLOCK_ROUTER.patch("/{block_id}/properties")
+def update_block_properties(
     request: Request,
     space_id: UUID,
     block_id: UUID,
-    property_key: str,
     body: JSONProperty = Body(...),
+) -> BasicResponse[bool]:
+    pass
+
+
+@V1_SPACE_BLOCK_ROUTER.patch("/{block_id}/move_children_blocks")
+def move_children_blocks(
+    request: Request,
+    space_id: UUID,
+    block_id: UUID,
+    body: SpaceMoveChildrenBlocks = Body(...),
 ) -> BasicResponse[bool]:
     pass
 

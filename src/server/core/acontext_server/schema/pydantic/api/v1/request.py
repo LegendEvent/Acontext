@@ -64,6 +64,20 @@ class SpaceCreateBlock(JSONProperty):
     )
 
 
+class SpaceMoveChildrenPages(BaseModel):
+    children_page_ids: list[UUID] = Field(
+        ...,
+        description="ids of the children pages",
+    )
+
+
+class SpaceMoveChildrenBlocks(BaseModel):
+    children_block_ids: list[UUID] = Field(
+        ...,
+        description="ids of the children blocks",
+    )
+
+
 class SessionConnectToSpace(LocateSpace):
     pass
 
