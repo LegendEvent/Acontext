@@ -7,6 +7,10 @@ from ..util.terminal_color import TerminalColorMarks
 bound_logging_vars = structlog.contextvars.bound_contextvars
 
 
+def get_logging_contextvars():
+    return structlog.contextvars.get_contextvars()
+
+
 def __get_json_logger():
     shared_processors = [
         structlog.contextvars.merge_contextvars,

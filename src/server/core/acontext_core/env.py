@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from .telemetry.log import get_logger, bound_logging_vars
+from .telemetry.log import get_logger, bound_logging_vars, obtain_logging_contextvars
 from .schema.env import filter_value_from_env, filter_value_from_yaml, CoreConfig
 
 
