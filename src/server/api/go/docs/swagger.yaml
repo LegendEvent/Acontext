@@ -3,13 +3,19 @@ definitions:
   handler.CreateSpaceReq:
     properties:
       project_id:
-        example: de305d54-75b4-431b-adb2-eb6b9e546014
+        example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         type: string
     required:
     - project_id
     type: object
   handler.UpdateConfigsReq:
+    properties:
+      configs:
+        additionalProperties: true
+        type: object
+    required:
+    - configs
     type: object
   model.Project:
     properties:
@@ -91,6 +97,7 @@ paths:
       description: Delete a space by its ID
       parameters:
       - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
         name: space_id
@@ -113,6 +120,7 @@ paths:
       description: Update the configurations of a space by its ID
       parameters:
       - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
         name: space_id

@@ -78,6 +78,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "format": "uuid",
+                        "example": "123e4567-e89b-12d3-a456-426614174000",
                         "description": "Space ID",
                         "name": "space_id",
                         "in": "path",
@@ -111,6 +112,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "format": "uuid",
+                        "example": "123e4567-e89b-12d3-a456-426614174000",
                         "description": "Space ID",
                         "name": "space_id",
                         "in": "path",
@@ -147,12 +149,21 @@ const docTemplate = `{
                 "project_id": {
                     "type": "string",
                     "format": "uuid",
-                    "example": "de305d54-75b4-431b-adb2-eb6b9e546014"
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         },
         "handler.UpdateConfigsReq": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "configs"
+            ],
+            "properties": {
+                "configs": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
         },
         "model.Project": {
             "type": "object",

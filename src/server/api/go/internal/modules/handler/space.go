@@ -19,7 +19,7 @@ func NewSpaceHandler(s service.SpaceService) *SpaceHandler {
 }
 
 type CreateSpaceReq struct {
-	ProjectID string `form:"project_id" json:"project_id" binding:"required,uuid" format:"uuid" example:"de305d54-75b4-431b-adb2-eb6b9e546014"`
+	ProjectID string `form:"project_id" json:"project_id" binding:"required,uuid" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
 }
 
 // CreateSpace godoc
@@ -57,7 +57,7 @@ func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"	format(uuid)
+//	@Param			space_id	path		string	true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
 //	@Success		200			{object}	serializer.Response
 //	@Router			/space/{space_id} [delete]
 func (h *SpaceHandler) DeleteSpace(c *gin.Context) {
@@ -71,7 +71,7 @@ func (h *SpaceHandler) DeleteSpace(c *gin.Context) {
 }
 
 type UpdateConfigsReq struct {
-	Configs map[string]interface{} `form:"configs" json:"configs" binding:"required" swaggertype:"object" example:"{\"key\":\"value\"}"`
+	Configs map[string]interface{} `form:"configs" json:"configs" binding:"required"`
 }
 
 // UpdateConfigs godoc
@@ -81,7 +81,7 @@ type UpdateConfigsReq struct {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string						true	"Space ID"	format(uuid)
+//	@Param			space_id	path		string						true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
 //	@Param			payload		body		handler.UpdateConfigsReq	true	"UpdateConfigs payload"
 //	@Success		200			{object}	serializer.Response
 //	@Router			/space/{space_id}/configs [put]
