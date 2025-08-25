@@ -10,7 +10,15 @@ class CoreConfig(BaseModel):
     logging_format: str = "text"
 
     # RabbitMQ Configuration
-    rabbitmq_url: str = "amqp://guest:guest@localhost:5672/"
+    rabbitmq_url: str = "amqp://acontext:helloworld@localhost:5672/"
+
+    # Database Configuration
+    database_pool_size: int = 64
+    database_url: str = "postgresql://acontext:helloworld@localhost:5432/acontext"
+
+    # Redis Configuration
+    redis_pool_size: int = 32
+    redis_url: str = "redis://:helloworld@localhost:6379"
 
 
 def filter_value_from_env() -> dict[str, Any]:
