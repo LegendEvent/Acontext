@@ -1,7 +1,35 @@
 basePath: /api/v1
 definitions:
+  handler.ConnectToSpaceReq:
+    properties:
+      space_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        type: string
+    required:
+    - space_id
+    type: object
+  handler.CreateSessionReq:
+    properties:
+      configs:
+        additionalProperties: true
+        type: object
+      project_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        type: string
+      space_id:
+        example: 123e4567-e89b-12d3-a456-42661417
+        format: uuid
+        type: string
+    required:
+    - project_id
+    type: object
   handler.CreateSpaceReq:
     properties:
+      configs:
+        additionalProperties: true
+        type: object
       project_id:
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
@@ -9,7 +37,34 @@ definitions:
     required:
     - project_id
     type: object
-  handler.UpdateConfigsReq:
+  handler.GetSemanticAnswerReq:
+    properties:
+      query:
+        type: string
+    required:
+    - query
+    type: object
+  handler.GetSemanticGlobalReq:
+    properties:
+      query:
+        type: string
+    required:
+    - query
+    type: object
+  handler.GetSemanticGrepReq:
+    properties:
+      query:
+        type: string
+    required:
+    - query
+    type: object
+  handler.UpdateSessionConfigsReq:
+    properties:
+      configs:
+        additionalProperties: true
+        type: object
+    type: object
+  handler.UpdateSpaceConfigsReq:
     properties:
       configs:
         additionalProperties: true
@@ -29,6 +84,23 @@ definitions:
         items:
           $ref: '#/definitions/model.Space'
         type: array
+      updatedAt:
+        type: string
+    type: object
+  model.Session:
+    properties:
+      configs:
+        type: object
+      createdAt:
+        type: string
+      id:
+        type: string
+      project:
+        $ref: '#/definitions/model.Project'
+      projectID:
+        type: string
+      spaceID:
+        type: string
       updatedAt:
         type: string
     type: object
@@ -63,6 +135,137 @@ info:
   title: Acontext API
   version: "1.0"
 paths:
+  /session:
+    post:
+      consumes:
+      - application/json
+      description: Create a new session under a space
+      parameters:
+      - description: CreateSession payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateSessionReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Session'
+              type: object
+      summary: Create session
+      tags:
+      - session
+  /session/{session_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a session by id
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Delete session
+      tags:
+      - session
+  /session/{session_id}/configs:
+    get:
+      consumes:
+      - application/json
+      description: Get session configs by id
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Session'
+              type: object
+      summary: Get session configs
+      tags:
+      - session
+    put:
+      consumes:
+      - application/json
+      description: Update session configs by id
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      - description: UpdateSessionConfigs payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateSessionConfigsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Update session configs
+      tags:
+      - session
+  /session/{session_id}/connect_to_space:
+    post:
+      consumes:
+      - application/json
+      description: Connect a session to a space by id
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      - description: ConnectToSpace payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ConnectToSpaceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Connect session to space
+      tags:
+      - session
   /space:
     post:
       consumes:
@@ -114,6 +317,33 @@ paths:
       tags:
       - space
   /space/{space_id}/configs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the configurations of a space by its ID
+      parameters:
+      - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        in: path
+        name: space_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Space'
+              type: object
+      summary: Get space configs
+      tags:
+      - space
     put:
       consumes:
       - application/json
@@ -131,7 +361,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateConfigsReq'
+          $ref: '#/definitions/handler.UpdateSpaceConfigsReq'
       produces:
       - application/json
       responses:
@@ -140,6 +370,96 @@ paths:
           schema:
             $ref: '#/definitions/serializer.Response'
       summary: Update space configs
+      tags:
+      - space
+  /space/{space_id}/semantic_answer:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the semantic answer for a given query within a space by
+        its ID
+      parameters:
+      - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: GetSemanticAnswer payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.GetSemanticAnswerReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Get semantic answer
+      tags:
+      - space
+  /space/{space_id}/semantic_global:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the semantic global information for a given query within
+        a space by its ID
+      parameters:
+      - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: GetSemanticGlobal payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.GetSemanticGlobalReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Get semantic global
+      tags:
+      - space
+  /space/{space_id}/semantic_grep:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the semantic grep results for a given query within a space
+        by its ID
+      parameters:
+      - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: GetSemanticGrep payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.GetSemanticGrepReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      summary: Get semantic grep
       tags:
       - space
 schemes:

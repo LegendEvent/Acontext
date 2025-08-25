@@ -61,11 +61,11 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			space.DELETE("/:space_id", d.SpaceHandler.DeleteSpace)
 
 			space.PUT("/:space_id/configs", d.SpaceHandler.UpdateConfigs)
-			space.GET("/:space_id/configs")
+			space.GET("/:space_id/configs", d.SpaceHandler.GetConfigs)
 
-			space.GET("/:space_id/semantic_answer")
-			space.GET("/:space_id/semantic_global")
-			space.GET("/:space_id/semantic_grep")
+			space.GET("/:space_id/semantic_answer", d.SpaceHandler.GetSemanticAnswer)
+			space.GET("/:space_id/semantic_global", d.SpaceHandler.GetSemanticGlobal)
+			space.GET("/:space_id/semantic_grep", d.SpaceHandler.GetSemanticGrep)
 
 			page := space.Group("/:space_id/page")
 			{
@@ -95,19 +95,19 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 		session := v1.Group("/session")
 		{
-			session.POST("/")
-			session.DELETE("/:session_id")
+			session.POST("/", d.SessionHandler.CreateSession)
+			session.DELETE("/:session_id", d.SessionHandler.DeleteSession)
 
-			session.PUT("/:session_id/configs")
-			session.GET("/:session_id/configs")
+			session.PUT("/:session_id/configs", d.SessionHandler.UpdateConfigs)
+			session.GET("/:session_id/configs", d.SessionHandler.GetConfigs)
 
-			session.POST("/:session_id/connect_to_space")
+			session.POST("/:session_id/connect_to_space", d.SessionHandler.ConnectToSpace)
 
-			session.POST("/:session_id/messages")
-			session.GET("/:session_id/messages/status")
+			// session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
+			// session.GET("/:session_id/messages/status", d.SessionHandler.GetMessagesStatus)
 
-			session.GET("/:session_id/session_scratchpad")
-			session.GET("/:session_id/tasks")
+			// session.GET("/:session_id/session_scratchpad", d.SessionHandler.GetSessionScratchpad)
+			// session.GET("/:session_id/tasks", d.SessionHandler.GetTasks)
 		}
 	}
 	return r

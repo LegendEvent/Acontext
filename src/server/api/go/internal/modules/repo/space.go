@@ -11,6 +11,7 @@ type SpaceRepo interface {
 	Create(ctx context.Context, s *model.Space) error
 	Delete(ctx context.Context, s *model.Space) error
 	Update(ctx context.Context, s *model.Space) error
+	Get(ctx context.Context, s *model.Space) (*model.Space, error)
 }
 
 type spaceRepo struct{ db *gorm.DB }
@@ -29,4 +30,8 @@ func (r *spaceRepo) Delete(ctx context.Context, s *model.Space) error {
 
 func (r *spaceRepo) Update(ctx context.Context, s *model.Space) error {
 	return r.db.WithContext(ctx).Where(&model.Space{ID: s.ID}).Updates(s).Error
+}
+
+func (r *spaceRepo) Get(ctx context.Context, s *model.Space) (*model.Space, error) {
+	return s, r.db.WithContext(ctx).Where(&model.Space{ID: s.ID}).First(s).Error
 }
