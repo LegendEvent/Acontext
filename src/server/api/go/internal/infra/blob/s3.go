@@ -2,7 +2,10 @@ package blob
 
 import (
 	"context"
+	"fmt"
+	"mime/multipart"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -69,7 +72,7 @@ func NewS3(ctx context.Context, cfg *config.Config) (*S3Deps, error) {
 	}, nil
 }
 
-// 生成预签名 PUT URL（直传大文件推荐）
+// Generate a pre-signed PUT URL (recommended for direct uploading of large files)
 func (s *S3Deps) PresignPut(ctx context.Context, key, contentType string, expire time.Duration) (string, error) {
 	params := &s3.PutObjectInput{
 		Bucket:      &s.Bucket,
@@ -88,7 +91,7 @@ func (s *S3Deps) PresignPut(ctx context.Context, key, contentType string, expire
 	return ps.URL, nil
 }
 
-// 生成预签名 GET URL
+// Generate a pre-signed GET URL
 func (s *S3Deps) PresignGet(ctx context.Context, key string, expire time.Duration) (string, error) {
 	ps, err := s.Presigner.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: &s.Bucket,
@@ -100,4 +103,58 @@ func (s *S3Deps) PresignGet(ctx context.Context, key string, expire time.Duratio
 		return "", err
 	}
 	return ps.URL, nil
+}
+
+type UploadedMeta struct {
+	Bucket   string
+	Key      string
+	ETag     string
+	SHA256   string
+	MIME     string
+	SizeB    int64
+	Width    *int
+	Height   *int
+	Duration *float64
+}
+
+func (u *S3Deps) UploadFormFile(ctx context.Context, fh *multipart.FileHeader) (*UploadedMeta, error) {
+	file, err := fh.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	sumHex, err := sha256OfFileHeader(fh)
+	if err != nil {
+		return nil, fmt.Errorf("calc sha256: %w", err)
+	}
+
+	ext := strings.ToLower(filepath.Ext(fh.Filename))
+	datePrefix := time.Now().UTC().Format("2006/01/02")
+	key := fmt.Sprintf("uploads/%s/%s%s", datePrefix, sumHex, ext)
+
+	input := &s3.PutObjectInput{
+		Bucket: aws.String(u.Bucket),
+		Key:    aws.String(key),
+		Body:   file,
+		// TODO: ContentType is best sniffed by itself; here I simply use the MIME provided by the header.
+		ContentType: aws.String(fh.Header.Get("Content-Type")),
+		Metadata: map[string]string{
+			"sha256": sumHex,
+			"name":   fh.Filename,
+		},
+	}
+
+	out, err := u.Uploader.Upload(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UploadedMeta{
+		Bucket: u.Bucket,
+		Key:    key,
+		ETag:   aws.ToString(out.ETag),
+		MIME:   fh.Header.Get("Content-Type"),
+		SizeB:  fh.Size,
+	}, nil
 }

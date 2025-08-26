@@ -72,7 +72,7 @@ func NewConsumer(conn *amqp.Connection, queueName string, prefetch int, log *zap
 
 func (c *Consumer) Close() error { return c.ch.Close() }
 
-// Handle 是一个消费帮助函数，handler 返回 error 时会 Nack 重回队列
+// Handle is a consumption helper function that will Nack and requeue when the handler returns an error.
 func (c *Consumer) Handle(ctx context.Context, handler func([]byte) error) error {
 	msgs, err := c.ch.Consume(c.q.Name, "", false, false, false, false, nil)
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *Consumer) Handle(ctx context.Context, handler func([]byte) error) error
 				return errors.New("consumer channel closed")
 			}
 			if err := handler(m.Body); err != nil {
-				_ = m.Nack(false, true) // 处理失败，重新入队
+				_ = m.Nack(false, true) // Processing failed, requeue.
 				c.log.Sugar().Errorw("consume error", "err", err)
 				continue
 			}

@@ -1,9 +1,13 @@
 package handler
 
 import (
+	"fmt"
+	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memodb-io/Acontext/internal/modules/dto"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
@@ -161,4 +165,46 @@ func (h *SessionHandler) ConnectToSpace(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, serializer.Response{})
+}
+
+type SendMessageReq struct {
+	Role  string       `form:"role" json:"role" binding:"required" example:"user"`
+	Parts []dto.PartIn `form:"parts" json:"parts" binding:"required"`
+}
+
+func (h *SessionHandler) SendMessage(c *gin.Context) {
+	req := SendMessageReq{}
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	sessionID := c.Param("session_id")
+	ct := c.ContentType()
+	fileMap := map[string]*multipart.FileHeader{}
+	if strings.HasPrefix(ct, "multipart/form-data") {
+		for _, p := range req.Parts {
+			if p.FileField != "" {
+				fh, err := c.FormFile(p.FileField)
+				if err != nil {
+					c.JSON(http.StatusBadRequest, serializer.ParamErr(fmt.Sprintf("missing file %s", p.FileField), err))
+					return
+				}
+				fileMap[p.FileField] = fh
+			}
+		}
+	}
+
+	out, err := h.svc.SendMessage(c.Request.Context(), service.SendMessageInput{
+		SessionID: datatypes.UUID(datatypes.BinUUIDFromString(sessionID)),
+		Role:      req.Role,
+		Parts:     req.Parts,
+		Files:     fileMap,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.DBErr("", err))
+		return
+	}
+
+	c.JSON(http.StatusCreated, serializer.Response{Data: out})
 }

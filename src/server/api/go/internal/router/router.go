@@ -53,6 +53,11 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
+		project := v1.Group("/project")
+		{
+			project.POST("/", d.ProjectHandler.CreateProject)
+		}
+
 		space := v1.Group("/space")
 		{
 			space.GET("/status")
@@ -103,7 +108,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 			session.POST("/:session_id/connect_to_space", d.SessionHandler.ConnectToSpace)
 
-			// session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
+			session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
 			// session.GET("/:session_id/messages/status", d.SessionHandler.GetMessagesStatus)
 
 			// session.GET("/:session_id/session_scratchpad", d.SessionHandler.GetSessionScratchpad)

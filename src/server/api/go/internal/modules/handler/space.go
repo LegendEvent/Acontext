@@ -88,12 +88,13 @@ type UpdateSpaceConfigsReq struct {
 //	@Success		200			{object}	serializer.Response
 //	@Router			/space/{space_id}/configs [put]
 func (h *SpaceHandler) UpdateConfigs(c *gin.Context) {
-	spaceID := c.Param("space_id")
 	req := UpdateSpaceConfigsReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
 		return
 	}
+
+	spaceID := c.Param("space_id")
 	if err := h.svc.UpdateByID(c.Request.Context(), &model.Space{
 		ID:      datatypes.UUID(datatypes.BinUUIDFromString(spaceID)),
 		Configs: datatypes.JSONMap(req.Configs),

@@ -40,11 +40,16 @@ func main() {
 	gin.SetMode(cfg.App.Env)
 
 	// build handlers
-	sh := do.MustInvoke[*handler.SpaceHandler](inj)
+	projectHandler := do.MustInvoke[*handler.ProjectHandler](inj)
+	spaceHandler := do.MustInvoke[*handler.SpaceHandler](inj)
+	sessionHandler := do.MustInvoke[*handler.SessionHandler](inj)
+
 	engine := router.NewRouter(router.RouterDeps{
-		DB:           db,
-		Log:          log,
-		SpaceHandler: sh,
+		DB:             db,
+		Log:            log,
+		ProjectHandler: projectHandler,
+		SpaceHandler:   spaceHandler,
+		SessionHandler: sessionHandler,
 	})
 
 	addr := fmt.Sprintf("%s:%d", cfg.App.Host, cfg.App.Port)

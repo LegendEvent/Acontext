@@ -2,7 +2,7 @@ app:
   name: acontext-api
   env: debug            # available mode: debug / release / test
   host: 0.0.0.0
-  port: ${API_EXPORT_PORT}  # 绑定到 .env 的 8029
+  port: ${API_EXPORT_PORT}  # Bind to .env 的 8029
 
 log:
   level: info           # debug/info/warn/error

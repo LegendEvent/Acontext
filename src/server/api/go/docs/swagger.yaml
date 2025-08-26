@@ -9,6 +9,12 @@ definitions:
     required:
     - space_id
     type: object
+  handler.CreateProjectReq:
+    properties:
+      configs:
+        additionalProperties: true
+        type: object
+    type: object
   handler.CreateSessionReq:
     properties:
       configs:
@@ -241,6 +247,33 @@ info:
   title: Acontext API
   version: "1.0"
 paths:
+  /project:
+    post:
+      consumes:
+      - application/json
+      description: Create a new project
+      parameters:
+      - description: CreateProject payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateProjectReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Project'
+              type: object
+      summary: Create project
+      tags:
+      - project
   /session:
     post:
       consumes:

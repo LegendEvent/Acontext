@@ -85,18 +85,41 @@ func BuildContainer() *do.Injector {
 	})
 
 	// Repo
+	do.Provide(inj, func(i *do.Injector) (repo.ProjectRepo, error) {
+		return repo.NewProjectRepo(do.MustInvoke[*gorm.DB](i)), nil
+	})
 	do.Provide(inj, func(i *do.Injector) (repo.SpaceRepo, error) {
 		return repo.NewSpaceRepo(do.MustInvoke[*gorm.DB](i)), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (repo.SessionRepo, error) {
+		return repo.NewSessionRepo(do.MustInvoke[*gorm.DB](i)), nil
+	})
 
 	// Service
+	do.Provide(inj, func(i *do.Injector) (service.ProjectService, error) {
+		return service.NewProjectService(do.MustInvoke[repo.ProjectRepo](i)), nil
+	})
 	do.Provide(inj, func(i *do.Injector) (service.SpaceService, error) {
 		return service.NewSpaceService(do.MustInvoke[repo.SpaceRepo](i)), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (service.SessionService, error) {
+		return service.NewSessionService(
+			do.MustInvoke[repo.SessionRepo](i),
+			do.MustInvoke[*zap.Logger](i),
+			do.MustInvoke[*blob.S3Deps](i),
+			do.MustInvoke[*amqp.Connection](i),
+		), nil
+	})
 
 	// Handler
+	do.Provide(inj, func(i *do.Injector) (*handler.ProjectHandler, error) {
+		return handler.NewProjectHandler(do.MustInvoke[service.ProjectService](i)), nil
+	})
 	do.Provide(inj, func(i *do.Injector) (*handler.SpaceHandler, error) {
 		return handler.NewSpaceHandler(do.MustInvoke[service.SpaceService](i)), nil
+	})
+	do.Provide(inj, func(i *do.Injector) (*handler.SessionHandler, error) {
+		return handler.NewSessionHandler(do.MustInvoke[service.SessionService](i)), nil
 	})
 
 	return inj
