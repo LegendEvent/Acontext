@@ -1,13 +1,7 @@
-
-
 ## Core Development
 
-1. Run `sh scripts/local_dev_deps.sh`
-2. Init Core env
+1. Start dependencies with Docker Compose
 
 ```bash
-cd core
-uv sync
-uv run -m fastapi dev
+docker compose up -d
 ```
-
