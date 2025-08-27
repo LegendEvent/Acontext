@@ -1,11 +1,18 @@
 package main
 
-//	@title						Acontext API
-//	@version					1.0
-//	@description				API for Acontext.
-//	@schemes					http https
-//	@BasePath					/api/v1
-//	@securityDefinitions.apikey	BearerAuth
+//	@title			Acontext API
+//	@version		1.0
+//	@description	API for Acontext.
+//	@schemes		http https
+//	@BasePath		/api/v1
+
+// Bearer at Root level
+//	@securityDefinitions.apikey	RootAuth
+//	@in							header
+//	@name						Authorization
+
+// Bearer at Project level
+//	@securityDefinitions.apikey	ProjectAuth
 //	@in							header
 //	@name						Authorization
 
@@ -45,6 +52,7 @@ func main() {
 	sessionHandler := do.MustInvoke[*handler.SessionHandler](inj)
 
 	engine := router.NewRouter(router.RouterDeps{
+		Config:         cfg,
 		DB:             db,
 		Log:            log,
 		ProjectHandler: projectHandler,
@@ -58,6 +66,7 @@ func main() {
 	go func() {
 		log.Sugar().Infow("starting http server", "addr", addr)
 		log.Sugar().Infow("swagger url", "url", addr+"/swagger/index.html")
+		log.Sugar().Infow("root bearer token", "token", cfg.Root.ApiBearerToken)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Sugar().Fatalw("listen error", "err", err)
 		}

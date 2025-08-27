@@ -88,10 +88,6 @@ func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Me
 			}
 		}
 
-		// Preload (optional) the Assets of message
-		if err := tx.Preload("Assets").First(msg, "id = ?", msg.ID).Error; err != nil {
-			return err
-		}
 		return nil
 	})
 }

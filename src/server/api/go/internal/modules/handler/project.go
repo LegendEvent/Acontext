@@ -4,18 +4,24 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memodb-io/Acontext/internal/config"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
+	"github.com/memodb-io/Acontext/internal/pkg/utils"
 	"gorm.io/datatypes"
 )
 
 type ProjectHandler struct {
-	svc service.ProjectService
+	svc    service.ProjectService
+	Config *config.Config
 }
 
-func NewProjectHandler(s service.ProjectService) *ProjectHandler {
-	return &ProjectHandler{svc: s}
+func NewProjectHandler(s service.ProjectService, cfg *config.Config) *ProjectHandler {
+	return &ProjectHandler{
+		svc:    s,
+		Config: cfg,
+	}
 }
 
 type CreateProjectReq struct {
@@ -29,8 +35,9 @@ type CreateProjectReq struct {
 //	@Tags			project
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		handler.CreateProjectReq	true	"CreateProject payload"
-//	@Success		201		{object}	serializer.Response{data=model.Project}
+//	@Param			payload	body	handler.CreateProjectReq	true	"CreateProject payload"
+//	@Security		RootAuth
+//	@Success		201	{object}	serializer.Response{data=model.Project}
 //	@Router			/project [post]
 func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	req := CreateProjectReq{}
@@ -39,8 +46,15 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 		return
 	}
 
+	key, err := utils.GenerateKey(h.Config.Root.ProjectBearerTokenPrefix)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
+		return
+	}
+
 	project := model.Project{
-		Configs: datatypes.JSONMap(req.Configs),
+		SecretKey: key,
+		Configs:   datatypes.JSONMap(req.Configs),
 	}
 	if err := h.svc.Create(c.Request.Context(), &project); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))

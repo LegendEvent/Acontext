@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
-	"gorm.io/datatypes"
 )
 
 type SpaceService interface {
 	Create(ctx context.Context, m *model.Space) error
-	Delete(ctx context.Context, spaceID string) error
+	Delete(ctx context.Context, projectID uuid.UUID, spaceID uuid.UUID) error
 	UpdateByID(ctx context.Context, m *model.Space) error
 	GetByID(ctx context.Context, m *model.Space) (*model.Space, error)
 }
@@ -26,11 +26,11 @@ func (s *spaceService) Create(ctx context.Context, m *model.Space) error {
 	return s.r.Create(ctx, m)
 }
 
-func (s *spaceService) Delete(ctx context.Context, spaceID string) error {
+func (s *spaceService) Delete(ctx context.Context, projectID uuid.UUID, spaceID uuid.UUID) error {
 	if len(spaceID) == 0 {
 		return errors.New("space id is empty")
 	}
-	return s.r.Delete(ctx, &model.Space{ID: datatypes.UUID(datatypes.BinUUIDFromString(spaceID))})
+	return s.r.Delete(ctx, &model.Space{ID: spaceID, ProjectID: projectID})
 }
 
 func (s *spaceService) UpdateByID(ctx context.Context, m *model.Space) error {

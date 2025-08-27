@@ -20,28 +20,16 @@ definitions:
       configs:
         additionalProperties: true
         type: object
-      project_id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        format: uuid
-        type: string
       space_id:
         example: 123e4567-e89b-12d3-a456-42661417
         format: uuid
         type: string
-    required:
-    - project_id
     type: object
   handler.CreateSpaceReq:
     properties:
       configs:
         additionalProperties: true
         type: object
-      project_id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        format: uuid
-        type: string
-    required:
-    - project_id
     type: object
   handler.GetSemanticAnswerReq:
     properties:
@@ -64,6 +52,19 @@ definitions:
     required:
     - query
     type: object
+  handler.SendMessageReq:
+    properties:
+      parts:
+        items:
+          $ref: '#/definitions/types.PartIn'
+        type: array
+      role:
+        example: user
+        type: string
+    required:
+    - parts
+    - role
+    type: object
   handler.UpdateSessionConfigsReq:
     properties:
       configs:
@@ -84,7 +85,7 @@ definitions:
         type: string
       created_at:
         type: string
-      duration:
+      duration_seconds:
         type: number
       etag:
         type: string
@@ -99,11 +100,11 @@ definitions:
         type: array
       mime:
         type: string
-      s3Key:
+      s3_key:
         type: string
       sha256:
         type: string
-      sizeB:
+      size_b:
         type: integer
       updated_at:
         type: string
@@ -121,7 +122,7 @@ definitions:
         type: string
       id:
         type: string
-      messageAssets:
+      message_assets:
         description: Message <-> MessageAsset
         items:
           $ref: '#/definitions/model.MessageAsset'
@@ -147,7 +148,7 @@ definitions:
         allOf:
         - $ref: '#/definitions/model.Asset'
         description: MessageAsset <-> Asset
-      assetID:
+      asset_id:
         type: string
       created_at:
         type: string
@@ -155,7 +156,7 @@ definitions:
         allOf:
         - $ref: '#/definitions/model.Message'
         description: MessageAsset <-> Message
-      messageID:
+      message_id:
         type: string
       updated_at:
         type: string
@@ -167,6 +168,8 @@ definitions:
       created_at:
         type: string
       id:
+        type: string
+      secret_key:
         type: string
       sessions:
         description: Project <-> Session
@@ -241,6 +244,22 @@ definitions:
       msg:
         type: string
     type: object
+  types.PartIn:
+    properties:
+      file_field:
+        description: File field name in the form
+        type: string
+      meta:
+        additionalProperties: true
+        description: '[Optional] metadata'
+        type: object
+      text:
+        description: Text sharding
+        type: string
+      type:
+        description: '"text" | "image" | ...'
+        type: string
+    type: object
 info:
   contact: {}
   description: API for Acontext.
@@ -271,6 +290,8 @@ paths:
                 data:
                   $ref: '#/definitions/model.Project'
               type: object
+      security:
+      - RootAuth: []
       summary: Create project
       tags:
       - project
@@ -298,6 +319,8 @@ paths:
                 data:
                   $ref: '#/definitions/model.Session'
               type: object
+      security:
+      - ProjectAuth: []
       summary: Create session
       tags:
       - session
@@ -320,6 +343,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Delete session
       tags:
       - session
@@ -347,6 +372,8 @@ paths:
                 data:
                   $ref: '#/definitions/model.Session'
               type: object
+      security:
+      - ProjectAuth: []
       summary: Get session configs
       tags:
       - session
@@ -374,6 +401,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Update session configs
       tags:
       - session
@@ -402,7 +431,49 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Connect session to space
+      tags:
+      - session
+  /session/{session_id}/messages:
+    post:
+      consumes:
+      - application/json
+      - multipart/form-data
+      description: 'Supports JSON and multipart/form-data. In multipart mode: the
+        payload is a JSON string placed in a form field.'
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      - description: 'SendMessage payload (Content-Type: application/json)'
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SendMessageReq'
+      - description: 'SendMessage payload (Content-Type: multipart/form-data)'
+        in: formData
+        name: payload
+        type: string
+      - description: When uploading files, the field name must correspond to parts[*].file_field.
+        in: formData
+        name: file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
+      summary: Send message to session
       tags:
       - session
   /space:
@@ -429,6 +500,8 @@ paths:
                 data:
                   $ref: '#/definitions/model.Space'
               type: object
+      security:
+      - ProjectAuth: []
       summary: Create space
       tags:
       - space
@@ -452,6 +525,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Delete space
       tags:
       - space
@@ -480,6 +555,8 @@ paths:
                 data:
                   $ref: '#/definitions/model.Space'
               type: object
+      security:
+      - ProjectAuth: []
       summary: Get space configs
       tags:
       - space
@@ -508,6 +585,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Update space configs
       tags:
       - space
@@ -538,6 +617,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Get semantic answer
       tags:
       - space
@@ -568,6 +649,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Get semantic global
       tags:
       - space
@@ -598,6 +681,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/serializer.Response'
+      security:
+      - ProjectAuth: []
       summary: Get semantic grep
       tags:
       - space
@@ -605,7 +690,11 @@ schemes:
 - http
 - https
 securityDefinitions:
-  BearerAuth:
+  ProjectAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  RootAuth:
     in: header
     name: Authorization
     type: apiKey

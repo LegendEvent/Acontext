@@ -57,3 +57,11 @@ func ParamErr(msg string, err error) Response {
 	}
 	return Err(http.StatusBadRequest, msg, err)
 }
+
+// AuthErr
+func AuthErr(msg string) Response {
+	if msg == "" {
+		msg = "authentication error"
+	}
+	return Err(http.StatusUnauthorized, msg, nil)
+}

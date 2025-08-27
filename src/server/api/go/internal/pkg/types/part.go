@@ -1,4 +1,4 @@
-package dto
+package types
 
 type PartIn struct {
 	Type      string                 `json:"type"`                 // "text" | "image" | ...

@@ -45,7 +45,7 @@ services:
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
     ports:
       - "${RABBITMQ_EXPORT_PORT:-5672}:5672"    # AMQP
-      - "${RABBITMQ_ADMIN_EXPORT_PORT:-15672}:15672"  # UI：http://127.0.0.1:15672
+      - "${RABBITMQ_ADMIN_EXPORT_PORT:-15672}:15672"  # UI
     volumes:
       - ${RABBITMQ_LOCATION}:/var/lib/rabbitmq
     healthcheck:

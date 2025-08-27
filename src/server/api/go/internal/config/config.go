@@ -15,6 +15,11 @@ type AppCfg struct {
 	Port int
 }
 
+type RootCfg struct {
+	ApiBearerToken           string
+	ProjectBearerTokenPrefix string
+}
+
 type LogCfg struct {
 	Level string
 }
@@ -52,6 +57,7 @@ type S3Cfg struct {
 
 type Config struct {
 	App      AppCfg
+	Root     RootCfg
 	Log      LogCfg
 	Database DBCfg
 	Redis    RedisCfg
@@ -111,6 +117,8 @@ func Load() (*Config, error) {
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("app.host", "0.0.0.0")
 	v.SetDefault("app.port", 8080)
+	v.SetDefault("root.apiBearerToken", "acontext")
+	v.SetDefault("root.projectBearerTokenPrefix", "sk-proj-")
 	v.SetDefault("log.level", "info")
 	v.SetDefault("redis.poolSize", 10)
 	v.SetDefault("rabbitmq.prefetch", 10)

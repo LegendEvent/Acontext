@@ -4,6 +4,10 @@ app:
   host: 0.0.0.0
   port: ${API_EXPORT_PORT}  # Bind to .env 的 8029
 
+root:
+  apiBearerToken: "${ROOT_API_BEARER_TOKEN}"
+  projectBearerTokenPrefix: "sk-proj-"
+
 log:
   level: info           # debug/info/warn/error
 

@@ -113,7 +113,10 @@ func BuildContainer() *do.Injector {
 
 	// Handler
 	do.Provide(inj, func(i *do.Injector) (*handler.ProjectHandler, error) {
-		return handler.NewProjectHandler(do.MustInvoke[service.ProjectService](i)), nil
+		return handler.NewProjectHandler(
+			do.MustInvoke[service.ProjectService](i),
+			do.MustInvoke[*config.Config](i),
+		), nil
 	})
 	do.Provide(inj, func(i *do.Injector) (*handler.SpaceHandler, error) {
 		return handler.NewSpaceHandler(do.MustInvoke[service.SpaceService](i)), nil

@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/project": {
             "post": {
+                "security": [
+                    {
+                        "RootAuth": []
+                    }
+                ],
                 "description": "Create a new project",
                 "consumes": [
                     "application/json"
@@ -63,6 +68,11 @@ const docTemplate = `{
         },
         "/session": {
             "post": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Create a new session under a space",
                 "consumes": [
                     "application/json"
@@ -109,6 +119,11 @@ const docTemplate = `{
         },
         "/session/{session_id}": {
             "delete": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Delete a session by id",
                 "consumes": [
                     "application/json"
@@ -142,6 +157,11 @@ const docTemplate = `{
         },
         "/session/{session_id}/configs": {
             "get": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Get session configs by id",
                 "consumes": [
                     "application/json"
@@ -185,6 +205,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Update session configs by id",
                 "consumes": [
                     "application/json"
@@ -227,6 +252,11 @@ const docTemplate = `{
         },
         "/session/{session_id}/connect_to_space": {
             "post": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Connect a session to a space by id",
                 "consumes": [
                     "application/json"
@@ -267,8 +297,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/session/{session_id}/messages": {
+            "post": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
+                "description": "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field.",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "session"
+                ],
+                "summary": "Send message to session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "SendMessage payload (Content-Type: application/json)",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.SendMessageReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "SendMessage payload (Content-Type: multipart/form-data)",
+                        "name": "payload",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "When uploading files, the field name must correspond to parts[*].file_field.",
+                        "name": "file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/space": {
             "post": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Create a new space under a project",
                 "consumes": [
                     "application/json"
@@ -315,6 +410,11 @@ const docTemplate = `{
         },
         "/space/{space_id}": {
             "delete": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Delete a space by its ID",
                 "consumes": [
                     "application/json"
@@ -349,6 +449,11 @@ const docTemplate = `{
         },
         "/space/{space_id}/configs": {
             "get": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Retrieve the configurations of a space by its ID",
                 "consumes": [
                     "application/json"
@@ -393,6 +498,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Update the configurations of a space by its ID",
                 "consumes": [
                     "application/json"
@@ -436,6 +546,11 @@ const docTemplate = `{
         },
         "/space/{space_id}/semantic_answer": {
             "get": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Retrieve the semantic answer for a given query within a space by its ID",
                 "consumes": [
                     "application/json"
@@ -479,6 +594,11 @@ const docTemplate = `{
         },
         "/space/{space_id}/semantic_global": {
             "get": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Retrieve the semantic global information for a given query within a space by its ID",
                 "consumes": [
                     "application/json"
@@ -522,6 +642,11 @@ const docTemplate = `{
         },
         "/space/{space_id}/semantic_grep": {
             "get": {
+                "security": [
+                    {
+                        "ProjectAuth": []
+                    }
+                ],
                 "description": "Retrieve the semantic grep results for a given query within a space by its ID",
                 "consumes": [
                     "application/json"
@@ -589,18 +714,10 @@ const docTemplate = `{
         },
         "handler.CreateSessionReq": {
             "type": "object",
-            "required": [
-                "project_id"
-            ],
             "properties": {
                 "configs": {
                     "type": "object",
                     "additionalProperties": true
-                },
-                "project_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
                 "space_id": {
                     "type": "string",
@@ -611,18 +728,10 @@ const docTemplate = `{
         },
         "handler.CreateSpaceReq": {
             "type": "object",
-            "required": [
-                "project_id"
-            ],
             "properties": {
                 "configs": {
                     "type": "object",
                     "additionalProperties": true
-                },
-                "project_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         },
@@ -659,6 +768,25 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.SendMessageReq": {
+            "type": "object",
+            "required": [
+                "parts",
+                "role"
+            ],
+            "properties": {
+                "parts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.PartIn"
+                    }
+                },
+                "role": {
+                    "type": "string",
+                    "example": "user"
+                }
+            }
+        },
         "handler.UpdateSessionConfigsReq": {
             "type": "object",
             "properties": {
@@ -689,7 +817,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "duration": {
+                "duration_seconds": {
                     "type": "number"
                 },
                 "etag": {
@@ -711,13 +839,13 @@ const docTemplate = `{
                 "mime": {
                     "type": "string"
                 },
-                "s3Key": {
+                "s3_key": {
                     "type": "string"
                 },
                 "sha256": {
                     "type": "string"
                 },
-                "sizeB": {
+                "size_b": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -744,7 +872,7 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "messageAssets": {
+                "message_assets": {
                     "description": "Message \u003c-\u003e MessageAsset",
                     "type": "array",
                     "items": {
@@ -787,7 +915,7 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "assetID": {
+                "asset_id": {
                     "type": "string"
                 },
                 "created_at": {
@@ -801,7 +929,7 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "messageID": {
+                "message_id": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -819,6 +947,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "secret_key": {
                     "type": "string"
                 },
                 "sessions": {
@@ -935,10 +1066,37 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "types.PartIn": {
+            "type": "object",
+            "properties": {
+                "file_field": {
+                    "description": "File field name in the form",
+                    "type": "string"
+                },
+                "meta": {
+                    "description": "[Optional] metadata",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "text": {
+                    "description": "Text sharding",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"text\" | \"image\" | ...",
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
-        "BearerAuth": {
+        "ProjectAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "RootAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

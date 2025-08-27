@@ -32,7 +32,7 @@ swag-fmt:
 # first swagger & run
 run: swag swag-fmt
 	@set -a; . ../.env; set +a; \
-	cd $(GO_DIR) && go run ./cmd/server
+	cd $(GO_DIR) && go mod tidy && go run ./cmd/server
 
 # self-check
 doctor:

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
@@ -19,8 +20,7 @@ func NewSpaceHandler(s service.SpaceService) *SpaceHandler {
 }
 
 type CreateSpaceReq struct {
-	ProjectID string                 `form:"project_id" json:"project_id" binding:"required,uuid" format:"uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
-	Configs   map[string]interface{} `form:"configs" json:"configs"`
+	Configs map[string]interface{} `form:"configs" json:"configs"`
 }
 
 // CreateSpace godoc
@@ -30,8 +30,9 @@ type CreateSpaceReq struct {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body		handler.CreateSpaceReq	true	"CreateSpace payload"
-//	@Success		201		{object}	serializer.Response{data=model.Space}
+//	@Param			payload	body	handler.CreateSpaceReq	true	"CreateSpace payload"
+//	@Security		ProjectAuth
+//	@Success		201	{object}	serializer.Response{data=model.Space}
 //	@Router			/space [post]
 func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 	req := CreateSpaceReq{}
@@ -40,8 +41,9 @@ func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 		return
 	}
 
+	project := c.MustGet("project").(*model.Project)
 	space := model.Space{
-		ProjectID: datatypes.UUID(datatypes.BinUUIDFromString(req.ProjectID)),
+		ProjectID: project.ID,
 		Configs:   datatypes.JSONMap(req.Configs),
 	}
 	if err := h.svc.Create(c.Request.Context(), &space); err != nil {
@@ -59,12 +61,18 @@ func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Success		200			{object}	serializer.Response
+//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Security		ProjectAuth
+//	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id} [delete]
 func (h *SpaceHandler) DeleteSpace(c *gin.Context) {
-	spaceID := c.Param("space_id")
-	if err := h.svc.Delete(c.Request.Context(), spaceID); err != nil {
+	spaceID, err := uuid.Parse(c.Param("space_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+	project := c.MustGet("project").(*model.Project)
+	if err := h.svc.Delete(c.Request.Context(), project.ID, spaceID); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
 	}
@@ -83,9 +91,10 @@ type UpdateSpaceConfigsReq struct {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string							true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			payload		body		handler.UpdateSpaceConfigsReq	true	"UpdateConfigs payload"
-//	@Success		200			{object}	serializer.Response
+//	@Param			space_id	path	string							true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Param			payload		body	handler.UpdateSpaceConfigsReq	true	"UpdateConfigs payload"
+//	@Security		ProjectAuth
+//	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/configs [put]
 func (h *SpaceHandler) UpdateConfigs(c *gin.Context) {
 	req := UpdateSpaceConfigsReq{}
@@ -94,9 +103,13 @@ func (h *SpaceHandler) UpdateConfigs(c *gin.Context) {
 		return
 	}
 
-	spaceID := c.Param("space_id")
+	spaceID, err := uuid.Parse(c.Param("space_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
 	if err := h.svc.UpdateByID(c.Request.Context(), &model.Space{
-		ID:      datatypes.UUID(datatypes.BinUUIDFromString(spaceID)),
+		ID:      spaceID,
 		Configs: datatypes.JSONMap(req.Configs),
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
@@ -113,12 +126,17 @@ func (h *SpaceHandler) UpdateConfigs(c *gin.Context) {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Success		200			{object}	serializer.Response{data=model.Space}
+//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Security		ProjectAuth
+//	@Success		200	{object}	serializer.Response{data=model.Space}
 //	@Router			/space/{space_id}/configs [get]
 func (h *SpaceHandler) GetConfigs(c *gin.Context) {
-	spaceID := c.Param("space_id")
-	space, err := h.svc.GetByID(c.Request.Context(), &model.Space{ID: datatypes.UUID(datatypes.BinUUIDFromString(spaceID))})
+	spaceID, err := uuid.Parse(c.Param("space_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+	space, err := h.svc.GetByID(c.Request.Context(), &model.Space{ID: spaceID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
@@ -138,13 +156,18 @@ type GetSemanticAnswerReq struct {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string							true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			payload		body		handler.GetSemanticAnswerReq	true	"GetSemanticAnswer payload"
-//	@Success		200			{object}	serializer.Response{}
+//	@Param			space_id	path	string							true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Param			payload		body	handler.GetSemanticAnswerReq	true	"GetSemanticAnswer payload"
+//	@Security		ProjectAuth
+//	@Success		200	{object}	serializer.Response{}
 //	@Router			/space/{space_id}/semantic_answer [get]
 func (h *SpaceHandler) GetSemanticAnswer(c *gin.Context) {
 	// TODO: implement
-	spaceID := c.Param("space_id")
+	spaceID, err := uuid.Parse(c.Param("space_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
 	req := GetSemanticAnswerReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
@@ -165,13 +188,18 @@ type GetSemanticGlobalReq struct {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string							true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			payload		body		handler.GetSemanticGlobalReq	true	"GetSemanticGlobal payload"
-//	@Success		200			{object}	serializer.Response{}
+//	@Param			space_id	path	string							true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Param			payload		body	handler.GetSemanticGlobalReq	true	"GetSemanticGlobal payload"
+//	@Security		ProjectAuth
+//	@Success		200	{object}	serializer.Response{}
 //	@Router			/space/{space_id}/semantic_global [get]
 func (h *SpaceHandler) GetSemanticGlobal(c *gin.Context) {
 	// TODO: implement
-	spaceID := c.Param("space_id")
+	spaceID, err := uuid.Parse(c.Param("space_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
 	req := GetSemanticGlobalReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
@@ -192,13 +220,18 @@ type GetSemanticGrepReq struct {
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string						true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			payload		body		handler.GetSemanticGrepReq	true	"GetSemanticGrep payload"
-//	@Success		200			{object}	serializer.Response{}
+//	@Param			space_id	path	string						true	"Space ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Param			payload		body	handler.GetSemanticGrepReq	true	"GetSemanticGrep payload"
+//	@Security		ProjectAuth
+//	@Success		200	{object}	serializer.Response{}
 //	@Router			/space/{space_id}/semantic_grep [get]
 func (h *SpaceHandler) GetSemanticGrep(c *gin.Context) {
 	// TODO: implement
-	spaceID := c.Param("space_id")
+	spaceID, err := uuid.Parse(c.Param("space_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
 	req := GetSemanticGrepReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))

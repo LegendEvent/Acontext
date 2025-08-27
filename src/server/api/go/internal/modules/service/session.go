@@ -7,11 +7,12 @@ import (
 	"mime/multipart"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/infra/blob"
 	mq "github.com/memodb-io/Acontext/internal/infra/queue"
-	"github.com/memodb-io/Acontext/internal/modules/dto"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
+	"github.com/memodb-io/Acontext/internal/pkg/types"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -19,7 +20,7 @@ import (
 
 type SessionService interface {
 	Create(ctx context.Context, ss *model.Session) error
-	Delete(ctx context.Context, sessionID string) error
+	Delete(ctx context.Context, projectID uuid.UUID, sessionID uuid.UUID) error
 	UpdateByID(ctx context.Context, ss *model.Session) error
 	GetByID(ctx context.Context, ss *model.Session) (*model.Session, error)
 	SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error)
@@ -45,11 +46,11 @@ func (s *sessionService) Create(ctx context.Context, ss *model.Session) error {
 	return s.r.Create(ctx, ss)
 }
 
-func (s *sessionService) Delete(ctx context.Context, sessionID string) error {
+func (s *sessionService) Delete(ctx context.Context, projectID uuid.UUID, sessionID uuid.UUID) error {
 	if len(sessionID) == 0 {
 		return errors.New("space id is empty")
 	}
-	return s.r.Delete(ctx, &model.Session{ID: datatypes.UUID(datatypes.BinUUIDFromString(sessionID))})
+	return s.r.Delete(ctx, &model.Session{ID: sessionID, ProjectID: projectID})
 }
 
 func (s *sessionService) UpdateByID(ctx context.Context, ss *model.Session) error {
@@ -64,9 +65,9 @@ func (s *sessionService) GetByID(ctx context.Context, ss *model.Session) (*model
 }
 
 type SendMessageInput struct {
-	SessionID datatypes.UUID
+	SessionID uuid.UUID
 	Role      string
-	Parts     []dto.PartIn
+	Parts     []types.PartIn
 	Files     map[string]*multipart.FileHeader
 }
 
@@ -102,6 +103,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			}
 
 			a := &model.Asset{
+				ID:       uuid.New(),
 				Bucket:   umeta.Bucket,
 				S3Key:    umeta.Key,
 				ETag:     umeta.ETag,
@@ -115,6 +117,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			assets = append(assets, a)
 
 			parts = append(parts, model.Part{
+				AssetID:   &a.ID,
 				Type:      p.Type,
 				MIME:      umeta.MIME,
 				SizeB:     &umeta.SizeB,

@@ -1,7 +1,9 @@
 package router
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +11,10 @@ import (
 	"gorm.io/gorm"
 
 	_ "github.com/memodb-io/Acontext/docs"
+	"github.com/memodb-io/Acontext/internal/config"
 	"github.com/memodb-io/Acontext/internal/modules/handler"
+	"github.com/memodb-io/Acontext/internal/modules/model"
+	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -26,11 +31,59 @@ func zapLoggerMiddleware(log *zap.Logger) gin.HandlerFunc {
 			"status", c.Writer.Status(),
 			"latency", dur.String(),
 			"clientIP", c.ClientIP(),
+			"authorization", c.Request.Header.Get("Authorization"),
 		)
 	}
 }
 
+// rootAuthMiddleware
+func rootAuthMiddleware(secret string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		auth := c.Request.Header.Get("Authorization")
+		if auth != "Bearer "+secret {
+			c.JSON(http.StatusUnauthorized, serializer.AuthErr("Unauthorized"))
+			return
+		}
+		c.Next()
+	}
+}
+
+// projectAuthMiddleware
+func projectAuthMiddleware(cfg *config.Config, db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		auth := c.Request.Header.Get("Authorization")
+		if auth == "" {
+			c.JSON(http.StatusUnauthorized, serializer.AuthErr("Unauthorized"))
+			return
+		}
+
+		// Extract the token (remove the Bearer prefix)
+		token := strings.TrimPrefix(auth, "Bearer ")
+		if !strings.HasPrefix(token, cfg.Root.ProjectBearerTokenPrefix) {
+			c.JSON(http.StatusUnauthorized, serializer.AuthErr("Unauthorized"))
+			return
+		}
+
+		// Query Project from the database
+		var project model.Project
+		if err := db.Where(model.Project{SecretKey: token}).First(&project).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusUnauthorized, serializer.AuthErr("Unauthorized"))
+				return
+			}
+			c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
+			return
+		}
+
+		// Deposit into context
+		c.Set("project", &project)
+
+		c.Next()
+	}
+}
+
 type RouterDeps struct {
+	Config         *config.Config
 	DB             *gorm.DB
 	Log            *zap.Logger
 	ProjectHandler *handler.ProjectHandler
@@ -43,7 +96,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 	r.Use(gin.Recovery(), zapLoggerMiddleware(d.Log))
 
 	// health
-	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+	r.GET("/health", func(c *gin.Context) { c.JSON(200, serializer.Response{Msg: "ok"}) })
 
 	// swagger
 	r.GET("/swagger", func(c *gin.Context) {
@@ -53,66 +106,76 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
-		project := v1.Group("/project")
+		root := v1.Group("")
 		{
-			project.POST("/", d.ProjectHandler.CreateProject)
-		}
+			root.Use(rootAuthMiddleware(d.Config.Root.ApiBearerToken))
 
-		space := v1.Group("/space")
-		{
-			space.GET("/status")
-
-			space.POST("/", d.SpaceHandler.CreateSpace)
-			space.DELETE("/:space_id", d.SpaceHandler.DeleteSpace)
-
-			space.PUT("/:space_id/configs", d.SpaceHandler.UpdateConfigs)
-			space.GET("/:space_id/configs", d.SpaceHandler.GetConfigs)
-
-			space.GET("/:space_id/semantic_answer", d.SpaceHandler.GetSemanticAnswer)
-			space.GET("/:space_id/semantic_global", d.SpaceHandler.GetSemanticGlobal)
-			space.GET("/:space_id/semantic_grep", d.SpaceHandler.GetSemanticGrep)
-
-			page := space.Group("/:space_id/page")
+			project := root.Group("/project")
 			{
-				page.POST("/")
-				page.DELETE("/:page_id")
-
-				page.GET("/:page_id/properties")
-				page.PUT("/:page_id/properties")
-
-				page.GET("/:page_id/children")
-				page.PUT("/:page_id/children/move_pages")
-				page.PUT("/:page_id/children/move_blocks")
-			}
-
-			block := space.Group("/:space_id/block")
-			{
-				block.POST("/")
-				block.DELETE("/:block_id")
-
-				block.GET("/:block_id/properties")
-				block.PUT("/:block_id/properties")
-
-				block.GET("/:block_id/children")
-				block.PUT("/:block_id/children/move_blocks")
+				project.POST("/", d.ProjectHandler.CreateProject)
 			}
 		}
 
-		session := v1.Group("/session")
+		user := v1.Group("")
 		{
-			session.POST("/", d.SessionHandler.CreateSession)
-			session.DELETE("/:session_id", d.SessionHandler.DeleteSession)
+			user.Use(projectAuthMiddleware(d.Config, d.DB))
 
-			session.PUT("/:session_id/configs", d.SessionHandler.UpdateConfigs)
-			session.GET("/:session_id/configs", d.SessionHandler.GetConfigs)
+			space := user.Group("/space")
+			{
+				space.GET("/status")
 
-			session.POST("/:session_id/connect_to_space", d.SessionHandler.ConnectToSpace)
+				space.POST("/", d.SpaceHandler.CreateSpace)
+				space.DELETE("/:space_id", d.SpaceHandler.DeleteSpace)
 
-			session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
-			// session.GET("/:session_id/messages/status", d.SessionHandler.GetMessagesStatus)
+				space.PUT("/:space_id/configs", d.SpaceHandler.UpdateConfigs)
+				space.GET("/:space_id/configs", d.SpaceHandler.GetConfigs)
 
-			// session.GET("/:session_id/session_scratchpad", d.SessionHandler.GetSessionScratchpad)
-			// session.GET("/:session_id/tasks", d.SessionHandler.GetTasks)
+				space.GET("/:space_id/semantic_answer", d.SpaceHandler.GetSemanticAnswer)
+				space.GET("/:space_id/semantic_global", d.SpaceHandler.GetSemanticGlobal)
+				space.GET("/:space_id/semantic_grep", d.SpaceHandler.GetSemanticGrep)
+
+				page := space.Group("/:space_id/page")
+				{
+					page.POST("/")
+					page.DELETE("/:page_id")
+
+					page.GET("/:page_id/properties")
+					page.PUT("/:page_id/properties")
+
+					page.GET("/:page_id/children")
+					page.PUT("/:page_id/children/move_pages")
+					page.PUT("/:page_id/children/move_blocks")
+				}
+
+				block := space.Group("/:space_id/block")
+				{
+					block.POST("/")
+					block.DELETE("/:block_id")
+
+					block.GET("/:block_id/properties")
+					block.PUT("/:block_id/properties")
+
+					block.GET("/:block_id/children")
+					block.PUT("/:block_id/children/move_blocks")
+				}
+			}
+
+			session := user.Group("/session")
+			{
+				session.POST("/", d.SessionHandler.CreateSession)
+				session.DELETE("/:session_id", d.SessionHandler.DeleteSession)
+
+				session.PUT("/:session_id/configs", d.SessionHandler.UpdateConfigs)
+				session.GET("/:session_id/configs", d.SessionHandler.GetConfigs)
+
+				session.POST("/:session_id/connect_to_space", d.SessionHandler.ConnectToSpace)
+
+				session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
+				// session.GET("/:session_id/messages/status", d.SessionHandler.GetMessagesStatus)
+
+				// session.GET("/:session_id/session_scratchpad", d.SessionHandler.GetSessionScratchpad)
+				// session.GET("/:session_id/tasks", d.SessionHandler.GetTasks)
+			}
 		}
 	}
 	return r
