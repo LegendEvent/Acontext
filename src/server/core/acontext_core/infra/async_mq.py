@@ -315,11 +315,10 @@ class AsyncSingleThreadMQConsumer:
 
     async def health_check(self) -> bool:
         """Check if the consumer is healthy"""
+        await self.connect()
         if not self.connection or self.connection.is_closed:
             return False
-        return (
-            self.running and len([t for t in self.consumer_tasks if not t.done()]) > 0
-        )
+        return True
 
 
 # Decorator for easy handler registration
@@ -344,3 +343,11 @@ def register_consumer(
         return func
 
     return decorator
+
+
+MQ_CLIENT = AsyncSingleThreadMQConsumer(
+    ConnectionConfig(
+        url=CONFIG.rabbitmq_url,
+        connection_name=CONFIG.rabbitmq_connection_name,
+    )
+)

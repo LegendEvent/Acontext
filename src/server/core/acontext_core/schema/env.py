@@ -11,6 +11,7 @@ class CoreConfig(BaseModel):
 
     # RabbitMQ Configuration
     rabbitmq_url: str = "amqp://acontext:helloworld@localhost:15672/"
+    rabbitmq_connection_name: str = "acontext_core"
     rabbitmq_global_qos: int = 100
     consumer_handler_timeout: float = 30.0
 
