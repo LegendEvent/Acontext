@@ -15,23 +15,29 @@ BODY_CONTENT_PREVIEW_LENGTH = 100
 
 
 @dataclass
-class ConsumerConfig:
+class ConsumerConfigData:
     """Configuration for a single consumer"""
 
     queue_name: str
     exchange_name: str
     routing_key: str
-    handler: Callable[[bytes, Message], Awaitable[Any]] = field(repr=False)
     exchange_type: ExchangeType = ExchangeType.DIRECT
     prefetch_count: int = 10
     durable: bool = True
     auto_delete: bool = False
-    exclusive: bool = True
     # Advanced options
     timeout: float = CONFIG.consumer_handler_timeout
     max_retries: int = 3
-    retry_delay: float = 5.0
-    dead_letter_exchange: Optional[str] = None
+    retry_delay: float = 1.0
+    need_dlx_queue: bool = False
+    dlx_ttl_days: int = 7
+
+
+@dataclass
+class ConsumerConfig(ConsumerConfigData):
+    """Configuration for a single consumer"""
+
+    handler: Optional[Callable[[bytes, Message], Awaitable[Any]]] = field(default=None)
 
 
 @dataclass
@@ -73,6 +79,9 @@ class AsyncSingleThreadMQConsumer:
 
     async def connect(self) -> None:
         """Establish connection to RabbitMQ"""
+        if self.connection and not self.connection.is_closed:
+            return
+
         try:
             self.connection = await connect_robust(
                 self.connection_config.url,
@@ -115,8 +124,7 @@ class AsyncSingleThreadMQConsumer:
 
     async def _process_message(self, config: ConsumerConfig, message: Message) -> None:
         """Process a single message with retry logic"""
-        # async with message.process(requeue=True):
-        async with message.process(requeue=False):
+        async with message.process(requeue=False, ignore_processed=True):
             retry_count = 0
             max_retries = config.max_retries
 
@@ -157,8 +165,9 @@ class AsyncSingleThreadMQConsumer:
                             f"error: {str(e)}, "
                             f"body: {message.body[:BODY_CONTENT_PREVIEW_LENGTH]}..."
                         )
-                        # Message will be sent to DLQ if configured, otherwise rejected
-                        raise
+                        # goto DLX if any
+                        await message.reject(requeue=False)
+                        return
 
     async def _consume_queue(self, config: ConsumerConfig) -> None:
         """Consume messages from a specific queue"""
@@ -167,14 +176,7 @@ class AsyncSingleThreadMQConsumer:
             consumer_channel = await self.connection.channel()
             await consumer_channel.set_qos(prefetch_count=config.prefetch_count)
 
-            queue_info = await self._get_queue_info(consumer_channel, config.queue_name)
-            if queue_info is None:
-                LOG.info(f"queue: {config.queue_name} doesn't exist, creating")
-                queue = await self._setup_consumer_on_channel(config, consumer_channel)
-            else:
-                LOG.info(f"queue: {config.queue_name} already exists")
-                queue = queue_info["queue_object"]
-
+            queue = await self._setup_consumer_on_channel(config, consumer_channel)
             LOG.info(f"Starting consumer - queue: {config.queue_name}")
 
             async with queue.iterator() as queue_iter:
@@ -193,38 +195,39 @@ class AsyncSingleThreadMQConsumer:
         self,
         config: ConsumerConfig,
         channel: AbstractChannel,
-        queue_arguments: dict = {},
     ) -> AbstractQueue:
         """Setup exchange, queue, and bindings for a consumer on a specific channel"""
         # Declare exchange
         exchange = await channel.declare_exchange(
             config.exchange_name, config.exchange_type, durable=config.durable
         )
-
+        queue_arguments: dict = {}
         # Setup dead letter exchange if specified
         # TODO: implement dead-letter init
-        # if config.dead_letter_exchange:
-        #     dlx = await channel.declare_exchange(
-        #         config.dead_letter_exchange, ExchangeType.DIRECT, durable=True
-        #     )
-        #     queue_arguments["x-dead-letter-exchange"] = config.dead_letter_exchange
-        #     queue_arguments["x-dead-letter-routing-key"] = f"{config.routing_key}.dead"
+        if config.need_dlx_queue:
+            dlx_exchange_name = f"{config.exchange_name}.dead"
+            dlx_routing_key = f"{config.routing_key}.dead"
+            dlq_name = f"{config.queue_name}.dead"
 
-        #     # Create dead letter queue
-        #     dlq_name = f"{config.queue_name}.dead"
-        #     await channel.declare_queue(
-        #         dlq_name,
-        #         durable=True,
-        #         arguments={"x-message-ttl": 86400000},  # 24 hours TTL
-        #     )
-        #     await dlx.bind(dlq_name, f"{config.routing_key}.dead")
+            dlx = await channel.declare_exchange(
+                dlx_exchange_name, ExchangeType.DIRECT, durable=True
+            )
+            queue_arguments["x-dead-letter-exchange"] = dlx_exchange_name
+            queue_arguments["x-dead-letter-routing-key"] = dlx_routing_key
+
+            # Create dead letter queue
+            await channel.declare_queue(
+                dlq_name,
+                durable=True,
+                arguments={"x-message-ttl": 24 * 60 * 60 * config.dlx_ttl_days * 1000},
+            )
+            await dlx.bind(dlq_name, dlx_routing_key)
 
         # Declare queue
         queue = await channel.declare_queue(
             config.queue_name,
             durable=config.durable,
             auto_delete=config.auto_delete,
-            exclusive=config.exclusive,
             arguments=queue_arguments,
         )
 
@@ -232,23 +235,6 @@ class AsyncSingleThreadMQConsumer:
         await queue.bind(exchange, config.routing_key)
 
         return queue
-
-    async def _get_queue_info(
-        self, channel: AbstractChannel, queue_name: str
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Get detailed information about a queue if it exists.
-        Returns None if queue doesn't exist.
-        """
-        try:
-            # Use queue_declare with passive=True to check existence
-            queue = await channel.declare_queue(queue_name, passive=True)
-
-            # Get queue information (message count, consumer count, etc.)
-            # Note: This requires additional aio_pika features or management API
-            return {"name": queue_name, "exists": True, "queue_object": queue}
-        except Exception:
-            return None
 
     async def start(self) -> None:
         """Start all registered consumers"""
@@ -323,22 +309,12 @@ class AsyncSingleThreadMQConsumer:
 
 # Decorator for easy handler registration
 def register_consumer(
-    mq_client: AsyncSingleThreadMQConsumer,
-    queue_name: str,
-    exchange_name: str,
-    routing_key: str,
-    **kwargs,
+    mq_client: AsyncSingleThreadMQConsumer, config: ConsumerConfigData
 ):
     """Decorator to register a function as a message handler"""
 
     def decorator(func: Callable[[bytes, Message], Awaitable[Any]]):
-        _consumer_config = ConsumerConfig(
-            queue_name=queue_name,
-            exchange_name=exchange_name,
-            routing_key=routing_key,
-            handler=func,
-            **kwargs,
-        )
+        _consumer_config = ConsumerConfig(**config.__dict__, handler=func)
         mq_client.register_consumer(_consumer_config)
         return func
 
