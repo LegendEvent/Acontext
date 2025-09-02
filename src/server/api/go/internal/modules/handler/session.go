@@ -259,12 +259,14 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 		}
 	}
 
+	project := c.MustGet("project").(*model.Project)
 	sessionID, err := uuid.Parse(c.Param("session_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
 		return
 	}
 	out, err := h.svc.SendMessage(c.Request.Context(), service.SendMessageInput{
+		ProjectID: project.ID,
 		SessionID: sessionID,
 		Role:      req.Role,
 		Parts:     req.Parts,

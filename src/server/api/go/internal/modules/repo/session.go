@@ -14,7 +14,7 @@ type SessionRepo interface {
 	Delete(ctx context.Context, s *model.Session) error
 	Update(ctx context.Context, s *model.Session) error
 	Get(ctx context.Context, s *model.Session) (*model.Session, error)
-	CreateMessageWithAssets(ctx context.Context, msg *model.Message, assets []*model.Asset) error
+	CreateMessageWithAssets(ctx context.Context, msg *model.Message, assetMap map[int]*model.Asset) error
 }
 
 type sessionRepo struct{ db *gorm.DB }
@@ -39,7 +39,7 @@ func (r *sessionRepo) Get(ctx context.Context, s *model.Session) (*model.Session
 	return s, r.db.WithContext(ctx).Where(&model.Session{ID: s.ID}).First(s).Error
 }
 
-func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Message, assets []*model.Asset) error {
+func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Message, assetMap map[int]*model.Asset) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// First get the message parent id in session
 		parent := model.Message{}
@@ -47,14 +47,8 @@ func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Me
 			msg.ParentID = &parent.ID
 		}
 
-		// 1) Create message
-		if err := tx.Create(msg).Error; err != nil {
-			return err
-		}
-
-		// 2) upsert assets (by unique key bucket + s3_key)
-		for i := range assets {
-			a := assets[i]
+		// 1) upsert assets (by unique key bucket + s3_key)
+		for partIdx, a := range assetMap {
 			if a.Bucket == "" || a.S3Key == "" {
 				return errors.New("asset missing bucket or s3_key")
 			}
@@ -75,12 +69,19 @@ func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Me
 				Create(a).Error; err != nil {
 				return err
 			}
+
+			msg.Parts.Data()[partIdx].AssetID = &a.ID
+		}
+
+		// 2) Create message
+		if err := tx.Create(msg).Error; err != nil {
+			return err
 		}
 
 		// 3) Establish message_assets association (to avoid duplication)
-		if len(assets) > 0 {
-			links := make([]model.MessageAsset, 0, len(assets))
-			for _, a := range assets {
+		if len(assetMap) > 0 {
+			links := make([]model.MessageAsset, 0, len(assetMap))
+			for _, a := range assetMap {
 				links = append(links, model.MessageAsset{
 					MessageID: msg.ID,
 					AssetID:   a.ID,

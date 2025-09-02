@@ -64,6 +64,7 @@ func (s *sessionService) GetByID(ctx context.Context, ss *model.Session) (*model
 }
 
 type SendMessageInput struct {
+	ProjectID uuid.UUID
 	SessionID uuid.UUID
 	Role      string
 	Parts     []types.PartIn
@@ -71,13 +72,14 @@ type SendMessageInput struct {
 }
 
 type SendMQPublishJSON struct {
+	ProjectID uuid.UUID `json:"project_id"`
 	SessionID uuid.UUID `json:"session_id"`
 	MessageID uuid.UUID `json:"message_id"`
 }
 
 func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error) {
 	parts := make([]model.Part, 0, len(in.Parts))
-	assets := make([]*model.Asset, 0)
+	assetMap := make(map[int]*model.Asset)
 
 	for idx, p := range in.Parts {
 		part := model.Part{
@@ -98,7 +100,6 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			}
 
 			a := &model.Asset{
-				ID:     uuid.New(),
 				Bucket: umeta.Bucket,
 				S3Key:  umeta.Key,
 				ETag:   umeta.ETag,
@@ -106,8 +107,9 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 				MIME:   umeta.MIME,
 				SizeB:  umeta.SizeB,
 			}
-			assets = append(assets, a)
-			part.AssetID = &a.ID
+
+			assetMap[idx] = a
+
 			part.Filename = fh.Filename
 			part.MIME = umeta.MIME
 			part.SizeB = &umeta.SizeB
@@ -127,7 +129,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 		Parts:     datatypes.NewJSONType(parts),
 	}
 
-	if err := s.r.CreateMessageWithAssets(ctx, &msg, assets); err != nil {
+	if err := s.r.CreateMessageWithAssets(ctx, &msg, assetMap); err != nil {
 		return nil, err
 	}
 
@@ -137,6 +139,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			return nil, fmt.Errorf("create session message publisher: %w", err)
 		}
 		if err := p.PublishJSON(ctx, SendMQPublishJSON{
+			ProjectID: in.ProjectID,
 			SessionID: in.SessionID,
 			MessageID: msg.ID,
 		}); err != nil {
