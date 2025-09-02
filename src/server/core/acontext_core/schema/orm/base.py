@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column, declarative_mixin
 from sqlalchemy.sql import func
-from sqlalchemy.types import Integer, DateTime, Boolean
+from sqlalchemy.types import DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from ..result import Result, Code, Error
 
@@ -32,12 +32,12 @@ class Base(DeclarativeBase):
 
 @declarative_mixin
 class CommonMixin:
-    """Mixin class for common timestamp fields and soft deletion"""
+    """Mixin class for common timestamp fields matching GORM autoCreateTime/autoUpdateTime"""
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    last_updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),

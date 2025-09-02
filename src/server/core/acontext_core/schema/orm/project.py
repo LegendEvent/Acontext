@@ -1,14 +1,13 @@
 from .base import Base, CommonMixin
 import uuid
-from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
-    declarative_mixin,
-    declared_attr,
-)
+from sqlalchemy import String, Index
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .space import Space
+    from .session import Session
 
 
 class Project(Base, CommonMixin):
@@ -18,8 +17,15 @@ class Project(Base, CommonMixin):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
 
+    secret_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+
     configs: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
-    spaces: Mapped[list["Space"]] = relationship(  # type: ignore
+    # Relationships
+    spaces: Mapped[list["Space"]] = relationship(
         "Space", back_populates="project", cascade="all, delete-orphan"
+    )
+
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session", back_populates="project", cascade="all, delete-orphan"
     )
