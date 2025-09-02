@@ -9,11 +9,15 @@ class CoreConfig(BaseModel):
     llm_base_url: Optional[str] = None
     logging_format: str = "text"
 
-    # RabbitMQ Configuration
-    rabbitmq_url: str = "amqp://acontext:helloworld@localhost:15672/"
-    rabbitmq_connection_name: str = "acontext_core"
-    rabbitmq_global_qos: int = 100
-    consumer_handler_timeout: float = 60
+    # MQ Configuration
+    mq_url: str = "amqp://acontext:helloworld@localhost:15672/"
+    mq_connection_name: str = "acontext_core"
+    mq_global_qos: int = 100
+    mq_consumer_handler_timeout: float = 60
+    mq_default_message_ttl_days: int = 7
+    mq_default_dlx_ttl_days: int = 7
+    mq_default_max_retries: int = 3
+    mq_default_retry_delay_unit_sec: float = 1.0
 
     # Database Configuration
     database_pool_size: int = 64

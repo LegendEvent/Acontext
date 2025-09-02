@@ -1,7 +1,7 @@
 import asyncio
 import json
 from dataclasses import dataclass, field
-from typing import Callable, Awaitable, Any, Dict, Optional, List
+from typing import Callable, Awaitable, Any, Dict, Optional, List, Set
 from aio_pika import connect_robust, ExchangeType, Message
 from aio_pika.abc import (
     AbstractConnection,
@@ -22,16 +22,16 @@ class ConsumerConfigData:
     exchange_name: str
     routing_key: str
     exchange_type: ExchangeType = ExchangeType.DIRECT
-    prefetch_count: int = 10
     durable: bool = True
     auto_delete: bool = False
-    message_ttl_days: int = 7
-    # Advanced options
-    timeout: float = CONFIG.consumer_handler_timeout
-    max_retries: int = 3
-    retry_delay: float = 1.0
     need_dlx_queue: bool = False
-    dlx_ttl_days: int = 7
+    # Configuration
+    prefetch_count: int = CONFIG.mq_global_qos
+    message_ttl_days: int = CONFIG.mq_default_message_ttl_days
+    timeout: float = CONFIG.mq_consumer_handler_timeout
+    max_retries: int = CONFIG.mq_default_max_retries
+    retry_delay: float = CONFIG.mq_default_retry_delay_unit_sec
+    dlx_ttl_days: int = CONFIG.mq_default_dlx_ttl_days
 
     def to_dlx(self) -> "ConsumerConfigData":
         return ConsumerConfigData(
@@ -49,22 +49,22 @@ class ConsumerConfigData:
 class ConsumerConfig(ConsumerConfigData):
     """Configuration for a single consumer"""
 
-    handler: Optional[Callable[[bytes, Message], Awaitable[Any]]] = field(default=None)
+    handler: Optional[Callable[[dict, Message], Awaitable[Any]]] = field(default=None)
 
 
 @dataclass
 class ConnectionConfig:
-    """RabbitMQ connection configuration"""
+    """MQ connection configuration"""
 
     url: str
-    connection_name: str = "acontext_consumer"
+    connection_name: str = CONFIG.mq_connection_name
     heartbeat: int = 600
     blocked_connection_timeout: int = 300
 
 
 class AsyncSingleThreadMQConsumer:
     """
-    High-performance async RabbitMQ consumer with runtime registration
+    High-performance async MQ consumer with runtime registration
 
     Features:
     - Runtime consumer registration
@@ -79,18 +79,18 @@ class AsyncSingleThreadMQConsumer:
     def __init__(self, connection_config: ConnectionConfig):
         self.connection_config = connection_config
         self.connection: Optional[AbstractConnection] = None
-        self.channel: Optional[AbstractChannel] = None
         self.consumers: Dict[str, ConsumerConfig] = {}
         self.__running = False
-        self.consumer_tasks: List[asyncio.Task] = []
+        self._consumer_tasks: List[asyncio.Task] = []
         self._shutdown_event = asyncio.Event()
+        self._processing_tasks: Set[asyncio.Task] = set()
 
     @property
     def running(self) -> bool:
         return self.__running
 
     async def connect(self) -> None:
-        """Establish connection to RabbitMQ"""
+        """Establish connection to MQ"""
         if self.connection and not self.connection.is_closed:
             return
 
@@ -103,22 +103,18 @@ class AsyncSingleThreadMQConsumer:
                 heartbeat=self.connection_config.heartbeat,
                 blocked_connection_timeout=self.connection_config.blocked_connection_timeout,
             )
-            self.channel = await self.connection.channel()
-            await self.channel.set_qos(
-                prefetch_count=CONFIG.rabbitmq_global_qos
-            )  # Global prefetch
             LOG.info(
-                f"Connected to RabbitMQ (connection: {self.connection_config.connection_name})"
+                f"Connected to MQ (connection: {self.connection_config.connection_name})"
             )
         except Exception as e:
-            LOG.error(f"Failed to connect to RabbitMQ: {str(e)}")
-            raise
+            LOG.error(f"Failed to connect to MQ: {str(e)}")
+            raise e
 
     async def disconnect(self) -> None:
-        """Close connection to RabbitMQ"""
+        """Close connection to MQ"""
         if self.connection and not self.connection.is_closed:
             await self.connection.close()
-            LOG.info("Disconnected from RabbitMQ")
+            LOG.info("Disconnected from MQ")
 
     def register_consumer(self, consumer_config: ConsumerConfig) -> None:
         """Register a consumer at runtime"""
@@ -181,13 +177,25 @@ class AsyncSingleThreadMQConsumer:
                         await message.reject(requeue=False)
                         return
 
+    def cleanup_message_task(self, task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            LOG.error(f"Message task unknown error: {e}")
+        finally:
+            self._processing_tasks.discard(task)
+            LOG.info(f"#current processing tasks: {len(self._processing_tasks)}")
+
+    # TODO: add channel recovery logic
     async def _consume_queue(self, config: ConsumerConfig) -> None:
         """Consume messages from a specific queue"""
+        consumer_channel: AbstractChannel | None = None
         try:
             # Set QoS for this consumer
             consumer_channel = await self.connection.channel()
             await consumer_channel.set_qos(prefetch_count=config.prefetch_count)
-
             queue = await self._setup_consumer_on_channel(config, consumer_channel)
             LOG.info(f"Starting consumer - queue: {config.queue_name}")
 
@@ -197,11 +205,17 @@ class AsyncSingleThreadMQConsumer:
                         break
 
                     # Process message in background task for concurrency
-                    asyncio.create_task(self._process_message(config, message))
+                    task = asyncio.create_task(self._process_message(config, message))
+
+                    self._processing_tasks.add(task)
+                    task.add_done_callback(self.cleanup_message_task)
 
         except Exception as e:
             LOG.error(f"Consumer error - queue: {config.queue_name}, error: {str(e)}")
             raise
+        finally:
+            if consumer_channel and not consumer_channel.is_closed:
+                await consumer_channel.close()
 
     async def _setup_consumer_on_channel(
         self,
@@ -250,6 +264,7 @@ class AsyncSingleThreadMQConsumer:
 
         return queue
 
+    # TODO: add connection recovery logic
     async def start(self) -> None:
         """Start all registered consumers"""
         if self.running:
@@ -267,13 +282,13 @@ class AsyncSingleThreadMQConsumer:
         # Start consumer tasks
         for config in self.consumers.values():
             task = asyncio.create_task(self._consume_queue(config))
-            self.consumer_tasks.append(task)
+            self._consumer_tasks.append(task)
 
         LOG.info(f"Started all consumers (count: {len(self.consumers)})")
         try:
             # Wait for shutdown signal or any task to complete
             done, pending = await asyncio.wait(
-                self.consumer_tasks
+                self._consumer_tasks
                 + [asyncio.create_task(self._shutdown_event.wait())],
                 return_when=asyncio.FIRST_COMPLETED,
             )
@@ -284,7 +299,7 @@ class AsyncSingleThreadMQConsumer:
             else:
                 # One of the consumer tasks completed unexpectedly
                 for task in done:
-                    if task in self.consumer_tasks:
+                    if task in self._consumer_tasks:
                         try:
                             task.result()  # This will raise the exception if task failed
                         except Exception as e:
@@ -302,14 +317,21 @@ class AsyncSingleThreadMQConsumer:
         self._shutdown_event.set()
 
         # Cancel all consumer tasks
-        for task in self.consumer_tasks:
+        for task in self._consumer_tasks:
             task.cancel()
 
         # Wait for tasks to complete
-        if self.consumer_tasks:
-            await asyncio.gather(*self.consumer_tasks, return_exceptions=True)
+        if self._consumer_tasks:
+            await asyncio.gather(*self._consumer_tasks, return_exceptions=True)
 
-        self.consumer_tasks.clear()
+        # Cancel all in-flight message processing tasks
+        if self._processing_tasks:
+            for task in list(self._processing_tasks):
+                task.cancel()
+            await asyncio.gather(*self._processing_tasks, return_exceptions=True)
+            self._processing_tasks.clear()
+
+        self._consumer_tasks.clear()
         await self.disconnect()
         LOG.info("All consumers stopped")
 
@@ -327,7 +349,7 @@ def register_consumer(
 ):
     """Decorator to register a function as a message handler"""
 
-    def decorator(func: Callable[[bytes, Message], Awaitable[Any]]):
+    def decorator(func: Callable[[dict, Message], Awaitable[Any]]):
         _consumer_config = ConsumerConfig(**config.__dict__, handler=func)
         mq_client.register_consumer(_consumer_config)
         return func
@@ -337,7 +359,7 @@ def register_consumer(
 
 MQ_CLIENT = AsyncSingleThreadMQConsumer(
     ConnectionConfig(
-        url=CONFIG.rabbitmq_url,
-        connection_name=CONFIG.rabbitmq_connection_name,
+        url=CONFIG.mq_url,
+        connection_name=CONFIG.mq_connection_name,
     )
 )
