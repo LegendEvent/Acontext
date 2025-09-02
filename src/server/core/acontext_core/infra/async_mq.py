@@ -25,12 +25,24 @@ class ConsumerConfigData:
     prefetch_count: int = 10
     durable: bool = True
     auto_delete: bool = False
+    message_ttl_days: int = 7
     # Advanced options
     timeout: float = CONFIG.consumer_handler_timeout
     max_retries: int = 3
     retry_delay: float = 1.0
     need_dlx_queue: bool = False
     dlx_ttl_days: int = 7
+
+    def to_dlx(self) -> "ConsumerConfigData":
+        return ConsumerConfigData(
+            queue_name=f"{self.queue_name}.dead",
+            exchange_name=f"{self.exchange_name}.dead",
+            routing_key=f"{self.routing_key}.dead",
+            exchange_type=ExchangeType.DIRECT,
+            message_ttl_days=self.dlx_ttl_days,
+            durable=True,
+            need_dlx_queue=False,
+        )
 
 
 @dataclass
@@ -201,7 +213,9 @@ class AsyncSingleThreadMQConsumer:
         exchange = await channel.declare_exchange(
             config.exchange_name, config.exchange_type, durable=config.durable
         )
-        queue_arguments: dict = {}
+        queue_arguments: dict = {
+            "x-message-ttl": 24 * 60 * 60 * config.message_ttl_days * 1000,
+        }
         # Setup dead letter exchange if specified
         # TODO: implement dead-letter init
         if config.need_dlx_queue:
@@ -216,12 +230,12 @@ class AsyncSingleThreadMQConsumer:
             queue_arguments["x-dead-letter-routing-key"] = dlx_routing_key
 
             # Create dead letter queue
-            await channel.declare_queue(
+            dlq = await channel.declare_queue(
                 dlq_name,
                 durable=True,
                 arguments={"x-message-ttl": 24 * 60 * 60 * config.dlx_ttl_days * 1000},
             )
-            await dlx.bind(dlq_name, dlx_routing_key)
+            await dlq.bind(dlx, dlx_routing_key)
 
         # Declare queue
         queue = await channel.declare_queue(
