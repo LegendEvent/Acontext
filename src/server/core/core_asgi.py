@@ -1,17 +1,13 @@
 import asyncio
-from acontext_core.infra.async_mq import (
-    MQ_CLIENT,
-    Message,
-    ConsumerConfigData,
-    register_consumer,
-)
+import traceback
+from acontext_core.entry import MQ_CLIENT, setup, cleanup
+from acontext_core.infra.async_mq import ConsumerConfigData, register_consumer, Message
 
 
 consumer_config = ConsumerConfigData(
     queue_name="hello_world_queue",
     exchange_name="hello_exchange",
     routing_key="hello.world",
-    # timeout=1,
 )
 
 
@@ -26,19 +22,19 @@ async def hello_world_handler(body: dict, message: Message) -> None:
 
 async def app(scope, receive, send):
     if scope["type"] == "lifespan":
-        startup_task = None
         while True:
             message = await receive()
             if message["type"] == "lifespan.startup":
                 try:
-                    assert await MQ_CLIENT.health_check()
+                    await setup()
                 except Exception as e:
+                    print(traceback.format_exc())
                     await send({"type": "lifespan.startup.failed", "message": str(e)})
                     return
                 asyncio.create_task(MQ_CLIENT.start())
                 await send({"type": "lifespan.startup.complete"})
             elif message["type"] == "lifespan.shutdown":
-                await MQ_CLIENT.stop()
+                await cleanup()
                 await send({"type": "lifespan.shutdown.complete"})
                 return
     elif scope["type"] == "http":

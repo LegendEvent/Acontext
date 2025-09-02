@@ -1,4 +1,3 @@
-import os
 from typing import Optional, Dict, Any, AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -40,7 +39,7 @@ class RedisClient:
 
     def _build_redis_url(self) -> str:
         """Build Redis URL from environment variables."""
-        redis_url = os.getenv("REDIS_URL", None)
+        redis_url = CONFIG.redis_url
         return redis_url
 
     @property

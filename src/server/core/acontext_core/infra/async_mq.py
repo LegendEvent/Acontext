@@ -364,3 +364,16 @@ MQ_CLIENT = AsyncSingleThreadMQConsumer(
         connection_name=CONFIG.mq_connection_name,
     )
 )
+
+
+async def init_mq() -> None:
+    """Initialize MQ connection (perform health check)."""
+    if await MQ_CLIENT.health_check():
+        LOG.info(f"MQ connection initialized successfully")
+    else:
+        LOG.error("Failed to initialize MQ connection")
+        raise ConnectionError("Could not connect to MQ")
+
+
+async def close_mq() -> None:
+    await MQ_CLIENT.stop()
