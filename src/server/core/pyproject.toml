@@ -8,6 +8,7 @@ dependencies = [
     "aio-pika>=9.5.7",
     "asyncpg>=0.30.0",
     "fastapi[standard]>=0.116.1",
+    "gunicorn>=23.0.0",
     "openai>=1.95.1",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
@@ -16,6 +17,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.41",
     "structlog>=25.4.0",
     "tiktoken>=0.9.0",
+    "uvicorn>=0.35.0",
 ]
 
 [dependency-groups]
