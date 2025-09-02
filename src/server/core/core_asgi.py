@@ -30,13 +30,15 @@ async def app(scope, receive, send):
         while True:
             message = await receive()
             if message["type"] == "lifespan.startup":
-                assert await MQ_CLIENT.health_check()
-                startup_task = asyncio.create_task(MQ_CLIENT.start())
+                try:
+                    assert await MQ_CLIENT.health_check()
+                except Exception as e:
+                    await send({"type": "lifespan.startup.failed", "message": str(e)})
+                    return
+                asyncio.create_task(MQ_CLIENT.start())
                 await send({"type": "lifespan.startup.complete"})
             elif message["type"] == "lifespan.shutdown":
                 await MQ_CLIENT.stop()
-                if startup_task:
-                    await startup_task
                 await send({"type": "lifespan.shutdown.complete"})
                 return
     elif scope["type"] == "http":

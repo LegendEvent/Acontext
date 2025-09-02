@@ -312,11 +312,11 @@ class AsyncSingleThreadMQConsumer:
         if not self.running:
             return
 
-        LOG.info("Stopping consumers...")
         self.__running = False
         self._shutdown_event.set()
 
         # Cancel all consumer tasks
+        LOG.info(f"Stopping {len(self._consumer_tasks)} consumers...")
         for task in self._consumer_tasks:
             task.cancel()
 
@@ -325,6 +325,7 @@ class AsyncSingleThreadMQConsumer:
             await asyncio.gather(*self._consumer_tasks, return_exceptions=True)
 
         # Cancel all in-flight message processing tasks
+        LOG.info(f"Stopping {len(self._processing_tasks)} tasks...")
         if self._processing_tasks:
             for task in list(self._processing_tasks):
                 task.cancel()
