@@ -1,15 +1,15 @@
 app:
   name: acontext-api
-  env: debug            # available mode: debug / release / test
+  env: debug # available mode: debug / release / test
   host: 0.0.0.0
-  port: ${API_EXPORT_PORT}  # Bind to .env 的 8029
+  port: ${API_EXPORT_PORT} # Bind to .env 的 8029
 
 root:
   apiBearerToken: "${ROOT_API_BEARER_TOKEN}"
-  projectBearerTokenPrefix: "sk-proj-"
+  projectBearerTokenPrefix: "sk-ac-"
 
 log:
-  level: info           # debug/info/warn/error
+  level: info # debug/info/warn/error
 
 database:
   dsn: "host=127.0.0.1 user=${DATABASE_USER} password=${DATABASE_PASSWORD} dbname=${DATABASE_NAME} port=${DATABASE_EXPORT_PORT} sslmode=disable TimeZone=Asia/Shanghai"

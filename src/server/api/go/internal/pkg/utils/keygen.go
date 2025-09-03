@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/rand"
+	"errors"
 	"math/big"
 	"strings"
 )
@@ -12,6 +13,9 @@ const base62Chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456
 // A prefix can be passed in to generate a random string.
 func GenerateKey(prefix string) (string, error) {
 	var sb strings.Builder
+	if len(prefix) > 16 {
+		return "", errors.New("prefix must be less that 16 characters")
+	}
 	sb.WriteString(prefix)
 
 	for range 48 {
