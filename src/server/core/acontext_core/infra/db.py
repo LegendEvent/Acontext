@@ -1,3 +1,4 @@
+from ast import Or
 import os
 from typing import AsyncGenerator, Optional
 from contextlib import asynccontextmanager
@@ -11,7 +12,9 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 from sqlalchemy import event, text
 from sqlalchemy.exc import DisconnectionError, OperationalError
-from ..schema.orm import Base
+
+# from ..schema.orm import Base
+from ..schema.orm import ORM_BASE
 from ..env import LOG as logger
 from ..env import CONFIG
 
@@ -179,12 +182,12 @@ class DatabaseClient:
     async def create_tables(self) -> None:
         """Create all tables defined in the ORM models."""
         async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(ORM_BASE.metadata.create_all)
 
     async def drop_tables(self) -> None:
         """Drop all tables defined in the ORM models."""
         async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(ORM_BASE.metadata.drop_all)
         logger.warning("All database tables dropped")
 
     async def close(self) -> None:

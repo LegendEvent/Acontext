@@ -1,45 +1,52 @@
-from datetime import datetime
 import uuid
+from sqlalchemy.dialects.postgresql import UUID
+from datetime import datetime
+from dataclasses import dataclass, field
 from pydantic import ValidationError
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column, declarative_mixin
+from sqlalchemy.orm import registry
+from sqlalchemy import Column
 from sqlalchemy.sql import func
 from sqlalchemy.types import DateTime
-from sqlalchemy.dialects.postgresql import UUID
-from ..result import Result, Code, Error
+
+# Create the registry for dataclass ORM
+ORM_BASE = registry()
 
 
-class Base(DeclarativeBase):
-    """Base class for all ORM models with Pydantic integration"""
+class BaseMixin:
+    __sa_dataclass_metadata_key__ = "db"
 
-    @classmethod
-    def validate_data(cls, **kwargs) -> Result[None]:
-        # Get the Pydantic model for validation
-        pydantic_model = getattr(cls, "__use_pydantic__", None)
-        if pydantic_model is None:
-            return Result.resolve(None)
 
-        try:
-            pydantic_model.model_validate(kwargs)
-        except ValidationError as e:
-            model_name = cls.__name__
-            return Result.reject(
-                f"{model_name} validation failed: {e}", Code.BAD_REQUEST
+@dataclass
+class TimestampMixin(BaseMixin):
+
+    created_at: datetime = field(
+        init=False,
+        metadata={
+            "db": Column(
+                DateTime(timezone=True), server_default=func.now(), nullable=False
             )
+        },
+    )
+    updated_at: datetime = field(
+        init=False,
+        metadata={
+            "db": Column(
+                DateTime(timezone=True),
+                server_default=func.now(),
+                onupdate=func.now(),
+                nullable=False,
+            )
+        },
+    )
 
-        return Result.resolve(None)
 
-
-@declarative_mixin
-class CommonMixin:
+@dataclass
+class CommonMixin(TimestampMixin):
     """Mixin class for common timestamp fields matching GORM autoCreateTime/autoUpdateTime"""
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
+    id: uuid.UUID = field(
+        init=False,
+        metadata={
+            "db": Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+        },
     )

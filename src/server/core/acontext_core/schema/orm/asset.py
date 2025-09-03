@@ -1,37 +1,44 @@
-from .base import Base, CommonMixin
 import uuid
-from sqlalchemy import String, BigInteger, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from dataclasses import dataclass, field
+from sqlalchemy import String, BigInteger, Index, Column
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
+from .base import ORM_BASE, CommonMixin
 
 if TYPE_CHECKING:
     from .message import Message
-    from .message_asset import MessageAsset
 
 
-class Asset(Base, CommonMixin):
+@ORM_BASE.mapped
+@dataclass
+class Asset(CommonMixin):
     __tablename__ = "assets"
 
     __table_args__ = (Index("u_bucket_key", "bucket", "s3_key", unique=True),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    bucket: str = field(metadata={"db": Column(String, nullable=False)})
+
+    s3_key: str = field(metadata={"db": Column(String, nullable=False)})
+
+    mime: str = field(metadata={"db": Column(String, nullable=False)})
+
+    size_b: int = field(metadata={"db": Column(BigInteger, nullable=False)})
+
+    etag: Optional[str] = field(
+        default=None, metadata={"db": Column(String, nullable=True)}
     )
 
-    bucket: Mapped[str] = mapped_column(String, nullable=False)
-
-    s3_key: Mapped[str] = mapped_column(String, nullable=False)
-
-    etag: Mapped[str] = mapped_column(String, nullable=True)
-
-    sha256: Mapped[str] = mapped_column(String, nullable=True)
-
-    mime: Mapped[str] = mapped_column(String, nullable=False)
-
-    size_b: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    sha256: Optional[str] = field(
+        default=None, metadata={"db": Column(String, nullable=True)}
+    )
 
     # Relationships
-    messages: Mapped[list["Message"]] = relationship(
-        "Message", secondary="message_assets", back_populates="assets"
+    messages: List["Message"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Message", secondary="message_assets", back_populates="assets"
+            )
+        },
     )

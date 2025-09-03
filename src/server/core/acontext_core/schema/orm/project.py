@@ -1,33 +1,44 @@
-from .base import Base, CommonMixin
 import uuid
-from sqlalchemy import String, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from dataclasses import dataclass, field
+from sqlalchemy import String, Index, Column, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
+from .base import ORM_BASE, CommonMixin
 
 if TYPE_CHECKING:
     from .space import Space
     from .session import Session
 
 
-class Project(Base, CommonMixin):
+@ORM_BASE.mapped
+@dataclass
+class Project(CommonMixin):
     __tablename__ = "projects"
 
     __table_args__ = (Index("ix_project_secret_key", "secret_key", unique=True),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    secret_key: str = field(metadata={"db": Column(String(64), nullable=False)})
+
+    configs: Optional[dict] = field(
+        default=None, metadata={"db": Column(JSONB, nullable=True)}
     )
-
-    secret_key: Mapped[str] = mapped_column(String(64), nullable=False)
-
-    configs: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
     # Relationships
-    spaces: Mapped[list["Space"]] = relationship(
-        "Space", back_populates="project", cascade="all, delete-orphan"
+    spaces: List["Space"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Space", back_populates="project", cascade="all, delete-orphan"
+            )
+        },
     )
 
-    sessions: Mapped[list["Session"]] = relationship(
-        "Session", back_populates="project", cascade="all, delete-orphan"
+    sessions: List["Session"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Session", back_populates="project", cascade="all, delete-orphan"
+            )
+        },
     )

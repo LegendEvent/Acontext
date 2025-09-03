@@ -1,17 +1,15 @@
-from typing import Optional, List, Dict, Any
-from .base import Base, CommonMixin
 import uuid
-from sqlalchemy import String, ForeignKey, Index, CheckConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from dataclasses import dataclass, field
+from sqlalchemy import String, ForeignKey, Index, CheckConstraint, Column
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from pydantic import BaseModel
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List, Dict, Any
+from .base import ORM_BASE, CommonMixin
 
 if TYPE_CHECKING:
     from .session import Session
-    from .message import Message
     from .asset import Asset
-    from .message_asset import MessageAsset
 
 
 class Part(BaseModel):
@@ -32,7 +30,9 @@ class Part(BaseModel):
     meta: Optional[Dict[str, Any]] = None
 
 
-class Message(Base, CommonMixin):
+@ORM_BASE.mapped
+@dataclass
+class Message(CommonMixin):
     __tablename__ = "messages"
 
     __table_args__ = (
@@ -49,41 +49,65 @@ class Message(Base, CommonMixin):
         ),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    session_id: uuid.UUID = field(
+        metadata={
+            "db": Column(
+                UUID(as_uuid=True),
+                ForeignKey("sessions.id", ondelete="CASCADE"),
+                nullable=False,
+            )
+        }
     )
 
-    session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("sessions.id", ondelete="CASCADE"),
-        nullable=False,
+    role: str = field(metadata={"db": Column(String, nullable=False)})
+
+    parts: List[Part] = field(metadata={"db": Column(JSONB, nullable=False)})
+
+    session_task_process_status: str = field(
+        default="pending",
+        metadata={"db": Column(String, nullable=False, server_default="pending")},
     )
 
-    session_task_process_status: Mapped[str] = mapped_column(
-        String, nullable=False, server_default="pending"
+    parent_id: Optional[uuid.UUID] = field(
+        default=None,
+        metadata={
+            "db": Column(
+                UUID(as_uuid=True),
+                ForeignKey("messages.id", ondelete="CASCADE"),
+                nullable=True,
+            )
+        },
     )
-
-    parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("messages.id", ondelete="CASCADE"),
-        nullable=True,
-    )
-
-    role: Mapped[str] = mapped_column(String, nullable=False)
-
-    parts: Mapped[List[Part]] = mapped_column(JSONB, nullable=False)
 
     # Relationships
-    session: Mapped["Session"] = relationship("Session", back_populates="messages")
-
-    parent: Mapped[Optional["Message"]] = relationship(
-        "Message", remote_side="Message.id", back_populates="children"
+    session: "Session" = field(
+        init=False, metadata={"db": relationship("Session", back_populates="messages")}
     )
 
-    children: Mapped[list["Message"]] = relationship(
-        "Message", back_populates="parent", cascade="all, delete-orphan"
+    parent: Optional["Message"] = field(
+        default=None,
+        init=False,
+        metadata={
+            "db": relationship(
+                "Message", remote_side="Message.id", back_populates="children"
+            )
+        },
     )
 
-    assets: Mapped[list["Asset"]] = relationship(
-        "Asset", secondary="message_assets", back_populates="messages"
+    children: List["Message"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Message", back_populates="parent", cascade="all, delete-orphan"
+            )
+        },
+    )
+
+    assets: List["Asset"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Asset", secondary="message_assets", back_populates="messages"
+            )
+        },
     )

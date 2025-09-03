@@ -1,10 +1,10 @@
-from typing import Optional
-from .base import Base, CommonMixin
 import uuid
-from sqlalchemy import ForeignKey, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from dataclasses import dataclass, field
+from sqlalchemy import ForeignKey, Index, Column
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
+from .base import ORM_BASE, CommonMixin
 
 if TYPE_CHECKING:
     from .project import Project
@@ -12,7 +12,9 @@ if TYPE_CHECKING:
     from .message import Message
 
 
-class Session(Base, CommonMixin):
+@ORM_BASE.mapped
+@dataclass
+class Session(CommonMixin):
     __tablename__ = "sessions"
 
     __table_args__ = (
@@ -21,29 +23,47 @@ class Session(Base, CommonMixin):
         Index("ix_session_session_project_id", "id", "project_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    project_id: uuid.UUID = field(
+        metadata={
+            "db": Column(
+                UUID(as_uuid=True),
+                ForeignKey("projects.id", ondelete="CASCADE"),
+                nullable=False,
+            )
+        }
     )
 
-    project_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="CASCADE"),
-        nullable=False,
+    space_id: Optional[uuid.UUID] = field(
+        default=None,
+        metadata={
+            "db": Column(
+                UUID(as_uuid=True),
+                ForeignKey("spaces.id", ondelete="CASCADE"),
+                nullable=True,
+            )
+        },
     )
 
-    space_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("spaces.id", ondelete="CASCADE"),
-        nullable=True,
+    configs: Optional[dict] = field(
+        default=None, metadata={"db": Column(JSONB, nullable=True)}
     )
-
-    configs: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
     # Relationships
-    project: Mapped["Project"] = relationship("Project", back_populates="sessions")
+    project: "Project" = field(
+        init=False, metadata={"db": relationship("Project", back_populates="sessions")}
+    )
 
-    space: Mapped[Optional["Space"]] = relationship("Space", back_populates="sessions")
+    space: Optional["Space"] = field(
+        default=None,
+        init=False,
+        metadata={"db": relationship("Space", back_populates="sessions")},
+    )
 
-    messages: Mapped[list["Message"]] = relationship(
-        "Message", back_populates="session", cascade="all, delete-orphan"
+    messages: List["Message"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Message", back_populates="session", cascade="all, delete-orphan"
+            )
+        },
     )
