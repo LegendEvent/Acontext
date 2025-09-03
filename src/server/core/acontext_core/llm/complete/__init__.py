@@ -1,3 +1,4 @@
+import time
 from typing import Callable, Awaitable, Any, Mapping, Optional
 from .openai_sdk import openai_complete
 from ...schema.llm import LLMResponse
@@ -26,6 +27,7 @@ async def llm_complete(
     use_complete_func = FACTORIES[CONFIG.llm_sdk]
 
     try:
+        _start_s = time.perf_counter()
         response = await use_complete_func(
             prompt,
             model=use_model,
@@ -36,6 +38,8 @@ async def llm_complete(
             prompt_kwargs=prompt_kwargs,
             **kwargs,
         )
+        _end_s = time.perf_counter()
+        LOG.info(f"LLM Complete finished in {_end_s - _start_s:.4f}s")
     except Exception as e:
         LOG.error(f"LLM complete failed - error: {str(e)}")
         return Result.reject(str(e))
