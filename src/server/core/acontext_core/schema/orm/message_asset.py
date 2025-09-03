@@ -26,10 +26,3 @@ class MessageAsset(Base, CommonMixin):
         primary_key=True,
         index=True,
     )
-
-    # Relationships
-    message: Mapped["Message"] = relationship(
-        "Message", back_populates="message_assets"
-    )
-
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="message_assets")

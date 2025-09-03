@@ -3,6 +3,8 @@ from sqlalchemy import select
 from acontext_core.infra.db import DB_CLIENT, init_database
 from acontext_core.schema.orm import Project, Space, Session
 
+FAKE_KEY = "a" * 32
+
 
 @pytest.mark.asyncio
 async def test_db():

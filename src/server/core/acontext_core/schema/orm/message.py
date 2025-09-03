@@ -87,7 +87,3 @@ class Message(Base, CommonMixin):
     assets: Mapped[list["Asset"]] = relationship(
         "Asset", secondary="message_assets", back_populates="messages"
     )
-
-    message_assets: Mapped[list["MessageAsset"]] = relationship(
-        "MessageAsset", back_populates="message", cascade="all, delete-orphan"
-    )
