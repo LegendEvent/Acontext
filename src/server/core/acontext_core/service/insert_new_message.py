@@ -20,8 +20,7 @@ from .constants import EX, RK
     ),
 )
 async def insert_new_message(body: InsertNewMessage, message: Message):
-    with bound_logging_vars(project_id=body.project_id):
-        LOG.info(f"Inserting new message, {body}")
+    LOG.info(f"Inserting new message, {body}")
 
 
 register_consumer(
@@ -46,5 +45,4 @@ register_consumer(
     ),
 )
 async def buffer_new_message(body: InsertNewMessage, message: Message):
-    with bound_logging_vars(project_id=body.project_id):
-        LOG.info(f"New buffer message, {body}")
+    LOG.info(f"New buffer message, {body}")

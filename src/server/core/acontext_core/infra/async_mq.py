@@ -11,7 +11,7 @@ from aio_pika.abc import (
     AbstractQueue,
     AbstractExchange,
 )
-from ..env import LOG, CONFIG
+from ..env import LOG, CONFIG, bound_logging_vars
 from ..util.handler_spec import check_handler_function_sanity, get_handler_body_type
 
 
@@ -162,9 +162,10 @@ class AsyncSingleThreadMQConsumer:
                         body = config.body_pydantic_type.model_validate_json(
                             message.body
                         )
-                        await asyncio.wait_for(
-                            config.handler(body, message), timeout=config.timeout
-                        )
+                        with bound_logging_vars(queue_name=config.queue_name):
+                            await asyncio.wait_for(
+                                config.handler(body, message), timeout=config.timeout
+                            )
                     except ValidationError as e:
                         LOG.error(
                             f"Message validation failed - queue: {config.queue_name}, "
