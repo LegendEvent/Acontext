@@ -112,7 +112,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 			project := root.Group("/project")
 			{
-				project.POST("/", d.ProjectHandler.CreateProject)
+				project.POST("", d.ProjectHandler.CreateProject)
 			}
 		}
 
@@ -124,7 +124,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			{
 				space.GET("/status")
 
-				space.POST("/", d.SpaceHandler.CreateSpace)
+				space.POST("", d.SpaceHandler.CreateSpace)
 				space.DELETE("/:space_id", d.SpaceHandler.DeleteSpace)
 
 				space.PUT("/:space_id/configs", d.SpaceHandler.UpdateConfigs)
@@ -136,7 +136,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 				page := space.Group("/:space_id/page")
 				{
-					page.POST("/")
+					page.POST("")
 					page.DELETE("/:page_id")
 
 					page.GET("/:page_id/properties")
@@ -149,7 +149,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 				block := space.Group("/:space_id/block")
 				{
-					block.POST("/")
+					block.POST("")
 					block.DELETE("/:block_id")
 
 					block.GET("/:block_id/properties")
@@ -162,7 +162,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 			session := user.Group("/session")
 			{
-				session.POST("/", d.SessionHandler.CreateSession)
+				session.POST("", d.SessionHandler.CreateSession)
 				session.DELETE("/:session_id", d.SessionHandler.DeleteSession)
 
 				session.PUT("/:session_id/configs", d.SessionHandler.UpdateConfigs)
