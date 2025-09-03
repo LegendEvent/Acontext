@@ -23,7 +23,7 @@ uv sync
 sh launch.sh
 ```
 
-- Launch Core in prod mode (with hot reload)
+- Launch Core in prod mode
 
 ```bash
 # current path: ./src/server/core

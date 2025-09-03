@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from fastapi.responses import JSONResponse
 from typing import Generic, TypeVar, Type, Optional
 from .error_code import Code
 
@@ -13,6 +12,9 @@ class Error(BaseModel):
     @classmethod
     def init(cls, status: Code, errmsg: str) -> "Error":
         return cls(status=status, errmsg=errmsg)
+
+    def __str__(self) -> str:
+        return f"Error(status={self.status}, errmsg={self.errmsg})"
 
 
 class Result(BaseModel, Generic[T]):

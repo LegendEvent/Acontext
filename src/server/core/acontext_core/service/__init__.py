@@ -1,1 +1,1 @@
-from .insert_new_message import insert_new_message
+from . import insert_new_message

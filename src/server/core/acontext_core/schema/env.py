@@ -1,19 +1,28 @@
 import os
 import yaml
 from pydantic import BaseModel, Field
-from typing import Optional, Any
+from typing import Literal, Mapping, Optional, Any
 
 
 class CoreConfig(BaseModel):
     llm_api_key: str
     llm_base_url: Optional[str] = None
+    llm_openai_default_query: Optional[Mapping[str, Any]] = None
+    llm_openai_default_header: Optional[Mapping[str, Any]] = None
+    llm_response_timeout: float = 60
+    llm_sdk: Literal["openai"] = "openai"
+
+    llm_simple_model: str = "gpt-4.1-mini"
+
+    # Core Configuration
     logging_format: str = "text"
+    session_message_buffer_ttl_seconds: int = 5
 
     # MQ Configuration
     mq_url: str = "amqp://acontext:helloworld@localhost:15672/"
     mq_connection_name: str = "acontext_core"
     mq_global_qos: int = 100
-    mq_consumer_handler_timeout: float = 60
+    mq_consumer_handler_timeout: float = 96
     mq_default_message_ttl_seconds: int = 7 * 24 * 60 * 60
     mq_default_dlx_ttl_days: int = 7
     mq_default_max_retries: int = 3

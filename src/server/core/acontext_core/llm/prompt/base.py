@@ -11,5 +11,5 @@ class BasePrompt(ABC):
         pass
 
     @abstractmethod
-    def prompt_infos(self) -> str:
+    def prompt_kwargs(self) -> str:
         pass

@@ -1,4 +1,4 @@
-from ..env import LOG
+from ..env import LOG, CONFIG
 from ..telemetry.log import bound_logging_vars
 from ..infra.async_mq import (
     register_consumer,
@@ -30,7 +30,7 @@ register_consumer(
         exchange_name=EX.session_message,
         routing_key=RK.session_message_insert,
         queue_name="session.message.insert.notify.buffer",
-        message_ttl_seconds=5,
+        message_ttl_seconds=CONFIG.session_message_buffer_ttl_seconds,
         need_dlx_queue=True,
         use_dlx_ex_rk=(EX.session_message, RK.session_message_buffer_process),
     ),
