@@ -13,11 +13,13 @@ if TYPE_CHECKING:
 class Project(Base, CommonMixin):
     __tablename__ = "projects"
 
+    __table_args__ = (Index("ix_project_secret_key", "secret_key", unique=True),)
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
 
-    secret_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    secret_key: Mapped[str] = mapped_column(String(64), nullable=False)
 
     configs: Mapped[dict] = mapped_column(JSONB, nullable=True)
 

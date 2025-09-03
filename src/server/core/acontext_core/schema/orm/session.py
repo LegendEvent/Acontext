@@ -15,6 +15,12 @@ if TYPE_CHECKING:
 class Session(Base, CommonMixin):
     __tablename__ = "sessions"
 
+    __table_args__ = (
+        Index("ix_session_project_id", "project_id"),
+        Index("ix_session_space_id", "space_id"),
+        Index("ix_session_session_project_id", "id", "project_id"),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
@@ -23,14 +29,12 @@ class Session(Base, CommonMixin):
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
 
     space_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("spaces.id", ondelete="CASCADE"),
         nullable=True,
-        index=True,
     )
 
     configs: Mapped[dict] = mapped_column(JSONB, nullable=True)

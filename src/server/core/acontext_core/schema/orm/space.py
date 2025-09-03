@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 class Space(Base, CommonMixin):
     __tablename__ = "spaces"
 
+    __table_args__ = (Index("ix_space_space_project_id", "id", "project_id"),)
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
@@ -21,7 +23,6 @@ class Space(Base, CommonMixin):
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
 
     configs: Mapped[dict] = mapped_column(JSONB, nullable=True)

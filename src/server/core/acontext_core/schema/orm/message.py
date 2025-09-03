@@ -40,6 +40,13 @@ class Message(Base, CommonMixin):
             "role IN ('user', 'assistant', 'system', 'tool', 'function')",
             name="ck_message_role",
         ),
+        Index("ix_message_session_id", "session_id"),
+        Index("ix_message_parent_id", "parent_id"),
+        Index(
+            "ix_message_session_task_status",
+            "session_id",
+            "session_task_process_status",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -50,14 +57,16 @@ class Message(Base, CommonMixin):
         UUID(as_uuid=True),
         ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
+    )
+
+    session_task_process_status: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="pending"
     )
 
     parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("messages.id", ondelete="CASCADE"),
         nullable=True,
-        index=True,
     )
 
     role: Mapped[str] = mapped_column(String, nullable=False)
