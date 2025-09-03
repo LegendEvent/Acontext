@@ -24,7 +24,7 @@ class Base(DeclarativeBase):
         except ValidationError as e:
             model_name = cls.__name__
             return Result.reject(
-                Code.BAD_REQUEST, f"{model_name} validation failed: {e}"
+                f"{model_name} validation failed: {e}", Code.BAD_REQUEST
             )
 
         return Result.resolve(None)

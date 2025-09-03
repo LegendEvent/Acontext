@@ -1,3 +1,4 @@
+from . import service
 from .infra.db import init_database, close_database, DB_CLIENT
 from .infra.redis import init_redis, close_redis, REDIS_CLIENT
 from .infra.async_mq import init_mq, close_mq, MQ_CLIENT

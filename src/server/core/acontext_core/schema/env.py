@@ -14,7 +14,7 @@ class CoreConfig(BaseModel):
     mq_connection_name: str = "acontext_core"
     mq_global_qos: int = 100
     mq_consumer_handler_timeout: float = 60
-    mq_default_message_ttl_days: int = 7
+    mq_default_message_ttl_seconds: int = 7 * 24 * 60 * 60
     mq_default_dlx_ttl_days: int = 7
     mq_default_max_retries: int = 3
     mq_default_retry_delay_unit_sec: float = 1.0

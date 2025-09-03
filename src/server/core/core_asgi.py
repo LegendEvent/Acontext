@@ -1,23 +1,6 @@
 import asyncio
 import traceback
 from acontext_core.entry import MQ_CLIENT, setup, cleanup
-from acontext_core.infra.async_mq import ConsumerConfigData, register_consumer, Message
-
-
-consumer_config = ConsumerConfigData(
-    queue_name="hello_world_queue",
-    exchange_name="hello_exchange",
-    routing_key="hello.world",
-)
-
-
-@register_consumer(
-    mq_client=MQ_CLIENT,
-    config=consumer_config,
-)
-async def hello_world_handler(body: dict, message: Message) -> None:
-    """Simple hello world message handler"""
-    print(body)
 
 
 async def app(scope, receive, send):

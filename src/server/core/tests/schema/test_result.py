@@ -9,7 +9,7 @@ def test_result_class():
     assert d == test_data
     assert eil is None
 
-    err = Result.reject(Code.BAD_REQUEST, "test")
+    err = Result.reject("test", Code.BAD_REQUEST)
     d, eil = err.unpack()
     assert d is None
     assert eil.status == Code.BAD_REQUEST

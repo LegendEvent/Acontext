@@ -24,7 +24,7 @@ class Result(BaseModel, Generic[T]):
         return cls(data=data, error=Error())
 
     @classmethod
-    def reject(cls, status: Code, errmsg: str) -> "Result[T]":
+    def reject(cls, errmsg: str, status: Code = Code.INTERNAL_ERROR) -> "Result[T]":
         assert status != Code.SUCCESS, "status must not be SUCCESS"
         return cls(data=None, error=Error.init(status, errmsg))
 

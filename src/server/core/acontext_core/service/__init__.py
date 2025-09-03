@@ -1,0 +1,1 @@
+from .insert_new_message import insert_new_message

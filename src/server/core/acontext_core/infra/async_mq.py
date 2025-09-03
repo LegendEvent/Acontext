@@ -1,5 +1,7 @@
 import asyncio
 import json
+from enum import StrEnum
+from pydantic import ValidationError, BaseModel
 from dataclasses import dataclass, field
 from typing import Callable, Awaitable, Any, Dict, Optional, List, Set
 from aio_pika import connect_robust, ExchangeType, Message
@@ -10,46 +12,57 @@ from aio_pika.abc import (
     AbstractExchange,
 )
 from ..env import LOG, CONFIG
+from ..util.handler_spec import check_handler_function_sanity, get_handler_body_type
 
-BODY_CONTENT_PREVIEW_LENGTH = 100
+
+class SpecialHandler(StrEnum):
+    NO_PROCESS = "no_process"
 
 
 @dataclass
 class ConsumerConfigData:
     """Configuration for a single consumer"""
 
-    queue_name: str
     exchange_name: str
     routing_key: str
+    queue_name: str
     exchange_type: ExchangeType = ExchangeType.DIRECT
     durable: bool = True
     auto_delete: bool = False
-    need_dlx_queue: bool = False
     # Configuration
     prefetch_count: int = CONFIG.mq_global_qos
-    message_ttl_days: int = CONFIG.mq_default_message_ttl_days
+    message_ttl_seconds: int = CONFIG.mq_default_message_ttl_seconds
     timeout: float = CONFIG.mq_consumer_handler_timeout
     max_retries: int = CONFIG.mq_default_max_retries
     retry_delay: float = CONFIG.mq_default_retry_delay_unit_sec
+    # DLX setup
+    need_dlx_queue: bool = False
     dlx_ttl_days: int = CONFIG.mq_default_dlx_ttl_days
-
-    def to_dlx(self) -> "ConsumerConfigData":
-        return ConsumerConfigData(
-            queue_name=f"{self.queue_name}.dead",
-            exchange_name=f"{self.exchange_name}.dead",
-            routing_key=f"{self.routing_key}.dead",
-            exchange_type=ExchangeType.DIRECT,
-            message_ttl_days=self.dlx_ttl_days,
-            durable=True,
-            need_dlx_queue=False,
-        )
+    use_dlx_ex_rk: Optional[tuple[str, str]] = None
+    dlx_suffix: str = "dead"
 
 
 @dataclass
 class ConsumerConfig(ConsumerConfigData):
     """Configuration for a single consumer"""
 
-    handler: Optional[Callable[[dict, Message], Awaitable[Any]]] = field(default=None)
+    handler: Optional[
+        Callable[[BaseModel, Message], Awaitable[Any]] | SpecialHandler
+    ] = field(default=None)
+    body_pydantic_type: Optional[BaseModel] = field(default=None)
+
+    def __post_init__(self):
+        assert self.handler is not None, "Consumer Handler can not be None"
+        if isinstance(self.handler, SpecialHandler):
+            return
+        _, eil = check_handler_function_sanity(self.handler).unpack()
+        if eil:
+            raise ValueError(
+                f"Handler function {self.handler} does not meet the sanity requirements:\n{eil}"
+            )
+
+        self.body_pydantic_type = get_handler_body_type(self.handler)
+        assert self.body_pydantic_type is not None, "Handler body type can not be None"
 
 
 @dataclass
@@ -80,10 +93,11 @@ class AsyncSingleThreadMQConsumer:
         self.connection_config = connection_config
         self.connection: Optional[AbstractConnection] = None
         self.consumers: Dict[str, ConsumerConfig] = {}
-        self.__running = False
-        self._consumer_tasks: List[asyncio.Task] = []
+        self._publish_channle: Optional[AbstractChannel] = None
+        self._consumer_loop_tasks: List[asyncio.Task] = []
         self._shutdown_event = asyncio.Event()
         self._processing_tasks: Set[asyncio.Task] = set()
+        self.__running = False
 
     @property
     def running(self) -> bool:
@@ -103,6 +117,7 @@ class AsyncSingleThreadMQConsumer:
                 heartbeat=self.connection_config.heartbeat,
                 blocked_connection_timeout=self.connection_config.blocked_connection_timeout,
             )
+            self._publish_channle = await self.connection.channel()
             LOG.info(
                 f"Connected to MQ (connection: {self.connection_config.connection_name})"
             )
@@ -112,9 +127,13 @@ class AsyncSingleThreadMQConsumer:
 
     async def disconnect(self) -> None:
         """Close connection to MQ"""
+        if self._publish_channle and not self._publish_channle.is_closed:
+            await self._publish_channle.close()
+            self._publish_channle = None
         if self.connection and not self.connection.is_closed:
             await self.connection.close()
-            LOG.info("Disconnected from MQ")
+            self.connection = None
+        LOG.info("Disconnected from MQ")
 
     def register_consumer(self, consumer_config: ConsumerConfig) -> None:
         """Register a consumer at runtime"""
@@ -139,19 +158,26 @@ class AsyncSingleThreadMQConsumer:
             while retry_count <= max_retries:
                 try:
                     # process the body to json
-                    body = json.loads(message.body.decode("utf-8"))
-                    # Call the handler
                     try:
+                        body = config.body_pydantic_type.model_validate_json(
+                            message.body
+                        )
                         await asyncio.wait_for(
                             config.handler(body, message), timeout=config.timeout
                         )
+                    except ValidationError as e:
+                        LOG.error(
+                            f"Message validation failed - queue: {config.queue_name}, "
+                            f"error: {str(e)}"
+                        )
+                        await message.reject(requeue=False)
+                        return
                     except asyncio.TimeoutError:
                         raise TimeoutError(
                             f"Handler timeout after {config.timeout}s - queue: {config.queue_name}"
                         )
                     LOG.info(
-                        f"Message processed successfully - queue: {config.queue_name}, "
-                        f"body: {message.body[:BODY_CONTENT_PREVIEW_LENGTH]}..."
+                        f"Message processed successfully - queue: {config.queue_name}"
                     )
                     return  # Success, exit retry loop
 
@@ -170,8 +196,7 @@ class AsyncSingleThreadMQConsumer:
                     else:
                         LOG.error(
                             f"Message processing failed permanently - queue: {config.queue_name}, "
-                            f"error: {str(e)}, "
-                            f"body: {message.body[:BODY_CONTENT_PREVIEW_LENGTH]}..."
+                            f"error: {str(e)}"
                         )
                         # goto DLX if any
                         await message.reject(requeue=False)
@@ -186,18 +211,30 @@ class AsyncSingleThreadMQConsumer:
             LOG.error(f"Message task unknown error: {e}")
         finally:
             self._processing_tasks.discard(task)
-            LOG.info(f"#current processing tasks: {len(self._processing_tasks)}")
+            LOG.info(f"#Current Processing Tasks: {len(self._processing_tasks)}")
+
+    async def _special_queue(self, config: ConsumerConfig) -> str:
+        if config.handler is SpecialHandler.NO_PROCESS:
+            return f"Special consumer - queue: {config.queue_name} <- ({config.exchange_name}, {config.routing_key}), {config.handler}."
+        raise RuntimeError(f"Special handler {config.handler} not implemented")
 
     # TODO: add channel recovery logic
-    async def _consume_queue(self, config: ConsumerConfig) -> None:
+    async def _consume_queue(self, config: ConsumerConfig) -> str:
         """Consume messages from a specific queue"""
+
         consumer_channel: AbstractChannel | None = None
         try:
             # Set QoS for this consumer
             consumer_channel = await self.connection.channel()
             await consumer_channel.set_qos(prefetch_count=config.prefetch_count)
             queue = await self._setup_consumer_on_channel(config, consumer_channel)
-            LOG.info(f"Starting consumer - queue: {config.queue_name}")
+
+            if isinstance(config.handler, SpecialHandler):
+                hint = await self._special_queue(config)
+                return hint
+            LOG.info(
+                f"Looping consumer - queue: {config.queue_name} <- ({config.exchange_name}, {config.routing_key})"
+            )
 
             async with queue.iterator() as queue_iter:
                 async for message in queue_iter:
@@ -212,9 +249,10 @@ class AsyncSingleThreadMQConsumer:
 
         except Exception as e:
             LOG.error(f"Consumer error - queue: {config.queue_name}, error: {str(e)}")
-            raise
+            raise e
         finally:
             if consumer_channel and not consumer_channel.is_closed:
+                LOG.info(f"Closing consumer channel - queue: {config.queue_name}")
                 await consumer_channel.close()
 
     async def _setup_consumer_on_channel(
@@ -228,20 +266,18 @@ class AsyncSingleThreadMQConsumer:
             config.exchange_name, config.exchange_type, durable=config.durable
         )
         queue_arguments: dict = {
-            "x-message-ttl": 24 * 60 * 60 * config.message_ttl_days * 1000,
+            "x-message-ttl": config.message_ttl_seconds * 1000,
         }
         # Setup dead letter exchange if specified
         # TODO: implement dead-letter init
-        if config.need_dlx_queue:
-            dlx_exchange_name = f"{config.exchange_name}.dead"
-            dlx_routing_key = f"{config.routing_key}.dead"
-            dlq_name = f"{config.queue_name}.dead"
+        if config.need_dlx_queue and config.use_dlx_ex_rk is None:
+            dlx_exchange_name = f"{config.exchange_name}.{config.dlx_suffix}"
+            dlx_routing_key = f"{config.routing_key}.{config.dlx_suffix}"
+            dlq_name = f"{config.queue_name}.{config.dlx_suffix}"
 
             dlx = await channel.declare_exchange(
                 dlx_exchange_name, ExchangeType.DIRECT, durable=True
             )
-            queue_arguments["x-dead-letter-exchange"] = dlx_exchange_name
-            queue_arguments["x-dead-letter-routing-key"] = dlx_routing_key
 
             # Create dead letter queue
             dlq = await channel.declare_queue(
@@ -250,6 +286,14 @@ class AsyncSingleThreadMQConsumer:
                 arguments={"x-message-ttl": 24 * 60 * 60 * config.dlx_ttl_days * 1000},
             )
             await dlq.bind(dlx, dlx_routing_key)
+
+            queue_arguments["x-dead-letter-exchange"] = dlx_exchange_name
+            queue_arguments["x-dead-letter-routing-key"] = dlx_routing_key
+
+        if config.need_dlx_queue and config.use_dlx_ex_rk is not None:
+            LOG.info(f"Queue {config.queue_name} uses DLX {config.use_dlx_ex_rk}")
+            queue_arguments["x-dead-letter-exchange"] = config.use_dlx_ex_rk[0]
+            queue_arguments["x-dead-letter-routing-key"] = config.use_dlx_ex_rk[1]
 
         # Declare queue
         queue = await channel.declare_queue(
@@ -263,6 +307,29 @@ class AsyncSingleThreadMQConsumer:
         await queue.bind(exchange, config.routing_key)
 
         return queue
+
+    async def publish(self, exchange_name: str, routing_key: str, body: str) -> None:
+        """Publish a message to an exchange without declaring it"""
+        assert len(exchange_name) and len(routing_key)
+        await self.connect()
+
+        if self._publish_channle is None:
+            raise RuntimeError("No active MQ Publish Channel")
+
+        # Create a channel for publishing
+        # Create the message
+        message = Message(
+            body.encode("utf-8"),
+            content_type="application/json",
+            delivery_mode=2,  # Make message persistent
+        )
+
+        exchange = await self._publish_channle.get_exchange(exchange_name)
+        await exchange.publish(message, routing_key=routing_key)
+
+        LOG.info(
+            f"Published message to exchange: {exchange_name}, routing_key: {routing_key}"
+        )
 
     # TODO: add connection recovery logic
     async def start(self) -> None:
@@ -282,28 +349,31 @@ class AsyncSingleThreadMQConsumer:
         # Start consumer tasks
         for config in self.consumers.values():
             task = asyncio.create_task(self._consume_queue(config))
-            self._consumer_tasks.append(task)
+            self._consumer_loop_tasks.append(task)
 
         LOG.info(f"Started all consumers (count: {len(self.consumers)})")
         try:
             # Wait for shutdown signal or any task to complete
-            done, pending = await asyncio.wait(
-                self._consumer_tasks
-                + [asyncio.create_task(self._shutdown_event.wait())],
-                return_when=asyncio.FIRST_COMPLETED,
-            )
+            while not self._shutdown_event.is_set():
+                # special handlers maybe return earlier
+                done, pending = await asyncio.wait(
+                    self._consumer_loop_tasks
+                    + [asyncio.create_task(self._shutdown_event.wait())],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
 
-            # If shutdown event was triggered, tasks will be cancelled in stop()
-            if self._shutdown_event.is_set():
-                LOG.info("Shutdown event received")
-            else:
-                # One of the consumer tasks completed unexpectedly
+                # If shutdown event was triggered, tasks will be cancelled in stop()
                 for task in done:
-                    if task in self._consumer_tasks:
-                        try:
-                            task.result()  # This will raise the exception if task failed
-                        except Exception as e:
-                            LOG.error(f"Consumer task failed: {e}")
+                    try:
+                        r = (
+                            task.result()
+                        )  # This will raise the exception if task failed
+                        self._consumer_loop_tasks.remove(task)
+                        LOG.info(f"Consumer task completed. {r}")
+                    except Exception as e:
+                        LOG.error(f"Consumer task failed: {e}")
+                        return
+            LOG.info("Shutdown event received")
         finally:
             await self.stop()
 
@@ -316,13 +386,13 @@ class AsyncSingleThreadMQConsumer:
         self._shutdown_event.set()
 
         # Cancel all consumer tasks
-        LOG.info(f"Stopping {len(self._consumer_tasks)} consumers...")
-        for task in self._consumer_tasks:
+        LOG.info(f"Stopping {len(self._consumer_loop_tasks)} consumers...")
+        for task in self._consumer_loop_tasks:
             task.cancel()
 
         # Wait for tasks to complete
-        if self._consumer_tasks:
-            await asyncio.gather(*self._consumer_tasks, return_exceptions=True)
+        if self._consumer_loop_tasks:
+            await asyncio.gather(*self._consumer_loop_tasks, return_exceptions=True)
 
         # Cancel all in-flight message processing tasks
         LOG.info(f"Stopping {len(self._processing_tasks)} tasks...")
@@ -332,7 +402,7 @@ class AsyncSingleThreadMQConsumer:
             await asyncio.gather(*self._processing_tasks, return_exceptions=True)
             self._processing_tasks.clear()
 
-        self._consumer_tasks.clear()
+        self._consumer_loop_tasks.clear()
         await self.disconnect()
         LOG.info("All consumers stopped")
 
@@ -350,7 +420,7 @@ def register_consumer(
 ):
     """Decorator to register a function as a message handler"""
 
-    def decorator(func: Callable[[dict, Message], Awaitable[Any]]):
+    def decorator(func: Callable[[dict, Message], Awaitable[Any]] | SpecialHandler):
         _consumer_config = ConsumerConfig(**config.__dict__, handler=func)
         mq_client.register_consumer(_consumer_config)
         return func
