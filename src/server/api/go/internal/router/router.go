@@ -113,6 +113,9 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			project := root.Group("/project")
 			{
 				project.POST("", d.ProjectHandler.CreateProject)
+				project.DELETE("/:project_id", d.ProjectHandler.DeleteProject)
+
+				project.PUT("/:project_id/configs", d.ProjectHandler.UpdateConfigs)
 			}
 		}
 

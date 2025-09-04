@@ -65,6 +65,12 @@ definitions:
     - parts
     - role
     type: object
+  handler.UpdateProjectConfigsReq:
+    properties:
+      configs:
+        additionalProperties: true
+        type: object
+    type: object
   handler.UpdateSessionConfigsReq:
     properties:
       configs:
@@ -289,6 +295,60 @@ paths:
       security:
       - RootAuth: []
       summary: Create project
+      tags:
+      - project
+  /project/{project_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a project by id
+      parameters:
+      - description: Project ID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      security:
+      - RootAuth: []
+      summary: Delete project
+      tags:
+      - project
+  /project/{project_id}/configs:
+    put:
+      consumes:
+      - application/json
+      description: Update project configs by id
+      parameters:
+      - description: Project ID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: UpdateProjectConfigs payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateProjectConfigsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      security:
+      - RootAuth: []
+      summary: Update project configs
       tags:
       - project
   /session:
