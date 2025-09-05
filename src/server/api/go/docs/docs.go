@@ -851,6 +851,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.Asset"
                     }
                 },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Message"
+                    }
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -863,6 +869,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.MessageAsset"
                     }
+                },
+                "parent": {
+                    "$ref": "#/definitions/model.Message"
                 },
                 "parent_id": {
                     "type": "string"
