@@ -6,7 +6,7 @@ from .llm.complete import llm_sanity_check
 
 
 async def setup() -> None:
-    await llm_sanity_check()
+    # await llm_sanity_check()
     await init_database()
     await init_redis()
     await init_mq()

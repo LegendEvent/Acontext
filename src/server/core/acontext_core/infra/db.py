@@ -137,32 +137,13 @@ class DatabaseClient:
         session = await self.get_session()
         try:
             yield session
-        except Exception:
+            await session.commit()
+        except Exception as e:
+            logger.error(f"DB Session failed: {str(e)}. Rollback...")
             await session.rollback()
-            raise
+            raise e
         finally:
             await session.close()
-
-    @asynccontextmanager
-    async def get_transaction_context(self) -> AsyncGenerator[AsyncSession, None]:
-        """
-        Get a database session with explicit transaction management.
-
-        Usage:
-            async with db_client.get_transaction_context() as session:
-                # All operations in this block are in a transaction
-                await session.execute(insert(User).values(name="John"))
-                # Transaction is automatically committed unless an exception occurs
-        """
-        session = await self.get_session()
-        async with session.begin():
-            try:
-                yield session
-            except Exception:
-                # Transaction will be automatically rolled back
-                raise
-            finally:
-                await session.close()
 
     async def health_check(self) -> bool:
         """
