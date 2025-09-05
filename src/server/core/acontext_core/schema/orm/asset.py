@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import String, BigInteger, Index, Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 from .base import ORM_BASE, CommonMixin
 
 if TYPE_CHECKING:
@@ -21,17 +21,13 @@ class Asset(CommonMixin):
 
     s3_key: str = field(metadata={"db": Column(String, nullable=False)})
 
+    etag: str = field(metadata={"db": Column(String, nullable=False)})
+
+    sha256: str = field(metadata={"db": Column(String, nullable=False)})
+
     mime: str = field(metadata={"db": Column(String, nullable=False)})
 
-    size_b: int = field(metadata={"db": Column(BigInteger, nullable=False)})
-
-    etag: Optional[str] = field(
-        default=None, metadata={"db": Column(String, nullable=True)}
-    )
-
-    sha256: Optional[str] = field(
-        default=None, metadata={"db": Column(String, nullable=True)}
-    )
+    size_bigint: int = field(metadata={"db": Column(BigInteger, nullable=False)})
 
     # Relationships
     messages: List["Message"] = field(

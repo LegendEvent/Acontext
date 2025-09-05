@@ -24,7 +24,7 @@ class Part(BaseModel):
     asset_id: Optional[uuid.UUID] = None
     mime: Optional[str] = None
     filename: Optional[str] = None
-    size_b: Optional[int] = None
+    size_bigint: Optional[int] = None  # Updated to match Go field name
 
     # metadata for embedding, ocr, asr, caption, etc.
     meta: Optional[Dict[str, Any]] = None
@@ -47,6 +47,7 @@ class Message(CommonMixin):
             "session_id",
             "session_task_process_status",
         ),
+        Index("idx_session_created", "session_id", "created_at"),
     )
 
     session_id: uuid.UUID = field(
