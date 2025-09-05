@@ -3,7 +3,9 @@ package repo
 import (
 	"context"
 	"errors"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -15,6 +17,7 @@ type SessionRepo interface {
 	Update(ctx context.Context, s *model.Session) error
 	Get(ctx context.Context, s *model.Session) (*model.Session, error)
 	CreateMessageWithAssets(ctx context.Context, msg *model.Message, assetMap map[int]*model.Asset) error
+	ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int) ([]model.Message, error)
 }
 
 type sessionRepo struct{ db *gorm.DB }
@@ -99,4 +102,24 @@ func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Me
 
 		return nil
 	})
+}
+
+func (r *sessionRepo) ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int) ([]model.Message, error) {
+	q := r.db.WithContext(ctx).Where("session_id = ?", sessionID)
+
+	// Use the (created_at, id) composite cursor; an empty cursor indicates starting from "latest"
+	if !afterCreatedAt.IsZero() && afterID != uuid.Nil {
+		// Retrieve strictly "older" records (reverse pagination)
+		// (created_at, id) < (afterCreatedAt, afterID)
+		q = q.Where("(created_at < ?) OR (created_at = ? AND id < ?)", afterCreatedAt, afterCreatedAt, afterID)
+	}
+
+	var items []model.Message
+	err := q.
+		Preload("Assets").
+		Order("created_at DESC, id DESC").
+		Limit(limit).
+		Find(&items).Error
+
+	return items, err
 }

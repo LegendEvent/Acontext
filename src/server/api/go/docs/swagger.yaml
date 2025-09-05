@@ -50,7 +50,7 @@ definitions:
     properties:
       parts:
         items:
-          $ref: '#/definitions/types.PartIn'
+          $ref: '#/definitions/service.PartIn'
         type: array
       role:
         example: user
@@ -232,7 +232,7 @@ definitions:
       msg:
         type: string
     type: object
-  types.PartIn:
+  service.PartIn:
     properties:
       file_field:
         description: File field name in the form
@@ -396,6 +396,42 @@ paths:
       tags:
       - session
   /session/{session_id}/messages:
+    get:
+      consumes:
+      - application/json
+      description: Get messages from session.
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      - description: Limit of messages to return, default 20. Max 200.
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination. Use the cursor from the previous response
+          to get the next page.
+        in: query
+        name: cursor
+        type: string
+      - description: Whether to return asset public url, default is false
+        in: query
+        name: with_asset_public_url
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.Response'
+      security:
+      - BearerAuth: []
+      summary: Get messages from session
+      tags:
+      - session
     post:
       consumes:
       - application/json

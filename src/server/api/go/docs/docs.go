@@ -247,6 +247,60 @@ const docTemplate = `{
             }
         },
         "/session/{session_id}/messages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get messages from session.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "session"
+                ],
+                "summary": "Get messages from session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit of messages to return, default 20. Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Whether to return asset public url, default is false",
+                        "name": "with_asset_public_url",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -718,7 +772,7 @@ const docTemplate = `{
                 "parts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.PartIn"
+                        "$ref": "#/definitions/service.PartIn"
                     }
                 },
                 "role": {
@@ -998,7 +1052,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.PartIn": {
+        "service.PartIn": {
             "type": "object",
             "properties": {
                 "file_field": {

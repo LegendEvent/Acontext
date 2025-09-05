@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/config"
@@ -12,7 +13,7 @@ import (
 	mq "github.com/memodb-io/Acontext/internal/infra/queue"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
-	"github.com/memodb-io/Acontext/internal/pkg/types"
+	"github.com/memodb-io/Acontext/internal/pkg/paging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -24,6 +25,7 @@ type SessionService interface {
 	UpdateByID(ctx context.Context, ss *model.Session) error
 	GetByID(ctx context.Context, ss *model.Session) (*model.Session, error)
 	SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error)
+	GetMessages(ctx context.Context, in GetMessagesInput) (*GetMessagesOutput, error)
 }
 
 type sessionService struct {
@@ -70,7 +72,7 @@ type SendMessageInput struct {
 	ProjectID uuid.UUID
 	SessionID uuid.UUID
 	Role      string
-	Parts     []types.PartIn
+	Parts     []PartIn
 	Files     map[string]*multipart.FileHeader
 }
 
@@ -78,6 +80,13 @@ type SendMQPublishJSON struct {
 	ProjectID uuid.UUID `json:"project_id"`
 	SessionID uuid.UUID `json:"session_id"`
 	MessageID uuid.UUID `json:"message_id"`
+}
+
+type PartIn struct {
+	Type      string                 `json:"type"`                 // "text" | "image" | ...
+	Text      string                 `json:"text,omitempty"`       // Text sharding
+	FileField string                 `json:"file_field,omitempty"` // File field name in the form
+	Meta      map[string]interface{} `json:"meta,omitempty"`       // [Optional] metadata
 }
 
 func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error) {
@@ -151,4 +160,72 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 	}
 
 	return &msg, nil
+}
+
+type GetMessagesInput struct {
+	SessionID          uuid.UUID     `json:"session_id"`
+	Limit              int           `json:"limit"`
+	Cursor             string        `json:"cursor"`
+	WithAssetPublicURL bool          `json:"with_public_url"`
+	AssetExpire        time.Duration `json:"asset_expire"`
+}
+
+type PublicURL struct {
+	URL      string    `json:"url"`
+	ExpireAt time.Time `json:"expire_at"`
+}
+
+type GetMessagesOutput struct {
+	Items      []model.Message         `json:"items"`
+	NextCursor string                  `json:"next_cursor,omitempty"`
+	HasMore    bool                    `json:"has_more"`
+	PublicURLs map[uuid.UUID]PublicURL `json:"public_urls,omitempty"` // asset_id -> url
+}
+
+func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (*GetMessagesOutput, error) {
+	// Parse cursor (createdAt, id); an empty cursor indicates starting from the latest
+	var afterT time.Time
+	var afterID uuid.UUID
+	var err error
+	if in.Cursor != "" {
+		afterT, afterID, err = paging.DecodeCursor(in.Cursor)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Query limit+1 is used to determine has_more
+	msgs, err := s.r.ListBySessionWithCursor(ctx, in.SessionID, afterT, afterID, in.Limit+1)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &GetMessagesOutput{
+		Items:   msgs,
+		HasMore: false,
+	}
+	if len(msgs) > in.Limit {
+		out.HasMore = true
+		out.Items = msgs[:in.Limit]
+		last := out.Items[len(out.Items)-1]
+		out.NextCursor = paging.EncodeCursor(last.CreatedAt, last.ID)
+	}
+
+	if in.WithAssetPublicURL {
+		out.PublicURLs = make(map[uuid.UUID]PublicURL)
+		for _, m := range out.Items {
+			for _, a := range m.Assets {
+				url, err := s.blob.PresignGet(ctx, a.S3Key, in.AssetExpire)
+				if err != nil {
+					return nil, fmt.Errorf("get presigned url for asset %s: %w", a.ID, err)
+				}
+				out.PublicURLs[a.ID] = PublicURL{
+					URL:      url,
+					ExpireAt: time.Now().Add(in.AssetExpire),
+				}
+			}
+		}
+	}
+
+	return out, nil
 }

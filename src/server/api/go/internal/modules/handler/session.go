@@ -6,13 +6,13 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
-	"github.com/memodb-io/Acontext/internal/pkg/types"
 	"gorm.io/datatypes"
 )
 
@@ -206,8 +206,8 @@ func (h *SessionHandler) ConnectToSpace(c *gin.Context) {
 }
 
 type SendMessageReq struct {
-	Role  string         `form:"role" json:"role" binding:"required" example:"user"`
-	Parts []types.PartIn `form:"parts" json:"parts" binding:"required"`
+	Role  string           `form:"role" json:"role" binding:"required" example:"user"`
+	Parts []service.PartIn `form:"parts" json:"parts" binding:"required"`
 }
 
 // SendMessage godoc
@@ -278,4 +278,51 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, serializer.Response{Data: out})
+}
+
+type GetMessagesReq struct {
+	Limit              int    `form:"limit,default=20" json:"limit" binding:"required,min=1,max=200" example:"20"`
+	Cursor             string `form:"cursor" json:"cursor" example:"cHJvdGVjdGVkIHZlcnNpb24gdG8gYmUgZXhjbHVkZWQgaW4gcGFyc2luZyB0aGUgY3Vyc29y"`
+	WithAssetPublicURL bool   `form:"with_asset_public_url,default=false" json:"with_asset_public_url" example:"false"`
+}
+
+// GetMessages godoc
+//
+//	@Summary		Get messages from session
+//	@Description	Get messages from session.
+//	@Tags			session
+//	@Accept			json
+//	@Produce		json
+//	@Param			session_id				path	string	true	"Session ID"	format(uuid)
+//	@Param			limit					query	integer	false	"Limit of messages to return, default 20. Max 200."
+//	@Param			cursor					query	string	false	"Cursor for pagination. Use the cursor from the previous response to get the next page."
+//	@Param			with_asset_public_url	query	string	false	"Whether to return asset public url, default is false"	example:"false"
+//	@Security		BearerAuth
+//	@Success		200	{object}	serializer.Response{}
+//	@Router			/session/{session_id}/messages [get]
+func (h *SessionHandler) GetMessages(c *gin.Context) {
+	req := GetMessagesReq{}
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	sessionID, err := uuid.Parse(c.Param("session_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+	out, err := h.svc.GetMessages(c.Request.Context(), service.GetMessagesInput{
+		SessionID:          sessionID,
+		Limit:              req.Limit,
+		Cursor:             req.Cursor,
+		WithAssetPublicURL: req.WithAssetPublicURL,
+		AssetExpire:        time.Hour * 24,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.DBErr("", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, serializer.Response{Data: out})
 }

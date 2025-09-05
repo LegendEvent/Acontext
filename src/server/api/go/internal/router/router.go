@@ -89,7 +89,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 	r.Use(gin.Recovery(), zapLoggerMiddleware(d.Log))
 
 	// health
-	r.GET("/health", func(c *gin.Context) { c.JSON(200, serializer.Response{Msg: "ok"}) })
+	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, serializer.Response{Msg: "ok"}) })
 
 	// swagger
 	r.GET("/swagger", func(c *gin.Context) {
@@ -152,10 +152,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			session.POST("/:session_id/connect_to_space", d.SessionHandler.ConnectToSpace)
 
 			session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
-			// session.GET("/:session_id/messages/status", d.SessionHandler.GetMessagesStatus)
-
-			// session.GET("/:session_id/session_scratchpad", d.SessionHandler.GetSessionScratchpad)
-			// session.GET("/:session_id/tasks", d.SessionHandler.GetTasks)
+			session.GET("/:session_id/messages", d.SessionHandler.GetMessages)
 		}
 	}
 	return r
