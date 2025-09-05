@@ -16,9 +16,14 @@ if TYPE_CHECKING:
 class Project(CommonMixin):
     __tablename__ = "projects"
 
-    __table_args__ = (Index("ix_project_secret_key", "secret_key", unique=True),)
+    __table_args__ = (
+        Index("ix_project_secret_key_hmac", "secret_key_hmac", unique=True),
+    )
 
-    secret_key: str = field(metadata={"db": Column(String(64), nullable=False)})
+    secret_key_hmac: str = field(metadata={"db": Column(String(64), nullable=False)})
+    secret_key_hash_phc: str = field(
+        metadata={"db": Column(String(255), nullable=False)}
+    )
 
     configs: Optional[dict] = field(
         default=None, metadata={"db": Column(JSONB, nullable=True)}
