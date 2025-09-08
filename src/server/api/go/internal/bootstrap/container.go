@@ -51,6 +51,7 @@ func BuildContainer() *do.Injector {
 				&model.Message{},
 				&model.Asset{},
 				&model.MessageAsset{},
+				&model.Block{},
 			)
 		}
 
