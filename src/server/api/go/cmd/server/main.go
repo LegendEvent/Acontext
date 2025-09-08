@@ -44,6 +44,7 @@ func main() {
 
 	// build handlers
 	spaceHandler := do.MustInvoke[*handler.SpaceHandler](inj)
+	blockHandler := do.MustInvoke[*handler.BlockHandler](inj)
 	sessionHandler := do.MustInvoke[*handler.SessionHandler](inj)
 
 	engine := router.NewRouter(router.RouterDeps{
@@ -51,6 +52,7 @@ func main() {
 		DB:             db,
 		Log:            log,
 		SpaceHandler:   spaceHandler,
+		BlockHandler:   blockHandler,
 		SessionHandler: sessionHandler,
 	})
 

@@ -99,6 +99,9 @@ func BuildContainer() *do.Injector {
 	do.Provide(inj, func(i *do.Injector) (repo.SessionRepo, error) {
 		return repo.NewSessionRepo(do.MustInvoke[*gorm.DB](i)), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (repo.BlockRepo, error) {
+		return repo.NewBlockRepo(do.MustInvoke[*gorm.DB](i)), nil
+	})
 
 	// Service
 	do.Provide(inj, func(i *do.Injector) (service.SpaceService, error) {
@@ -113,6 +116,9 @@ func BuildContainer() *do.Injector {
 			do.MustInvoke[*config.Config](i),
 		), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (service.BlockService, error) {
+		return service.NewBlockService(do.MustInvoke[repo.BlockRepo](i)), nil
+	})
 
 	// Handler
 	do.Provide(inj, func(i *do.Injector) (*handler.SpaceHandler, error) {
@@ -120,6 +126,9 @@ func BuildContainer() *do.Injector {
 	})
 	do.Provide(inj, func(i *do.Injector) (*handler.SessionHandler, error) {
 		return handler.NewSessionHandler(do.MustInvoke[service.SessionService](i)), nil
+	})
+	do.Provide(inj, func(i *do.Injector) (*handler.BlockHandler, error) {
+		return handler.NewBlockHandler(do.MustInvoke[service.BlockService](i)), nil
 	})
 
 	return inj
