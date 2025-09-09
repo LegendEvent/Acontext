@@ -47,6 +47,11 @@ class CommonMixin(TimestampMixin):
     id: uuid.UUID = field(
         init=False,
         metadata={
-            "db": Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+            "db": Column(
+                UUID(as_uuid=True),
+                primary_key=True,
+                default=uuid.uuid4,
+                server_default=func.gen_random_uuid(),
+            )
         },
     )

@@ -21,7 +21,7 @@ from .constants import EX, RK
 )
 async def insert_new_message(body: InsertNewMessage, message: Message):
     with bound_logging_vars(project_id=str(body.project_id)):
-        pass
+        LOG.info(f"New message, {body}")
 
 
 register_consumer(

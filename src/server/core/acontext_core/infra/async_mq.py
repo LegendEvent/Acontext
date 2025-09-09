@@ -13,6 +13,7 @@ from aio_pika.abc import (
 )
 from ..env import LOG, CONFIG, bound_logging_vars
 from ..util.handler_spec import check_handler_function_sanity, get_handler_body_type
+from time import perf_counter
 
 
 class SpecialHandler(StrEnum):
@@ -163,8 +164,13 @@ class AsyncSingleThreadMQConsumer:
                             message.body
                         )
                         with bound_logging_vars(queue_name=config.queue_name):
+                            _start_s = perf_counter()
                             await asyncio.wait_for(
                                 config.handler(body, message), timeout=config.timeout
+                            )
+                            _end_s = perf_counter()
+                            LOG.info(
+                                f"Queue: {config.queue_name} processed in {_end_s - _start_s:.4f}s"
                             )
                     except ValidationError as e:
                         LOG.error(
@@ -177,9 +183,6 @@ class AsyncSingleThreadMQConsumer:
                         raise TimeoutError(
                             f"Handler timeout after {config.timeout}s - queue: {config.queue_name}"
                         )
-                    LOG.info(
-                        f"Message processed successfully - queue: {config.queue_name}"
-                    )
                     return  # Success, exit retry loop
 
                 except Exception as e:
@@ -212,7 +215,7 @@ class AsyncSingleThreadMQConsumer:
             LOG.error(f"Message task unknown error: {e}")
         finally:
             self._processing_tasks.discard(task)
-            LOG.info(f"#Current Processing Tasks: {len(self._processing_tasks)}")
+            LOG.debug(f"#Current Processing Tasks: {len(self._processing_tasks)}")
 
     async def _special_queue(self, config: ConsumerConfig) -> str:
         if config.handler is SpecialHandler.NO_PROCESS:
