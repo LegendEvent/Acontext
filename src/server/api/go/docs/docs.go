@@ -652,18 +652,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "New parent ID (uuid)",
-                        "name": "parent_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Sort value",
-                        "name": "sort",
-                        "in": "formData"
+                        "description": "MoveBlock payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.MoveBlockReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -823,11 +818,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Sort value",
-                        "name": "sort",
-                        "in": "formData",
-                        "required": true
+                        "description": "UpdateBlockSort payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateBlockSortReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -1139,17 +1136,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "New parent ID (uuid)",
-                        "name": "parent_id",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Sort value",
-                        "name": "sort",
-                        "in": "formData"
+                        "description": "MovePage payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.MovePageReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -1309,11 +1302,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Sort value",
-                        "name": "sort",
-                        "in": "formData",
-                        "required": true
+                        "description": "UpdatePageSort payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdatePageSortReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -1506,6 +1501,9 @@ const docTemplate = `{
         "handler.CreatePageReq": {
             "type": "object",
             "properties": {
+                "parent_id": {
+                    "type": "string"
+                },
                 "props": {
                     "type": "object",
                     "additionalProperties": {}
@@ -1571,6 +1569,31 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.MoveBlockReq": {
+            "type": "object",
+            "required": [
+                "parent_id"
+            ],
+            "properties": {
+                "parent_id": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.MovePageReq": {
+            "type": "object",
+            "properties": {
+                "parent_id": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                }
+            }
+        },
         "handler.SendMessageReq": {
             "type": "object",
             "required": [
@@ -1602,6 +1625,14 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.UpdateBlockSortReq": {
+            "type": "object",
+            "properties": {
+                "sort": {
+                    "type": "integer"
+                }
+            }
+        },
         "handler.UpdatePagePropertiesReq": {
             "type": "object",
             "properties": {
@@ -1611,6 +1642,14 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "handler.UpdatePageSortReq": {
+            "type": "object",
+            "properties": {
+                "sort": {
+                    "type": "integer"
                 }
             }
         },

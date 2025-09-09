@@ -38,8 +38,17 @@ func (s *blockService) CreatePage(ctx context.Context, b *model.Block) error {
 	if b.Type != model.BlockTypePage {
 		return errors.New("type must be page")
 	}
-	b.ParentID = nil
-	next, err := s.r.NextSort(ctx, b.SpaceID, nil)
+	// Validate parent type: when parent_id is provided, it must be a page
+	if b.ParentID != nil {
+		parent, err := s.r.Get(ctx, *b.ParentID)
+		if err != nil {
+			return err
+		}
+		if parent.Type != model.BlockTypePage {
+			return errors.New("parent must be page")
+		}
+	}
+	next, err := s.r.NextSort(ctx, b.SpaceID, b.ParentID)
 	if err != nil {
 		return err
 	}
@@ -78,6 +87,16 @@ func (s *blockService) ListPageChildren(ctx context.Context, pageID uuid.UUID) (
 func (s *blockService) MovePage(ctx context.Context, pageID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
 	if len(pageID) == 0 {
 		return errors.New("page id is empty")
+	}
+	// Validate parent type for moving: when newParentID is provided, it must be a page
+	if newParentID != nil {
+		parent, err := s.r.Get(ctx, *newParentID)
+		if err != nil {
+			return err
+		}
+		if parent.Type != model.BlockTypePage {
+			return errors.New("new parent must be page")
+		}
 	}
 	if targetSort == nil {
 		return s.r.MoveToParentAppend(ctx, pageID, newParentID)

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,8 +21,9 @@ func NewBlockHandler(s service.BlockService) *BlockHandler {
 }
 
 type CreatePageReq struct {
-	Title string         `form:"title" json:"title"`
-	Props map[string]any `form:"props" json:"props"`
+	ParentID *uuid.UUID     `from:"parent_id" json:"parent_id"`
+	Title    string         `form:"title" json:"title"`
+	Props    map[string]any `form:"props" json:"props"`
 }
 
 // CreatePage godoc
@@ -50,10 +52,11 @@ func (h *BlockHandler) CreatePage(c *gin.Context) {
 	}
 
 	page := model.Block{
-		SpaceID: spaceID,
-		Type:    model.BlockTypePage,
-		Title:   req.Title,
-		Props:   datatypes.NewJSONType(req.Props),
+		SpaceID:  spaceID,
+		Type:     model.BlockTypePage,
+		ParentID: req.ParentID,
+		Title:    req.Title,
+		Props:    datatypes.NewJSONType(req.Props),
 	}
 	if err := h.svc.CreatePage(c.Request.Context(), &page); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
@@ -386,10 +389,9 @@ type MovePageReq struct {
 //	@Tags			page
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"				Format(uuid)
-//	@Param			page_id		path		string	true	"Page ID"				Format(uuid)
-//	@Param			parent_id	formData	string	false	"New parent ID (uuid)"	Format(uuid)
-//	@Param			sort		formData	integer	false	"Sort value"
+//	@Param			space_id	path	string				true	"Space ID"	Format(uuid)
+//	@Param			page_id		path	string				true	"Page ID"	Format(uuid)
+//	@Param			payload		body	handler.MovePageReq	true	"MovePage payload"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/page/{page_id}/move [put]
@@ -402,6 +404,12 @@ func (h *BlockHandler) MovePage(c *gin.Context) {
 	req := MovePageReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	// Validate: parent_id cannot be the page itself
+	if req.ParentID != nil && *req.ParentID == pageID {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent_id cannot be self")))
 		return
 	}
 
@@ -424,9 +432,9 @@ type UpdatePageSortReq struct {
 //	@Tags			page
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"	Format(uuid)
-//	@Param			page_id		path		string	true	"Page ID"	Format(uuid)
-//	@Param			sort		formData	integer	true	"Sort value"
+//	@Param			space_id	path	string						true	"Space ID"	Format(uuid)
+//	@Param			page_id		path	string						true	"Page ID"	Format(uuid)
+//	@Param			payload		body	handler.UpdatePageSortReq	true	"UpdatePageSort payload"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/page/{page_id}/sort [put]
@@ -463,10 +471,9 @@ type MoveBlockReq struct {
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"				Format(uuid)
-//	@Param			block_id	path		string	true	"Block ID"				Format(uuid)
-//	@Param			parent_id	formData	string	true	"New parent ID (uuid)"	Format(uuid)
-//	@Param			sort		formData	integer	false	"Sort value"
+//	@Param			space_id	path	string					true	"Space ID"	Format(uuid)
+//	@Param			block_id	path	string					true	"Block ID"	Format(uuid)
+//	@Param			payload		body	handler.MoveBlockReq	true	"MoveBlock payload"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/block/{block_id}/move [put]
@@ -480,6 +487,12 @@ func (h *BlockHandler) MoveBlock(c *gin.Context) {
 	req := MoveBlockReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	// Validate: parent_id cannot be the block itself
+	if req.ParentID == blockID {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent_id cannot be self")))
 		return
 	}
 
@@ -502,9 +515,9 @@ type UpdateBlockSortReq struct {
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path		string	true	"Space ID"	Format(uuid)
-//	@Param			block_id	path		string	true	"Block ID"	Format(uuid)
-//	@Param			sort		formData	integer	true	"Sort value"
+//	@Param			space_id	path	string						true	"Space ID"	Format(uuid)
+//	@Param			block_id	path	string						true	"Block ID"	Format(uuid)
+//	@Param			payload		body	handler.UpdateBlockSortReq	true	"UpdateBlockSort payload"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/block/{block_id}/sort [put]

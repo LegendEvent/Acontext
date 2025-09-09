@@ -20,7 +20,7 @@ type Block struct {
 
 	Type string `gorm:"type:text;not null;index:idx_blocks_space_type;index:idx_blocks_space_type_archived,priority:2;check:chk_blocks_type,type IN ('page','block')" json:"type"`
 
-	ParentID *uuid.UUID `gorm:"type:uuid;check:chk_blocks_parent_rule,(type = 'page' AND parent_id IS NULL) OR (type = 'block' AND parent_id IS NOT NULL);uniqueIndex:ux_blocks_space_parent_sort,priority:2" json:"parent_id"`
+	ParentID *uuid.UUID `gorm:"type:uuid;check:chk_blocks_parent_rule,(type = 'block' AND parent_id IS NOT NULL) OR (type = 'page');uniqueIndex:ux_blocks_space_parent_sort,priority:2" json:"parent_id"`
 	Parent   *Block     `gorm:"constraint:fk_blocks_parent,OnUpdate:CASCADE,OnDelete:CASCADE;" json:"parent"`
 
 	Title string                             `gorm:"type:text;not null;default:''" json:"title"`
