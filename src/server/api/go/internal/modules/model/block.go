@@ -24,7 +24,7 @@ type Block struct {
 	Parent   *Block     `gorm:"constraint:fk_blocks_parent,OnUpdate:CASCADE,OnDelete:CASCADE;" json:"parent"`
 
 	Title string                             `gorm:"type:text;not null;default:''" json:"title"`
-	Props datatypes.JSONType[map[string]any] `gorm:"type:jsonb;not null;default:'{}'" json:"props"`
+	Props datatypes.JSONType[map[string]any] `gorm:"type:jsonb;not null;default:'{}'" swaggertype:"object" json:"props"`
 
 	Sort       int64 `gorm:"not null;default:0;uniqueIndex:ux_blocks_space_parent_sort,priority:3" json:"sort"`
 	IsArchived bool  `gorm:"not null;default:false;index:idx_blocks_space_type_archived,priority:3;index" json:"is_archived"`
