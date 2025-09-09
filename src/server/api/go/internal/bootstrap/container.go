@@ -9,6 +9,7 @@ import (
 	"github.com/memodb-io/Acontext/internal/infra/cache"
 	"github.com/memodb-io/Acontext/internal/infra/db"
 	"github.com/memodb-io/Acontext/internal/infra/logger"
+	mq "github.com/memodb-io/Acontext/internal/infra/queue"
 	"github.com/memodb-io/Acontext/internal/modules/handler"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
@@ -76,6 +77,13 @@ func BuildContainer() *do.Injector {
 		return amqp.Dial(cfg.RabbitMQ.URL)
 	})
 
+	// RabbitMQ Publisher
+	do.Provide(inj, func(i *do.Injector) (*mq.Publisher, error) {
+		conn := do.MustInvoke[*amqp.Connection](i)
+		log := do.MustInvoke[*zap.Logger](i)
+		return mq.NewPublisher(conn, log)
+	})
+
 	// S3
 	do.Provide(inj, func(i *do.Injector) (*blob.S3Deps, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -112,7 +120,7 @@ func BuildContainer() *do.Injector {
 			do.MustInvoke[repo.SessionRepo](i),
 			do.MustInvoke[*zap.Logger](i),
 			do.MustInvoke[*blob.S3Deps](i),
-			do.MustInvoke[*amqp.Connection](i),
+			do.MustInvoke[*mq.Publisher](i),
 			do.MustInvoke[*config.Config](i),
 		), nil
 	})

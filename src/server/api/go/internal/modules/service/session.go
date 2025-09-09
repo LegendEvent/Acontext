@@ -14,7 +14,6 @@ import (
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
 	"github.com/memodb-io/Acontext/internal/pkg/paging"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
 )
@@ -29,20 +28,20 @@ type SessionService interface {
 }
 
 type sessionService struct {
-	r    repo.SessionRepo
-	log  *zap.Logger
-	blob *blob.S3Deps
-	mq   *amqp.Connection
-	cfg  *config.Config
+	r         repo.SessionRepo
+	log       *zap.Logger
+	blob      *blob.S3Deps
+	publisher *mq.Publisher
+	cfg       *config.Config
 }
 
-func NewSessionService(r repo.SessionRepo, log *zap.Logger, blob *blob.S3Deps, mq *amqp.Connection, cfg *config.Config) SessionService {
+func NewSessionService(r repo.SessionRepo, log *zap.Logger, blob *blob.S3Deps, publisher *mq.Publisher, cfg *config.Config) SessionService {
 	return &sessionService{
-		r:    r,
-		log:  log,
-		blob: blob,
-		mq:   mq,
-		cfg:  cfg,
+		r:         r,
+		log:       log,
+		blob:      blob,
+		publisher: publisher,
+		cfg:       cfg,
 	}
 }
 
@@ -145,12 +144,8 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 		return nil, err
 	}
 
-	if s.mq != nil {
-		p, err := mq.NewPublisher(s.mq, s.log)
-		if err != nil {
-			return nil, fmt.Errorf("create session message publisher: %w", err)
-		}
-		if err := p.PublishJSON(ctx, s.cfg.RabbitMQ.ExchangeName.SessionMessage, s.cfg.RabbitMQ.RoutingKey.SessionMessageInsert, SendMQPublishJSON{
+	if s.publisher != nil {
+		if err := s.publisher.PublishJSON(ctx, s.cfg.RabbitMQ.ExchangeName.SessionMessage, s.cfg.RabbitMQ.RoutingKey.SessionMessageInsert, SendMQPublishJSON{
 			ProjectID: in.ProjectID,
 			SessionID: in.SessionID,
 			MessageID: msg.ID,
