@@ -36,6 +36,17 @@ class CoreConfig(BaseModel):
     redis_pool_size: int = 32
     redis_url: str = "redis://:helloworld@localhost:16379"
 
+    # S3 Configuration (MinIO defaults based on docker-compose)
+    s3_endpoint: str = "http://127.0.0.1:19000"  # MinIO API endpoint
+    s3_region: str = "auto"  # MinIO region (can be any value)
+    s3_access_key: str = "acontext"  # Default MinIO root user
+    s3_secret_key: str = "helloworld"  # Default MinIO root password
+    s3_bucket: str = "acontext-assets"  # Default bucket name
+    s3_use_path_style: bool = True  # Required for MinIO
+    s3_max_pool_connections: int = 32
+    s3_connection_timeout: float = 60.0
+    s3_read_timeout: float = 60.0
+
 
 def filter_value_from_env() -> dict[str, Any]:
     config_keys = CoreConfig.model_fields.keys()

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "aio-pika>=9.5.7",
+    "aiobotocore>=2.24.2",
     "asyncpg>=0.30.0",
     "fastapi[standard]>=0.116.1",
     "gunicorn>=23.0.0",
