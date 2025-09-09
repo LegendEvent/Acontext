@@ -48,6 +48,7 @@ class DatabaseClient:
 
         logger.info(f"SQLAlchemy Engine URL: {self.database_url}")
         self._engine: AsyncEngine = self._create_engine()
+        self._table_created: bool = False
         self._sessionmaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
             bind=self.engine,
             class_=AsyncSession,
@@ -154,7 +155,7 @@ class DatabaseClient:
         """
         try:
             async with self.get_session_context() as session:
-                r = await session.execute(text("SELECT 1"))
+                await session.execute(text("SELECT 1"))
                 return True
         except (DisconnectionError, OperationalError, Exception) as e:
             logger.error(f"Database health check failed: {e}")
@@ -162,8 +163,11 @@ class DatabaseClient:
 
     async def create_tables(self) -> None:
         """Create all tables defined in the ORM models."""
+        if self._table_created:
+            return
         async with self.engine.begin() as conn:
             await conn.run_sync(ORM_BASE.metadata.create_all)
+        self._table_created = True
 
     async def drop_tables(self) -> None:
         """Drop all tables defined in the ORM models."""
@@ -194,21 +198,6 @@ class DatabaseClient:
 
 # Lazy Loading Global database client instance
 DB_CLIENT = DatabaseClient()
-
-
-# Dependency function for FastAPI
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    FastAPI dependency to get a database session.
-
-    Usage in FastAPI routes:
-        @app.get("/users")
-        async def get_users(session: AsyncSession = Depends(get_db_session)):
-            result = await session.execute(select(User))
-            return result.scalars().all()
-    """
-    async with DB_CLIENT.get_session_context() as session:
-        yield session
 
 
 # Convenience functions

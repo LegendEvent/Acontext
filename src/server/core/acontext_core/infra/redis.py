@@ -158,20 +158,6 @@ class RedisClient:
 REDIS_CLIENT = RedisClient()
 
 
-# Dependency function for FastAPI
-async def get_redis_client() -> Redis:
-    """
-    FastAPI dependency to get a Redis client.
-
-    Usage in FastAPI routes:
-        @app.get("/cache")
-        async def get_cache(redis: Redis = Depends(get_redis_client)):
-            await redis.set("key", "value")
-            return {"value": await redis.get("key")}
-    """
-    return await REDIS_CLIENT.get_client()
-
-
 # Convenience functions
 async def init_redis() -> None:
     """Initialize Redis connection (perform health check)."""

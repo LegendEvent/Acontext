@@ -93,7 +93,14 @@ class S3Client:
         # self._session: aiobotocore.session.AioSession = self._create_session()
         self._session: aiobotocore.session.AioSession = get_aiobotocore_session()
         self._client: AioBaseClient = None
-        self._client_lock = asyncio.Lock()
+        self._client_lock: asyncio.Lock = None
+
+    @property
+    def client_lock(self):
+        """Lazy-load the client lock to ensure it's created in the correct event loop."""
+        if self._client_lock is None:
+            self._client_lock = asyncio.Lock()
+        return self._client_lock
 
     def _create_session(self) -> aiobotocore.session.AioSession:
         """Create aiobotocore session with optimal settings."""
@@ -105,8 +112,7 @@ class S3Client:
         """Get or create S3 client instance with connection pooling."""
         if self._client is not None:
             return self._client
-
-        async with self._client_lock:
+        async with self.client_lock:
             # Double-check pattern to avoid race conditions
             if self._client is not None:
                 return self._client

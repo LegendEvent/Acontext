@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from acontext_core.infra.db import DB_CLIENT, init_database
+from acontext_core.infra.db import DatabaseClient
 from acontext_core.schema.orm import Project, Space, Session
 
 FAKE_KEY = "a" * 32
@@ -9,22 +9,23 @@ FAKE_KEY = "a" * 32
 
 @pytest.mark.asyncio
 async def test_db():
-    await init_database()
+    db_client = DatabaseClient()
+    await db_client.create_tables()
 
-    await DB_CLIENT.health_check()
-    print(DB_CLIENT.get_pool_status())
+    await db_client.health_check()
+    print(db_client.get_pool_status())
 
-    async with DB_CLIENT.get_session_context() as session:
+    async with db_client.get_session_context() as session:
         # check if same p exist
         p_result = await session.execute(
-            select(Project).where(Project.secret_key == FAKE_KEY)
+            select(Project).where(Project.secret_key_hmac == FAKE_KEY)
         )
         before_p = p_result.scalars().first()
         if before_p:
             await session.delete(before_p)
             await session.flush()
 
-        p = Project(secret_key=FAKE_KEY)
+        p = Project(secret_key_hmac=FAKE_KEY, secret_key_hash_phc=FAKE_KEY)
         session.add(p)
         await session.flush()
 
@@ -41,7 +42,7 @@ async def test_db():
         sid = s.id
         seid = se.id
     print(pid, sid, seid)
-    async with DB_CLIENT.get_session_context() as session:
+    async with db_client.get_session_context() as session:
         # Use select() with selectinload for session and its space relationship
         se_query = await session.execute(
             select(Session)
