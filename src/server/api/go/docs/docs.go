@@ -1507,7 +1507,8 @@ const docTemplate = `{
         "handler.CreateBlockReq": {
             "type": "object",
             "required": [
-                "parent_id"
+                "parent_id",
+                "type"
             ],
             "properties": {
                 "parent_id": {
@@ -1519,6 +1520,10 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "text"
                 }
             }
         },

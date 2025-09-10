@@ -18,8 +18,12 @@ definitions:
         type: object
       title:
         type: string
+      type:
+        example: text
+        type: string
     required:
     - parent_id
+    - type
     type: object
   handler.CreatePageReq:
     properties:

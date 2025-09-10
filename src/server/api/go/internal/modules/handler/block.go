@@ -201,6 +201,7 @@ func (h *BlockHandler) ListPageChildren(c *gin.Context) {
 
 type CreateBlockReq struct {
 	ParentID uuid.UUID      `from:"parent_id" json:"parent_id" binding:"required"`
+	Type     string         `from:"type" json:"type" binding:"required" example:"text"`
 	Title    string         `from:"title" json:"title"`
 	Props    map[string]any `from:"props" json:"props"`
 }
@@ -230,10 +231,15 @@ func (h *BlockHandler) CreateBlock(c *gin.Context) {
 		return
 	}
 
+	if !model.IsValidBlockType(req.Type) {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("type", errors.New("invalid block type")))
+		return
+	}
+
 	parentID := req.ParentID
 	b := model.Block{
 		SpaceID:  spaceID,
-		Type:     model.BlockTypeBlock,
+		Type:     req.Type,
 		ParentID: &parentID,
 		Title:    req.Title,
 		Props:    datatypes.NewJSONType(req.Props),

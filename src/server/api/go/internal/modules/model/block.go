@@ -1,16 +1,65 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
 )
 
+// BlockTypeConfig Define the configuration of block types
+type BlockTypeConfig struct {
+	Name          string `json:"name"`
+	AllowChildren bool   `json:"allow_children"` // whether the block type can have children
+	RequireParent bool   `json:"require_parent"` // whether the block type requires a parent
+}
+
+// For backward compatibility, keep the constant definitions
 const (
-	BlockTypePage  = "page"
-	BlockTypeBlock = "block"
+	BlockTypePage    = "page"
+	BlockTypeText    = "text"
+	BlockTypeSnippet = "snippet"
 )
+
+// BlockType Define all supported block types
+var BlockTypes = map[string]BlockTypeConfig{
+	BlockTypePage: {
+		Name:          BlockTypePage,
+		AllowChildren: true,
+		RequireParent: false,
+	},
+	BlockTypeText: {
+		Name:          BlockTypeText,
+		AllowChildren: true,
+		RequireParent: true,
+	},
+	BlockTypeSnippet: {
+		Name:          BlockTypeSnippet,
+		AllowChildren: true,
+		RequireParent: true,
+	},
+}
+
+// IsValidBlockType Check if the given type is valid
+func IsValidBlockType(blockType string) bool {
+	_, exists := BlockTypes[blockType]
+	return exists
+}
+
+// GetBlockTypeConfig Get the configuration of a block type
+func GetBlockTypeConfig(blockType string) (BlockTypeConfig, error) {
+	config, exists := BlockTypes[blockType]
+	if !exists {
+		return BlockTypeConfig{}, fmt.Errorf("invalid block type: %s", blockType)
+	}
+	return config, nil
+}
+
+// GetAllBlockTypes Get all supported block types
+func GetAllBlockTypes() map[string]BlockTypeConfig {
+	return BlockTypes
+}
 
 type Block struct {
 	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
@@ -18,9 +67,9 @@ type Block struct {
 	SpaceID uuid.UUID `gorm:"type:uuid;not null;index:idx_blocks_space;index:idx_blocks_space_type_archived,priority:1;uniqueIndex:ux_blocks_space_parent_sort,priority:1" json:"space_id"`
 	Space   *Space    `gorm:"constraint:fk_blocks_space,OnUpdate:CASCADE,OnDelete:CASCADE;" json:"space"`
 
-	Type string `gorm:"type:text;not null;index:idx_blocks_space_type;index:idx_blocks_space_type_archived,priority:2;check:chk_blocks_type,type IN ('page','block')" json:"type"`
+	Type string `gorm:"type:text;not null;index:idx_blocks_space_type;index:idx_blocks_space_type_archived,priority:2" json:"type"`
 
-	ParentID *uuid.UUID `gorm:"type:uuid;check:chk_blocks_parent_rule,(type = 'block' AND parent_id IS NOT NULL) OR (type = 'page');uniqueIndex:ux_blocks_space_parent_sort,priority:2" json:"parent_id"`
+	ParentID *uuid.UUID `gorm:"type:uuid;uniqueIndex:ux_blocks_space_parent_sort,priority:2" json:"parent_id"`
 	Parent   *Block     `gorm:"constraint:fk_blocks_parent,OnUpdate:CASCADE,OnDelete:CASCADE;" json:"parent"`
 
 	Title string                             `gorm:"type:text;not null;default:''" json:"title"`
@@ -35,3 +84,43 @@ type Block struct {
 }
 
 func (Block) TableName() string { return "blocks" }
+
+// Validate Validate the fields of a Block
+func (b *Block) Validate() error {
+	// Check if the type is valid
+	if !IsValidBlockType(b.Type) {
+		return fmt.Errorf("invalid block type: %s", b.Type)
+	}
+
+	config, _ := GetBlockTypeConfig(b.Type)
+
+	// Check the parent-child relationship constraints
+	if config.RequireParent && b.ParentID == nil {
+		return fmt.Errorf("block type '%s' requires a parent", b.Type)
+	}
+
+	if !config.RequireParent && b.Type != BlockTypePage && b.ParentID == nil {
+		return fmt.Errorf("only page type blocks can exist without a parent")
+	}
+
+	return nil
+}
+
+// ValidateForCreation Validate the constraints for creation
+func (b *Block) ValidateForCreation() error {
+	if err := b.Validate(); err != nil {
+		return err
+	}
+
+	// Can add specific validation logic for creation here
+	return nil
+}
+
+// CanHaveChildren Check if the block type can have children
+func (b *Block) CanHaveChildren() bool {
+	config, err := GetBlockTypeConfig(b.Type)
+	if err != nil {
+		return false
+	}
+	return config.AllowChildren
+}
