@@ -238,7 +238,7 @@ type SendMessageReq struct {
 //	@Param			payload		formData	string					false	"SendMessage payload (Content-Type: multipart/form-data)"
 //	@Param			file		formData	file					false	"When uploading files, the field name must correspond to parts[*].file_field."
 //	@Security		BearerAuth
-//	@Success		201	{object}	serializer.Response{}
+//	@Success		201	{object}	serializer.Response{data=model.Message}
 //	@Router			/session/{session_id}/messages [post]
 func (h *SessionHandler) SendMessage(c *gin.Context) {
 	req := SendMessageReq{}
@@ -314,7 +314,7 @@ type GetMessagesReq struct {
 //	@Param			cursor					query	string	false	"Cursor for pagination. Use the cursor from the previous response to get the next page."
 //	@Param			with_asset_public_url	query	string	false	"Whether to return asset public url, default is false"	example:"false"
 //	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response{}
+//	@Success		200	{object}	serializer.Response{data=service.GetMessagesOutput}
 //	@Router			/session/{session_id}/messages [get]
 func (h *SessionHandler) GetMessages(c *gin.Context) {
 	req := GetMessagesReq{}

@@ -16,7 +16,8 @@ type Message struct {
 
 	Role string `gorm:"type:text;not null;check:role IN ('user','assistant','system','tool','function')" json:"role"`
 
-	Parts datatypes.JSONType[[]Part] `gorm:"type:jsonb;not null" swaggertype:"array,object" json:"parts"`
+	PartsMeta datatypes.JSONType[Asset] `gorm:"type:jsonb;not null" swaggertype:"-" json:"-"`
+	Parts     []Part                    `gorm:"-" swaggertype:"array,object" json:"parts"`
 
 	SessionTaskProcessStatus string `gorm:"type:text;not null;default:'pending';check:session_task_process_status IN ('success','failed','running','pending')" json:"session_task_process_status"`
 
@@ -25,12 +26,6 @@ type Message struct {
 
 	// Message <-> Session
 	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"session"`
-
-	// Message <-> Asset
-	Assets []Asset `gorm:"many2many:message_assets;" json:"assets"`
-
-	// Message <-> MessageAsset
-	MessageAssets []MessageAsset `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"message_assets"`
 }
 
 func (Message) TableName() string { return "messages" }
@@ -43,11 +38,18 @@ type Part struct {
 	Text string `json:"text,omitempty"`
 
 	// media part
-	AssetID  *uuid.UUID `json:"asset_id,omitempty"`
-	MIME     string     `json:"mime,omitempty"`
-	Filename string     `json:"filename,omitempty"`
-	SizeB    *int64     `json:"size_bigint,omitempty"`
+	Asset    *Asset `json:"asset,omitempty"`
+	Filename string `json:"filename,omitempty"`
 
 	// embedding、ocr、asr、caption...
 	Meta map[string]any `json:"meta,omitempty"`
+}
+
+type Asset struct {
+	Bucket string `json:"bucket"`
+	S3Key  string `json:"s3_key"`
+	ETag   string `json:"etag"`
+	SHA256 string `json:"sha256"`
+	MIME   string `json:"mime"`
+	SizeB  int64  `json:"size_b"`
 }

@@ -1,7 +1,12 @@
 package blob
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"net/url"
@@ -93,6 +98,9 @@ func (s *S3Deps) PresignPut(ctx context.Context, key, contentType string, expire
 
 // Generate a pre-signed GET URL
 func (s *S3Deps) PresignGet(ctx context.Context, key string, expire time.Duration) (string, error) {
+	if key == "" {
+		return "", errors.New("key is empty")
+	}
 	ps, err := s.Presigner.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: &s.Bucket,
 		Key:    &key,
@@ -154,4 +162,73 @@ func (u *S3Deps) UploadFormFile(ctx context.Context, keyPrefix string, fh *multi
 		MIME:   fh.Header.Get("Content-Type"),
 		SizeB:  fh.Size,
 	}, nil
+}
+
+// UploadJSON uploads JSON data to S3 and returns metadata
+func (u *S3Deps) UploadJSON(ctx context.Context, keyPrefix string, data interface{}) (*UploadedMeta, error) {
+	// Serialize data to JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("marshal json: %w", err)
+	}
+
+	// Calculate SHA256 of the JSON data
+	h := sha256.New()
+	h.Write(jsonData)
+	sumHex := hex.EncodeToString(h.Sum(nil))
+
+	// Generate S3 key with date prefix
+	datePrefix := time.Now().UTC().Format("2006/01/02")
+	key := fmt.Sprintf("%s/%s/%s.json", keyPrefix, datePrefix, sumHex)
+
+	// Upload to S3
+	input := &s3.PutObjectInput{
+		Bucket:      aws.String(u.Bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(jsonData),
+		ContentType: aws.String("application/json"),
+		Metadata: map[string]string{
+			"sha256": sumHex,
+		},
+	}
+
+	out, err := u.Uploader.Upload(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UploadedMeta{
+		Bucket: u.Bucket,
+		Key:    key,
+		ETag:   *out.ETag,
+		SHA256: sumHex,
+		MIME:   "application/json",
+		SizeB:  int64(len(jsonData)),
+	}, nil
+}
+
+// DownloadJSON downloads JSON data from S3 and unmarshals it into the provided interface
+func (u *S3Deps) DownloadJSON(ctx context.Context, key string, target interface{}) error {
+	result, err := u.Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: &u.Bucket,
+		Key:    &key,
+	})
+	if err != nil {
+		return fmt.Errorf("get object from S3: %w", err)
+	}
+	defer result.Body.Close()
+
+	// Read the response body
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(result.Body)
+	if err != nil {
+		return fmt.Errorf("read response body: %w", err)
+	}
+
+	// Unmarshal JSON
+	if err := json.Unmarshal(buf.Bytes(), target); err != nil {
+		return fmt.Errorf("unmarshal json: %w", err)
+	}
+
+	return nil
 }

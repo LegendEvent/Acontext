@@ -50,8 +50,6 @@ func BuildContainer() *do.Injector {
 				&model.Space{},
 				&model.Session{},
 				&model.Message{},
-				&model.Asset{},
-				&model.MessageAsset{},
 				&model.Block{},
 			)
 		}

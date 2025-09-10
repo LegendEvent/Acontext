@@ -296,7 +296,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/serializer.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.GetMessagesOutput"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -354,7 +366,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/serializer.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Message"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -1674,45 +1698,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.Asset": {
-            "type": "object",
-            "properties": {
-                "bucket": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "etag": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "messages": {
-                    "description": "Asset \u003c-\u003e Message",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Message"
-                    }
-                },
-                "mime": {
-                    "type": "string"
-                },
-                "s3_key": {
-                    "type": "string"
-                },
-                "sha256": {
-                    "type": "string"
-                },
-                "size_b": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
         "model.Block": {
             "type": "object",
             "properties": {
@@ -1763,13 +1748,6 @@ const docTemplate = `{
         "model.Message": {
             "type": "object",
             "properties": {
-                "assets": {
-                    "description": "Message \u003c-\u003e Asset",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Asset"
-                    }
-                },
                 "children": {
                     "type": "array",
                     "items": {
@@ -1781,13 +1759,6 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
-                },
-                "message_assets": {
-                    "description": "Message \u003c-\u003e MessageAsset",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.MessageAsset"
-                    }
                 },
                 "parent": {
                     "$ref": "#/definitions/model.Message"
@@ -1816,39 +1787,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "session_task_process_status": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.MessageAsset": {
-            "type": "object",
-            "properties": {
-                "asset": {
-                    "description": "MessageAsset \u003c-\u003e Asset",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Asset"
-                        }
-                    ]
-                },
-                "asset_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "message": {
-                    "description": "MessageAsset \u003c-\u003e Message",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Message"
-                        }
-                    ]
-                },
-                "message_id": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -1983,6 +1921,30 @@ const docTemplate = `{
                 }
             }
         },
+        "service.GetMessagesOutput": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Message"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                },
+                "public_urls": {
+                    "description": "file_name -\u003e url",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/service.PublicURL"
+                    }
+                }
+            }
+        },
         "service.PartIn": {
             "type": "object",
             "properties": {
@@ -2001,6 +1963,17 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "\"text\" | \"image\" | ...",
+                    "type": "string"
+                }
+            }
+        },
+        "service.PublicURL": {
+            "type": "object",
+            "properties": {
+                "expire_at": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }

@@ -90,7 +90,6 @@ type PartIn struct {
 
 func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error) {
 	parts := make([]model.Part, 0, len(in.Parts))
-	assetMap := make(map[int]*model.Asset)
 
 	for idx, p := range in.Parts {
 		part := model.Part{
@@ -104,13 +103,13 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 				return nil, fmt.Errorf("parts[%d]: missing uploaded file %s", idx, p.FileField)
 			}
 
-			// 上传到 S3
+			// upload asset to S3
 			umeta, err := s.blob.UploadFormFile(ctx, "assets/"+in.ProjectID.String(), fh)
 			if err != nil {
 				return nil, fmt.Errorf("upload %s failed: %w", p.FileField, err)
 			}
 
-			a := &model.Asset{
+			asset := &model.Asset{
 				Bucket: umeta.Bucket,
 				S3Key:  umeta.Key,
 				ETag:   umeta.ETag,
@@ -119,11 +118,8 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 				SizeB:  umeta.SizeB,
 			}
 
-			assetMap[idx] = a
-
+			part.Asset = asset
 			part.Filename = fh.Filename
-			part.MIME = umeta.MIME
-			part.SizeB = &umeta.SizeB
 		}
 
 		if p.Text != "" {
@@ -131,16 +127,29 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 		}
 
 		parts = append(parts, part)
+	}
 
+	// upload parts to S3 as JSON file
+	partsUmeta, err := s.blob.UploadJSON(ctx, "parts/"+in.ProjectID.String(), parts)
+	if err != nil {
+		return nil, fmt.Errorf("upload parts to S3 failed: %w", err)
 	}
 
 	msg := model.Message{
 		SessionID: in.SessionID,
 		Role:      in.Role,
-		Parts:     datatypes.NewJSONType(parts),
+		PartsMeta: datatypes.NewJSONType(model.Asset{
+			Bucket: partsUmeta.Bucket,
+			S3Key:  partsUmeta.Key,
+			ETag:   partsUmeta.ETag,
+			SHA256: partsUmeta.SHA256,
+			MIME:   partsUmeta.MIME,
+			SizeB:  partsUmeta.SizeB,
+		}),
+		Parts: parts,
 	}
 
-	if err := s.r.CreateMessageWithAssets(ctx, &msg, assetMap); err != nil {
+	if err := s.r.CreateMessageWithAssets(ctx, &msg); err != nil {
 		return nil, err
 	}
 
@@ -171,10 +180,10 @@ type PublicURL struct {
 }
 
 type GetMessagesOutput struct {
-	Items      []model.Message         `json:"items"`
-	NextCursor string                  `json:"next_cursor,omitempty"`
-	HasMore    bool                    `json:"has_more"`
-	PublicURLs map[uuid.UUID]PublicURL `json:"public_urls,omitempty"` // asset_id -> url
+	Items      []model.Message      `json:"items"`
+	NextCursor string               `json:"next_cursor,omitempty"`
+	HasMore    bool                 `json:"has_more"`
+	PublicURLs map[string]PublicURL `json:"public_urls,omitempty"` // file_name -> url
 }
 
 func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (*GetMessagesOutput, error) {
@@ -195,6 +204,17 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 		return nil, err
 	}
 
+	for i, m := range msgs {
+		meta := m.PartsMeta.Data()
+
+		parts := []model.Part{}
+		if err := s.blob.DownloadJSON(ctx, meta.S3Key, &parts); err != nil {
+			continue
+		}
+
+		msgs[i].Parts = parts
+	}
+
 	out := &GetMessagesOutput{
 		Items:   msgs,
 		HasMore: false,
@@ -207,14 +227,17 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 	}
 
 	if in.WithAssetPublicURL {
-		out.PublicURLs = make(map[uuid.UUID]PublicURL)
+		out.PublicURLs = make(map[string]PublicURL)
 		for _, m := range out.Items {
-			for _, a := range m.Assets {
-				url, err := s.blob.PresignGet(ctx, a.S3Key, in.AssetExpire)
-				if err != nil {
-					return nil, fmt.Errorf("get presigned url for asset %s: %w", a.ID, err)
+			for _, p := range m.Parts {
+				if p.Asset == nil {
+					continue
 				}
-				out.PublicURLs[a.ID] = PublicURL{
+				url, err := s.blob.PresignGet(ctx, p.Asset.S3Key, in.AssetExpire)
+				if err != nil {
+					return nil, fmt.Errorf("get presigned url for asset %s: %w", p.Asset.S3Key, err)
+				}
+				out.PublicURLs[p.Asset.SHA256] = PublicURL{
 					URL:      url,
 					ExpireAt: time.Now().Add(in.AssetExpire),
 				}
