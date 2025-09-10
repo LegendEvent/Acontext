@@ -114,7 +114,7 @@ type UploadedMeta struct {
 	SizeB  int64
 }
 
-func (u *S3Deps) UploadFormFile(ctx context.Context, fh *multipart.FileHeader) (*UploadedMeta, error) {
+func (u *S3Deps) UploadFormFile(ctx context.Context, keyPrefix string, fh *multipart.FileHeader) (*UploadedMeta, error) {
 	file, err := fh.Open()
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (u *S3Deps) UploadFormFile(ctx context.Context, fh *multipart.FileHeader) (
 
 	ext := strings.ToLower(filepath.Ext(fh.Filename))
 	datePrefix := time.Now().UTC().Format("2006/01/02")
-	key := fmt.Sprintf("uploads/%s/%s%s", datePrefix, sumHex, ext)
+	key := fmt.Sprintf("%s/%s/%s%s", keyPrefix, datePrefix, sumHex, ext)
 
 	input := &s3.PutObjectInput{
 		Bucket:      aws.String(u.Bucket),

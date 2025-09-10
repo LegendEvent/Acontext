@@ -105,7 +105,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			}
 
 			// 上传到 S3
-			umeta, err := s.blob.UploadFormFile(ctx, fh)
+			umeta, err := s.blob.UploadFormFile(ctx, "assets/"+in.ProjectID.String(), fh)
 			if err != nil {
 				return nil, fmt.Errorf("upload %s failed: %w", p.FileField, err)
 			}
