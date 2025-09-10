@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -47,7 +48,11 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 		return
 	}
 
-	project := c.MustGet("project").(*model.Project)
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
 
 	session := model.Session{
 		ProjectID: project.ID,
@@ -86,7 +91,13 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
 		return
 	}
-	project := c.MustGet("project").(*model.Project)
+
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
 	if err := h.svc.Delete(c.Request.Context(), project.ID, sessionID); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
@@ -259,7 +270,12 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 		}
 	}
 
-	project := c.MustGet("project").(*model.Project)
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
 	sessionID, err := uuid.Parse(c.Param("session_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))

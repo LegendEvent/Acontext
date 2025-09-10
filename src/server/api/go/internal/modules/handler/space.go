@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -41,7 +42,12 @@ func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 		return
 	}
 
-	project := c.MustGet("project").(*model.Project)
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
 	space := model.Space{
 		ProjectID: project.ID,
 		Configs:   datatypes.JSONMap(req.Configs),
@@ -71,7 +77,13 @@ func (h *SpaceHandler) DeleteSpace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
 		return
 	}
-	project := c.MustGet("project").(*model.Project)
+
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
 	if err := h.svc.Delete(c.Request.Context(), project.ID, spaceID); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
