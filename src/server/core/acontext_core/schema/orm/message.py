@@ -9,8 +9,18 @@ from .base import ORM_BASE, CommonMixin
 
 if TYPE_CHECKING:
     from .session import Session
-    from .asset import Asset
     from .task import Task
+
+
+class Asset(BaseModel):
+    """Asset model matching the GORM Asset struct - used for JSONB serialization only"""
+
+    bucket: str
+    s3_key: str
+    etag: str
+    sha256: str
+    mime: str
+    size_b: int
 
 
 class Part(BaseModel):
@@ -21,11 +31,9 @@ class Part(BaseModel):
     # text part
     text: Optional[str] = None
 
-    # media part
-    asset_id: Optional[uuid.UUID] = None
-    mime: Optional[str] = None
+    # media part - embedded Asset like Go version
+    asset: Optional[Asset] = None
     filename: Optional[str] = None
-    size_bigint: Optional[int] = None  # Updated to match Go field name
 
     # metadata for embedding, ocr, asr, caption, etc.
     meta: Optional[Dict[str, Any]] = None
@@ -47,11 +55,6 @@ class Message(CommonMixin):
         ),
         Index("ix_message_session_id", "session_id"),
         Index("ix_message_parent_id", "parent_id"),
-        Index(
-            "ix_message_session_task_status",
-            "session_id",
-            "session_task_process_status",
-        ),
         Index("idx_session_created", "session_id", "created_at"),
     )
 
@@ -65,27 +68,10 @@ class Message(CommonMixin):
         }
     )
 
-    task_id: Optional[uuid.UUID] = field(
-        metadata={
-            "db": Column(
-                UUID(as_uuid=True),
-                ForeignKey(
-                    "tasks.id", ondelete="SET NULL"
-                ),  # Changed from CASCADE to SET NULL
-                nullable=True,
-                server_default=None,
-            )
-        },
-    )
-
     role: str = field(metadata={"db": Column(String, nullable=False)})
 
-    parts: List[Part] = field(metadata={"db": Column(JSONB, nullable=False)})
-
-    session_task_process_status: str = field(
-        default="pending",
-        metadata={"db": Column(String, nullable=False, server_default="pending")},
-    )
+    # Store Asset data as JSONB (matches Go's PartsMeta field)
+    parts_meta: List[Asset] = field(metadata={"db": Column(JSONB, nullable=False)})
 
     parent_id: Optional[uuid.UUID] = field(
         default=None,
@@ -98,15 +84,17 @@ class Message(CommonMixin):
         },
     )
 
+    # Computed field for API responses (matches Go's Parts field with gorm:"-")
+    # parts: List[Part] = field(default_factory=list, init=False)
+
+    session_task_process_status: str = field(
+        default="pending",
+        metadata={"db": Column(String, nullable=False, server_default="pending")},
+    )
+
     # Relationships
     session: "Session" = field(
         init=False, metadata={"db": relationship("Session", back_populates="messages")}
-    )
-
-    task: Optional["Task"] = field(
-        default=None,
-        init=False,
-        metadata={"db": relationship("Task", back_populates="messages")},
     )
 
     parent: Optional["Message"] = field(
@@ -121,18 +109,10 @@ class Message(CommonMixin):
 
     children: List["Message"] = field(
         default_factory=list,
+        init=False,
         metadata={
             "db": relationship(
                 "Message", back_populates="parent", cascade="all, delete-orphan"
-            )
-        },
-    )
-
-    assets: List["Asset"] = field(
-        default_factory=list,
-        metadata={
-            "db": relationship(
-                "Asset", secondary="message_assets", back_populates="messages"
             )
         },
     )
