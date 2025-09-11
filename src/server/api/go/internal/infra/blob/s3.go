@@ -122,6 +122,15 @@ type UploadedMeta struct {
 	SizeB  int64
 }
 
+// Add helper function to clean ETag
+func cleanETag(etag string) string {
+	if etag == "" {
+		return etag
+	}
+	// Remove surrounding quotes that AWS includes in ETag responses
+	return strings.Trim(etag, `"`)
+}
+
 func (u *S3Deps) UploadFormFile(ctx context.Context, keyPrefix string, fh *multipart.FileHeader) (*UploadedMeta, error) {
 	file, err := fh.Open()
 	if err != nil {
@@ -157,7 +166,7 @@ func (u *S3Deps) UploadFormFile(ctx context.Context, keyPrefix string, fh *multi
 	return &UploadedMeta{
 		Bucket: u.Bucket,
 		Key:    key,
-		ETag:   *out.ETag,
+		ETag:   cleanETag(*out.ETag), // Clean the ETag
 		SHA256: sumHex,
 		MIME:   fh.Header.Get("Content-Type"),
 		SizeB:  fh.Size,
@@ -200,7 +209,7 @@ func (u *S3Deps) UploadJSON(ctx context.Context, keyPrefix string, data interfac
 	return &UploadedMeta{
 		Bucket: u.Bucket,
 		Key:    key,
-		ETag:   *out.ETag,
+		ETag:   cleanETag(*out.ETag), // Clean the ETag
 		SHA256: sumHex,
 		MIME:   "application/json",
 		SizeB:  int64(len(jsonData)),
