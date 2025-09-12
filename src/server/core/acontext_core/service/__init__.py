@@ -1,1 +1,1 @@
-from . import insert_new_message
+from . import session_message

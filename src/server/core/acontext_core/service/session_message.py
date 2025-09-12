@@ -9,8 +9,11 @@ from ..infra.async_mq import (
     SpecialHandler,
 )
 from ..schema.mq.session import InsertNewMessage
+from ..schema.session.task import TaskStatus
+from ..schema.session.message import MessageBlob
 from .constants import EX, RK
-from .data import message as M
+from .data import message as MD
+from .controller import message as MC
 
 
 @register_consumer(
@@ -22,7 +25,16 @@ from .data import message as M
     ),
 )
 async def insert_new_message(body: InsertNewMessage, message: Message):
-    LOG.info(f"New message, {body}")
+    async with DB_CLIENT.get_session_context() as read_session:
+        r = await MD.session_message_length(read_session, body.session_id)
+        pending_message_length, eil = r.unpack()
+        if eil:
+            LOG.error(f"Exception while fetching session messages: {eil}")
+            return
+        if pending_message_length < CONFIG.session_message_buffer_max_turns:
+            LOG.info(f"Session message buffer is not full, wait for next turn")
+            return
+    await MC.process_session_pending_message(body.session_id)
 
 
 register_consumer(
@@ -48,7 +60,7 @@ register_consumer(
 )
 async def buffer_new_message(body: InsertNewMessage, message: Message):
     async with DB_CLIENT.get_session_context() as session:
-        r = await M.check_session_message_status(session, message_id=body.message_id)
+        r = await MD.check_session_message_status(session, message_id=body.message_id)
         message_status, eil = r.unpack()
         if eil:
             LOG.error(f"Exception while checking message status {eil}")
@@ -57,5 +69,5 @@ async def buffer_new_message(body: InsertNewMessage, message: Message):
         if message_status != "pending":
             LOG.info(f"Message {body.message_id} already processed")
             return
-
-    LOG.info(f"Process pending message! {body.message_id}")
+    LOG.info(f"Unprocessed message timeout, process it now")
+    await MC.process_session_pending_message(body.session_id)

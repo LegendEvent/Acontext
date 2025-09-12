@@ -99,23 +99,23 @@ class DatabaseClient:
         return engine
 
     def _setup_event_listeners(self, engine: AsyncEngine) -> None:
-        """Set up event listeners for connection pool monitoring."""
+        """PLACEHOLDER Set up event listeners for connection pool monitoring."""
+        pass
+        # @event.listens_for(engine.sync_engine, "connect")
+        # def on_connect(dbapi_connection, connection_record):
+        #     logger.debug("New database connection established")
 
-        @event.listens_for(engine.sync_engine, "connect")
-        def on_connect(dbapi_connection, connection_record):
-            logger.debug("New database connection established")
+        # @event.listens_for(engine.sync_engine, "checkout")
+        # def on_checkout(dbapi_connection, connection_record, connection_proxy):
+        #     logger.debug("Connection checked out from pool")
 
-        @event.listens_for(engine.sync_engine, "checkout")
-        def on_checkout(dbapi_connection, connection_record, connection_proxy):
-            logger.debug("Connection checked out from pool")
+        # @event.listens_for(engine.sync_engine, "checkin")
+        # def on_checkin(dbapi_connection, connection_record):
+        #     logger.debug("Connection returned to pool")
 
-        @event.listens_for(engine.sync_engine, "checkin")
-        def on_checkin(dbapi_connection, connection_record):
-            logger.debug("Connection returned to pool")
-
-        @event.listens_for(engine.sync_engine, "invalidate")
-        def on_invalidate(dbapi_connection, connection_record, exception):
-            logger.warning(f"Connection invalidated: {exception}")
+        # @event.listens_for(engine.sync_engine, "invalidate")
+        # def on_invalidate(dbapi_connection, connection_record, exception):
+        #     logger.warning(f"Connection invalidated: {exception}")
 
     async def get_session(self) -> AsyncSession:
         """

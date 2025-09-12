@@ -16,6 +16,8 @@ class CoreConfig(BaseModel):
 
     # Core Configuration
     logging_format: str = "text"
+
+    session_message_buffer_max_turns: int = 4
     session_message_buffer_ttl_seconds: int = 5
 
     # MQ Configuration

@@ -16,9 +16,11 @@ else:
     with open(CONFIG_FILE_PATH) as f:
         CONFIG_YAML_STRING = f.read()
 
-ENV_VARS = filter_value_from_env()
-YAML_VARS = filter_value_from_yaml(CONFIG_YAML_STRING)
-CONFIG = CoreConfig(**ENV_VARS, **YAML_VARS)
+_ENV_VARS = filter_value_from_env()
+_YAML_VARS = filter_value_from_yaml(CONFIG_YAML_STRING)
+
+VARS = {**_ENV_VARS, **_YAML_VARS}
+CONFIG = CoreConfig(**VARS)
 LOG = get_logger(CONFIG.logging_format)
 
 if not os.path.exists(CONFIG_FILE_PATH):

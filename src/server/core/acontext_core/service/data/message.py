@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import List, Optional
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
 from ...schema.orm import Message, Part, Asset
@@ -39,6 +39,36 @@ async def _fetch_message_parts(parts_meta: dict) -> Result[List[Part]]:
         return Result.resolve(parts)
     except Exception as e:
         return Result.reject(f"Unknown error to fetch parts {parts_meta}: {e}")
+
+
+async def session_message_length(
+    db_session: AsyncSession, session_id: asUUID, status: str = "pending"
+) -> Result[int]:
+    """
+    Get the count of messages for a given session with a specific status.
+
+    Args:
+        db_session: Database session
+        session_id: UUID of the session to count messages from
+        status: Status filter for messages (default: "pending")
+
+    Returns:
+        Result containing the count of messages
+    """
+    try:
+        query = select(func.count(Message.id)).where(
+            Message.session_id == session_id,
+            Message.session_task_process_status == status,
+        )
+
+        result = await db_session.execute(query)
+        count = result.scalar()
+
+        return Result.resolve(count)
+
+    except Exception as e:
+        LOG.error(f"Error counting messages for session {session_id}: {e}")
+        return Result.reject(f"Failed to count messages: {e}")
 
 
 async def fetch_session_messages(
