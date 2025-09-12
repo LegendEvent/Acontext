@@ -1,5 +1,6 @@
 from ..env import LOG, CONFIG
 from ..telemetry.log import bound_logging_vars
+from ..infra.db import DB_CLIENT
 from ..infra.async_mq import (
     register_consumer,
     MQ_CLIENT,
@@ -9,6 +10,7 @@ from ..infra.async_mq import (
 )
 from ..schema.mq.session import InsertNewMessage
 from .constants import EX, RK
+from .data import message as M
 
 
 @register_consumer(
@@ -20,8 +22,7 @@ from .constants import EX, RK
     ),
 )
 async def insert_new_message(body: InsertNewMessage, message: Message):
-    with bound_logging_vars(project_id=str(body.project_id)):
-        LOG.info(f"New message, {body}")
+    LOG.info(f"New message, {body}")
 
 
 register_consumer(
@@ -46,4 +47,15 @@ register_consumer(
     ),
 )
 async def buffer_new_message(body: InsertNewMessage, message: Message):
-    LOG.info(f"New buffer message, {body}")
+    async with DB_CLIENT.get_session_context() as session:
+        r = await M.check_session_message_status(session, message_id=body.message_id)
+        message_status, eil = r.unpack()
+        if eil:
+            LOG.error(f"Exception while checking message status {eil}")
+            return
+
+        if message_status != "pending":
+            LOG.info(f"Message {body.message_id} already processed")
+            return
+
+    LOG.info(f"Process pending message! {body.message_id}")

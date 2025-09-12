@@ -36,13 +36,12 @@ async def _fetch_message_parts(parts_meta: dict) -> Result[List[Part]]:
             parts = [Part(**pj) for pj in parts_json]
         except ValidationError as e:
             return Result.reject(f"Failed to validate parts {parts_json}: {e}")
-
         return Result.resolve(parts)
     except Exception as e:
-        return Result.reject(f"Failed to fetch parts {parts_meta}: {e}")
+        return Result.reject(f"Unknown error to fetch parts {parts_meta}: {e}")
 
 
-async def fetch_messages(
+async def fetch_session_messages(
     db_session: AsyncSession, session_id: asUUID, status: str = "pending"
 ) -> Result[List[Message]]:
     """
@@ -74,7 +73,7 @@ async def fetch_messages(
 
     # Fetch parts concurrently for all messages
     parts_tasks = [_fetch_message_parts(message.parts_meta) for message in messages]
-    parts_results = await asyncio.gather(*parts_tasks, return_exceptions=True)
+    parts_results = await asyncio.gather(*parts_tasks)
 
     # Assign parts to messages
     for message, parts_result in zip(messages, parts_results):
@@ -87,16 +86,16 @@ async def fetch_messages(
     return Result.resolve(messages)
 
 
-if __name__ == "__main__":
-    import asyncio
-    from ...infra.db import DB_CLIENT
-
-    async def main():
-        await DB_CLIENT.create_tables()
-        async with DB_CLIENT.get_session_context() as session:
-            r = await fetch_messages(session, "16e43a3d-f409-4ccb-830b-852d4107c3db")
-            d, eil = r.unpack()
-            print([dd.created_at for dd in d])
-        await S3_CLIENT.close()
-
-    asyncio.run(main())
+async def check_session_message_status(db_session: AsyncSession, message_id: asUUID):
+    query = (
+        select(Message)
+        .where(
+            Message.id == message_id,
+        )
+        .order_by(Message.created_at.asc())
+    )
+    result = await db_session.execute(query)
+    message = result.scalars().first()
+    if message is None:
+        return Result.reject(f"Message {message_id} doesn't exist")
+    return Result.resolve(message.session_task_process_status)

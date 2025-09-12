@@ -20,6 +20,9 @@ class SpecialHandler(StrEnum):
     NO_PROCESS = "no_process"
 
 
+LOGGING_FIELDS = {"project_id", "session_id"}
+
+
 @dataclass
 class ConsumerConfigData:
     """Configuration for a single consumer"""
@@ -160,13 +163,20 @@ class AsyncSingleThreadMQConsumer:
                 try:
                     # process the body to json
                     try:
-                        body = config.body_pydantic_type.model_validate_json(
-                            message.body
+                        payload = json.loads(message.body.decode("utf-8"))
+                        validated_body = config.body_pydantic_type.model_validate(
+                            payload
                         )
-                        with bound_logging_vars(queue_name=config.queue_name):
+                        _logging_vars = {
+                            k: payload.get(k, None) for k in LOGGING_FIELDS
+                        }
+                        with bound_logging_vars(
+                            queue_name=config.queue_name, **_logging_vars
+                        ):
                             _start_s = perf_counter()
                             await asyncio.wait_for(
-                                config.handler(body, message), timeout=config.timeout
+                                config.handler(validated_body, message),
+                                timeout=config.timeout,
                             )
                             _end_s = perf_counter()
                             LOG.info(
