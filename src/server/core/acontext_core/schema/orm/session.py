@@ -39,7 +39,7 @@ class Session(CommonMixin):
         metadata={
             "db": Column(
                 UUID(as_uuid=True),
-                ForeignKey("spaces.id", ondelete="CASCADE"),
+                ForeignKey("spaces.id", ondelete="SET NULL"),
                 nullable=True,
             )
         },
