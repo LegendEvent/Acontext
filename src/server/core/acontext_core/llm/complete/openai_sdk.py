@@ -14,6 +14,7 @@ async def openai_complete(
     json_mode=False,
     max_tokens=1024,
     prompt_kwargs: Optional[dict] = None,
+    tools=None,
     **kwargs,
 ) -> LLMResponse:
     prompt_kwargs = prompt_kwargs or {}
@@ -35,6 +36,7 @@ async def openai_complete(
         messages=messages,
         timeout=CONFIG.llm_response_timeout,
         max_tokens=max_tokens,
+        tools=tools,
         **kwargs,
     )
     cached_tokens = getattr(response.usage.prompt_tokens_details, "cached_tokens", None)

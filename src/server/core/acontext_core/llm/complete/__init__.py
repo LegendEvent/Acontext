@@ -19,6 +19,7 @@ async def llm_complete(
     json_mode=False,
     max_tokens=1024,
     prompt_kwargs: Optional[dict] = None,
+    tools=None,
     **kwargs,
 ) -> Result[LLMResponse]:
     _context_vars = get_logging_contextvars()
@@ -36,6 +37,7 @@ async def llm_complete(
             json_mode=json_mode,
             max_tokens=max_tokens,
             prompt_kwargs=prompt_kwargs,
+            tools=tools,
             **kwargs,
         )
         _end_s = time.perf_counter()
