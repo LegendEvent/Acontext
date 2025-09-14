@@ -20,7 +20,7 @@ type Session struct {
 	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
 
 	// Session <-> Space
-	Space *Space `gorm:"foreignKey:SpaceID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"space"`
+	Space *Space `gorm:"foreignKey:SpaceID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"space"`
 
 	// Session <-> Message
 	Messages []Message `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"messages"`

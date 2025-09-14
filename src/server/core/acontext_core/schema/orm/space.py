@@ -40,9 +40,5 @@ class Space(CommonMixin):
 
     sessions: List["Session"] = field(
         default_factory=list,
-        metadata={
-            "db": relationship(
-                "Session", back_populates="space", cascade="all, delete-orphan"
-            )
-        },
+        metadata={"db": relationship("Session", back_populates="space")},
     )
