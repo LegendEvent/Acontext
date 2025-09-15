@@ -2,6 +2,17 @@ from pydantic import BaseModel
 from typing import Literal, Optional
 
 
+class FunctionSchema(BaseModel):
+    name: str
+    description: str
+    parameters: dict
+
+
+class ToolSchema(BaseModel):
+    function: FunctionSchema
+    type: Literal["function"] = "function"
+
+
 class LLMFunction(BaseModel):
     name: str
     arguments: Optional[str] = None

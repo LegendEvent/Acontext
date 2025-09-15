@@ -1,9 +1,10 @@
 from .base import BasePrompt
+from ...schema.llm import ToolSchema
 
 
 class TaskPrompt(BasePrompt):
-    def system_prompt(self, *args, **kwargs) -> str:
-        tool_prompt = kwargs.get("tool_prompt", "")
+    @classmethod
+    def system_prompt(cls) -> str:
         return f"""You are a Task Management Agent responsible for analyzing conversation messages of assistant and managing task arrangements within a session context.
 
 ## Your Core Responsibilities
@@ -46,11 +47,26 @@ class TaskPrompt(BasePrompt):
 
 Be precise, context-aware, and conservative in your decisions. 
 Focus on meaningful task management that helps organize and track conversation objectives effectively.
+"""
 
-{tool_prompt}"""
-
-    def pack_task_input(self, *args, **kwargs) -> str:
+    @classmethod
+    def pack_task_input(cls, *args, **kwargs) -> str:
         return "You are a helpful assistant."
 
-    def prompt_kwargs(self) -> str:
+    @classmethod
+    def prompt_kwargs(cls) -> str:
         return {"prompt_id": "agent.task"}
+
+    @classmethod
+    def tool_schema(cls) -> list[ToolSchema]:
+        foo_func = ToolSchema(
+            function={
+                "name": "foo",
+                "description": "foo",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"x": {"type": "string"}},
+                },
+            }
+        )
+        return [foo_func]

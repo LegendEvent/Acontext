@@ -1,15 +1,19 @@
-from abc import ABC, abstractmethod
+from ...schema.llm import ToolSchema
 
 
-class BasePrompt(ABC):
-    @abstractmethod
-    def system_prompt(self, *args, **kwargs) -> str:
+class BasePrompt:
+    @classmethod
+    def system_prompt(cls, *args, **kwargs) -> str:
         pass
 
-    @abstractmethod
-    def pack_task_input(self, *args, **kwargs) -> str:
+    @classmethod
+    def pack_task_input(cls, *args, **kwargs) -> str:
         pass
 
-    @abstractmethod
-    def prompt_kwargs(self) -> str:
+    @classmethod
+    def prompt_kwargs(cls) -> str:
+        pass
+
+    @classmethod
+    def tool_schema(cls) -> list[ToolSchema]:
         pass

@@ -45,11 +45,21 @@ async def openai_complete(
         f"cached {cached_tokens}, input {response.usage.prompt_tokens}, total {response.usage.total_tokens}"
     )
 
+    _fc = (
+        response.choices[0].message.function_call.model_dump()
+        if response.choices[0].message.function_call
+        else None
+    )
+    _tu = (
+        [tool.model_dump() for tool in response.choices[0].message.tool_calls]
+        if response.choices[0].message.tool_calls
+        else None
+    )
     llm_response = LLMResponse(
         role=response.choices[0].message.role,
         content=response.choices[0].message.content,
-        function_call=response.choices[0].message.function_call,
-        tool_calls=response.choices[0].message.tool_calls,
+        function_call=_fc,
+        tool_calls=_tu,
     )
 
     if json_mode:
