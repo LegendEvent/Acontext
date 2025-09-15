@@ -19,6 +19,7 @@ class CoreConfig(BaseModel):
 
     session_message_buffer_max_turns: int = 4
     session_message_buffer_ttl_seconds: int = 5
+    session_message_processing_timeout_seconds: int = 60
 
     # MQ Configuration
     mq_url: str = "amqp://acontext:helloworld@localhost:15672/"

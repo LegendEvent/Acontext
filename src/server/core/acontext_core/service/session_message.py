@@ -1,5 +1,7 @@
+import asyncio
 from ..env import LOG, CONFIG
 from ..telemetry.log import bound_logging_vars
+from ..infra.redis import REDIS_CLIENT
 from ..infra.db import DB_CLIENT
 from ..infra.async_mq import (
     register_consumer,
@@ -16,6 +18,26 @@ from .data import message as MD
 from .controller import message as MC
 
 
+async def check_session_message_lock_or_set(session_id: str) -> bool:
+    async with REDIS_CLIENT.get_client_context() as client:
+        _session_lock = f"session.message.insert.lock.{session_id}"
+        # Use SET with NX (not exists) and EX (expire) for atomic lock acquisition
+        result = await client.set(
+            _session_lock,
+            "1",
+            nx=True,  # Only set if key doesn't exist
+            ex=CONFIG.session_message_processing_timeout_seconds,
+        )
+        # Returns True if the lock was acquired (key didn't exist), False if it already existed
+        return result is not None
+
+
+async def release_session_message_lock(session_id: str):
+    async with REDIS_CLIENT.get_client_context() as client:
+        _session_lock = f"session.message.insert.lock.{session_id}"
+        await client.delete(_session_lock)
+
+
 @register_consumer(
     mq_client=MQ_CLIENT,
     config=ConsumerConfigData(
@@ -25,24 +47,58 @@ from .controller import message as MC
     ),
 )
 async def insert_new_message(body: InsertNewMessage, message: Message):
+    LOG.info(f"Insert new message {body.message_id}")
     async with DB_CLIENT.get_session_context() as read_session:
+        r = await MD.check_session_message_status(
+            read_session, message_id=body.message_id
+        )
+        message_status, eil = r.unpack()
+        if eil:
+            LOG.error(f"Exception while fetching session messages: {eil}")
+            return
+        if message_status != "pending":
+            LOG.info(f"Message {body.message_id} already processed")
+            return
+
         r = await MD.session_message_length(read_session, body.session_id)
         pending_message_length, eil = r.unpack()
         if eil:
             LOG.error(f"Exception while fetching session messages: {eil}")
             return
         if pending_message_length < CONFIG.session_message_buffer_max_turns:
-            LOG.info(f"Session message buffer is not full, wait for next turn")
+            LOG.info(
+                f"Session message buffer is not full, wait for next turn/idle notify"
+            )
+            await MQ_CLIENT.publish(
+                exchange_name=EX.session_message,
+                routing_key=RK.session_message_buffer_notify,
+                body=body.model_dump_json(),
+            )
             return
-    await MC.process_session_pending_message(body.session_id)
+
+    _l = await check_session_message_lock_or_set(str(body.session_id))
+    if not _l:
+        LOG.info(
+            f"Current Session is processing."
+            f"wait {CONFIG.session_message_buffer_ttl_seconds} seconds for next resend. "
+            f"Message {body.message_id}"
+        )
+        await asyncio.sleep(CONFIG.session_message_buffer_ttl_seconds)
+        await message.reject(requeue=True)  # requeue to insert queue
+        return
+
+    try:
+        await MC.process_session_pending_message(body.session_id)
+    finally:
+        await release_session_message_lock(str(body.session_id))
 
 
 register_consumer(
     MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.session_message,
-        routing_key=RK.session_message_insert,
-        queue_name="session.message.insert.notify.buffer",
+        routing_key=RK.session_message_buffer_notify,
+        queue_name="session.message.buffer.notify",
         message_ttl_seconds=CONFIG.session_message_buffer_ttl_seconds,
         need_dlx_queue=True,
         use_dlx_ex_rk=(EX.session_message, RK.session_message_buffer_process),
@@ -59,6 +115,9 @@ register_consumer(
     ),
 )
 async def buffer_new_message(body: InsertNewMessage, message: Message):
+    LOG.info(
+        f"Message {body.message_id} IDLE for {CONFIG.session_message_buffer_ttl_seconds} seconds, process it now"
+    )
     async with DB_CLIENT.get_session_context() as session:
         r = await MD.check_session_message_status(session, message_id=body.message_id)
         message_status, eil = r.unpack()
@@ -69,5 +128,19 @@ async def buffer_new_message(body: InsertNewMessage, message: Message):
         if message_status != "pending":
             LOG.info(f"Message {body.message_id} already processed")
             return
-    LOG.info(f"Unprocessed message timeout, process it now")
-    await MC.process_session_pending_message(body.session_id)
+
+    _l = await check_session_message_lock_or_set(str(body.session_id))
+    if not _l:
+        LOG.info(
+            f"Current Session is processing, resend Message {body.message_id} to insert queue."
+        )
+        await MQ_CLIENT.publish(
+            exchange_name=EX.session_message,
+            routing_key=RK.session_message_insert,
+            body=body.model_dump_json(),
+        )
+        return
+    try:
+        await MC.process_session_pending_message(body.session_id)
+    finally:
+        await release_session_message_lock(str(body.session_id))

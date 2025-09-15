@@ -31,3 +31,7 @@ sh launch.sh -m prod
 sh launch.sh -m prod -w 4 # 4 workers
 ```
 
+- Test the core
+```bash
+uv run -m pytest
+```

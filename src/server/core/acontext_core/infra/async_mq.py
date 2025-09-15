@@ -1,5 +1,6 @@
 import asyncio
 import json
+import traceback
 from enum import StrEnum
 from pydantic import ValidationError, BaseModel
 from dataclasses import dataclass, field
@@ -201,16 +202,18 @@ class AsyncSingleThreadMQConsumer:
 
                     if retry_count <= max_retries:
                         LOG.warning(
-                            f"Message processing failed - queue: {config.queue_name}, "
+                            f"Message processing unknown error - queue: {config.queue_name}, "
                             f"attempt: {retry_count}/{config.max_retries}, "
                             f"retry after {_wait_for}s, "
-                            f"error: {str(e)}"
+                            f"error: {str(e)}",
+                            extra={"traceback": traceback.format_exc()},
                         )
                         await asyncio.sleep(_wait_for)  # Exponential backoff
                     else:
                         LOG.error(
                             f"Message processing failed permanently - queue: {config.queue_name}, "
-                            f"error: {str(e)}"
+                            f"error: {str(e)}",
+                            extra={"traceback": traceback.format_exc()},
                         )
                         # goto DLX if any
                         await message.reject(requeue=False)
