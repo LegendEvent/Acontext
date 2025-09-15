@@ -7,6 +7,7 @@ from ...env import LOG, CONFIG
 
 
 async def process_session_pending_message(session_id: asUUID):
+
     async with DB_CLIENT.get_session_context() as session:
         r = await MD.fetch_session_messages(session, session_id, status="pending")
         messages, eil = r.unpack()
@@ -29,6 +30,7 @@ async def process_session_pending_message(session_id: asUUID):
             MessageBlob(message_id=m.id, role=m.role, parts=m.parts)
             for m in previous_messages
         ]
+
     for m in previous_messages_data:
         print(m.to_string())
 
