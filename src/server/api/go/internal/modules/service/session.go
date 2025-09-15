@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/config"
 	"github.com/memodb-io/Acontext/internal/infra/blob"
@@ -82,10 +83,53 @@ type SendMQPublishJSON struct {
 }
 
 type PartIn struct {
-	Type      string                 `json:"type"`                 // "text" | "image" | ...
-	Text      string                 `json:"text,omitempty"`       // Text sharding
-	FileField string                 `json:"file_field,omitempty"` // File field name in the form
-	Meta      map[string]interface{} `json:"meta,omitempty"`       // [Optional] metadata
+	Type      string                 `json:"type" validate:"required,oneof=text image audio video file tool-call tool-result data"` // "text" | "image" | ...
+	Text      string                 `json:"text,omitempty"`                                                                        // Text sharding
+	FileField string                 `json:"file_field,omitempty"`                                                                  // File field name in the form
+	Meta      map[string]interface{} `json:"meta,omitempty"`                                                                        // [Optional] metadata
+}
+
+func (p *PartIn) Validate() error {
+	validate := validator.New()
+
+	// Basic field validation
+	if err := validate.Struct(p); err != nil {
+		return err
+	}
+
+	// Validate required fields based on different types
+	switch p.Type {
+	case "text":
+		if p.Text == "" {
+			return errors.New("text part requires non-empty text field")
+		}
+	case "tool-call":
+		if p.Meta == nil {
+			return errors.New("tool-call part requires meta field")
+		}
+		if _, ok := p.Meta["tool_name"]; !ok {
+			return errors.New("tool-call part requires 'tool_name' in meta")
+		}
+		if _, ok := p.Meta["arguments"]; !ok {
+			return errors.New("tool-call part requires 'arguments' in meta")
+		}
+	case "tool-result":
+		if p.Meta == nil {
+			return errors.New("tool-result part requires meta field")
+		}
+		if _, ok := p.Meta["tool_call_id"]; !ok {
+			return errors.New("tool-result part requires 'tool_call_id' in meta")
+		}
+	case "data":
+		if p.Meta == nil {
+			return errors.New("data part requires meta field")
+		}
+		if _, ok := p.Meta["data_type"]; !ok {
+			return errors.New("data part requires 'data_type' in meta")
+		}
+	}
+
+	return nil
 }
 
 func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error) {

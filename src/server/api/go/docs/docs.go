@@ -1638,6 +1638,13 @@ const docTemplate = `{
                 },
                 "role": {
                     "type": "string",
+                    "enum": [
+                        "user",
+                        "assistant",
+                        "system",
+                        "tool",
+                        "function"
+                    ],
                     "example": "user"
                 }
             }
@@ -1952,6 +1959,9 @@ const docTemplate = `{
         },
         "service.PartIn": {
             "type": "object",
+            "required": [
+                "type"
+            ],
             "properties": {
                 "file_field": {
                     "description": "File field name in the form",
@@ -1968,7 +1978,17 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "\"text\" | \"image\" | ...",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "image",
+                        "audio",
+                        "video",
+                        "file",
+                        "tool-call",
+                        "tool-result",
+                        "data"
+                    ]
                 }
             }
         },

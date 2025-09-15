@@ -95,6 +95,12 @@ definitions:
           $ref: '#/definitions/service.PartIn'
         type: array
       role:
+        enum:
+        - user
+        - assistant
+        - system
+        - tool
+        - function
         example: user
         type: string
     required:
@@ -314,7 +320,18 @@ definitions:
         type: string
       type:
         description: '"text" | "image" | ...'
+        enum:
+        - text
+        - image
+        - audio
+        - video
+        - file
+        - tool-call
+        - tool-result
+        - data
         type: string
+    required:
+    - type
     type: object
   service.PublicURL:
     properties:

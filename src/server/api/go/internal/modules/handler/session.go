@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
@@ -217,7 +218,7 @@ func (h *SessionHandler) ConnectToSpace(c *gin.Context) {
 }
 
 type SendMessageReq struct {
-	Role  string           `form:"role" json:"role" binding:"required" example:"user"`
+	Role  string           `form:"role" json:"role" binding:"required" validate:"oneof=user assistant system tool function" example:"user"`
 	Parts []service.PartIn `form:"parts" json:"parts" binding:"required"`
 }
 
@@ -265,6 +266,19 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 		}
 	} else {
 		if err := c.ShouldBind(&req); err != nil {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+			return
+		}
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(&req); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	for _, p := range req.Parts {
+		if err := p.Validate(); err != nil {
 			c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
 			return
 		}
