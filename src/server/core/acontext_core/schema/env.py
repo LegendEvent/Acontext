@@ -12,13 +12,13 @@ class CoreConfig(BaseModel):
     llm_response_timeout: float = 60
     llm_sdk: Literal["openai", "anthropic"] = "openai"
 
-    llm_simple_model: str = "gpt-4.1-mini"
+    llm_simple_model: str = "gpt-4.1"
 
     # Core Configuration
     logging_format: str = "text"
 
-    session_message_buffer_max_turns: int = 4
-    session_message_buffer_ttl_seconds: int = 5
+    session_message_buffer_max_turns: int = 6
+    session_message_buffer_ttl_seconds: int = 10
     session_message_processing_timeout_seconds: int = 60
 
     # MQ Configuration
