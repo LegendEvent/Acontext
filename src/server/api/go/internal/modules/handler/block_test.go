@@ -1,0 +1,321 @@
+package handler
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/memodb-io/Acontext/internal/modules/model"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+// MockBlockService is a mock implementation of BlockService
+type MockBlockService struct {
+	mock.Mock
+}
+
+func (m *MockBlockService) CreatePage(ctx context.Context, b *model.Block) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) DeletePage(ctx context.Context, spaceID uuid.UUID, pageID uuid.UUID) error {
+	args := m.Called(ctx, spaceID, pageID)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) GetPageProperties(ctx context.Context, pageID uuid.UUID) (*model.Block, error) {
+	args := m.Called(ctx, pageID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Block), args.Error(1)
+}
+
+func (m *MockBlockService) UpdatePageProperties(ctx context.Context, b *model.Block) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) ListPageChildren(ctx context.Context, pageID uuid.UUID) ([]model.Block, error) {
+	args := m.Called(ctx, pageID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Block), args.Error(1)
+}
+
+func (m *MockBlockService) MovePage(ctx context.Context, pageID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
+	args := m.Called(ctx, pageID, newParentID, targetSort)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) UpdatePageSort(ctx context.Context, pageID uuid.UUID, sort int64) error {
+	args := m.Called(ctx, pageID, sort)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) CreateBlock(ctx context.Context, b *model.Block) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) DeleteBlock(ctx context.Context, spaceID uuid.UUID, blockID uuid.UUID) error {
+	args := m.Called(ctx, spaceID, blockID)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) GetBlockProperties(ctx context.Context, blockID uuid.UUID) (*model.Block, error) {
+	args := m.Called(ctx, blockID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Block), args.Error(1)
+}
+
+func (m *MockBlockService) UpdateBlockProperties(ctx context.Context, b *model.Block) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) ListBlockChildren(ctx context.Context, blockID uuid.UUID) ([]model.Block, error) {
+	args := m.Called(ctx, blockID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Block), args.Error(1)
+}
+
+func (m *MockBlockService) MoveBlock(ctx context.Context, blockID uuid.UUID, newParentID uuid.UUID, targetSort *int64) error {
+	args := m.Called(ctx, blockID, newParentID, targetSort)
+	return args.Error(0)
+}
+
+func (m *MockBlockService) UpdateBlockSort(ctx context.Context, blockID uuid.UUID, sort int64) error {
+	args := m.Called(ctx, blockID, sort)
+	return args.Error(0)
+}
+
+func setupRouter() *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	return gin.New()
+}
+
+func TestBlockHandler_CreatePage(t *testing.T) {
+	spaceID := uuid.New()
+
+	tests := []struct {
+		name           string
+		spaceIDParam   string
+		requestBody    CreatePageReq
+		setup          func(*MockBlockService)
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:         "successful page creation",
+			spaceIDParam: spaceID.String(),
+			requestBody: CreatePageReq{
+				Title: "Test Page",
+				Props: map[string]any{"color": "red"},
+			},
+			setup: func(svc *MockBlockService) {
+				svc.On("CreatePage", mock.Anything, mock.MatchedBy(func(b *model.Block) bool {
+					return b.SpaceID == spaceID && b.Title == "Test Page" && b.Type == model.BlockTypePage
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusCreated,
+			expectedError:  false,
+		},
+		{
+			name:         "invalid space ID",
+			spaceIDParam: "invalid-uuid",
+			requestBody: CreatePageReq{
+				Title: "Test Page",
+			},
+			setup:          func(svc *MockBlockService) {},
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  true,
+		},
+		{
+			name:         "service layer error",
+			spaceIDParam: spaceID.String(),
+			requestBody: CreatePageReq{
+				Title: "Test Page",
+			},
+			setup: func(svc *MockBlockService) {
+				svc.On("CreatePage", mock.Anything, mock.Anything).Return(errors.New("database error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockBlockService{}
+			tt.setup(mockService)
+
+			handler := NewBlockHandler(mockService)
+			router := setupRouter()
+			router.POST("/space/:space_id/page", handler.CreatePage)
+
+			body, _ := json.Marshal(tt.requestBody)
+			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/page", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestBlockHandler_DeletePage(t *testing.T) {
+	spaceID := uuid.New()
+	pageID := uuid.New()
+
+	tests := []struct {
+		name           string
+		spaceIDParam   string
+		pageIDParam    string
+		setup          func(*MockBlockService)
+		expectedStatus int
+	}{
+		{
+			name:         "successful page deletion",
+			spaceIDParam: spaceID.String(),
+			pageIDParam:  pageID.String(),
+			setup: func(svc *MockBlockService) {
+				svc.On("DeletePage", mock.Anything, spaceID, pageID).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid space ID",
+			spaceIDParam:   "invalid-uuid",
+			pageIDParam:    pageID.String(),
+			setup:          func(svc *MockBlockService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid page ID",
+			spaceIDParam:   spaceID.String(),
+			pageIDParam:    "invalid-uuid",
+			setup:          func(svc *MockBlockService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:         "service layer error",
+			spaceIDParam: spaceID.String(),
+			pageIDParam:  pageID.String(),
+			setup: func(svc *MockBlockService) {
+				svc.On("DeletePage", mock.Anything, spaceID, pageID).Return(errors.New("deletion failed"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockBlockService{}
+			tt.setup(mockService)
+
+			handler := NewBlockHandler(mockService)
+			router := setupRouter()
+			router.DELETE("/space/:space_id/page/:page_id", handler.DeletePage)
+
+			req := httptest.NewRequest("DELETE", "/space/"+tt.spaceIDParam+"/page/"+tt.pageIDParam, nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestBlockHandler_CreateBlock(t *testing.T) {
+	spaceID := uuid.New()
+	parentID := uuid.New()
+
+	tests := []struct {
+		name           string
+		spaceIDParam   string
+		requestBody    CreateBlockReq
+		setup          func(*MockBlockService)
+		expectedStatus int
+	}{
+		{
+			name:         "successful block creation",
+			spaceIDParam: spaceID.String(),
+			requestBody: CreateBlockReq{
+				ParentID: parentID,
+				Type:     "text",
+				Title:    "test block",
+				Props:    map[string]any{"content": "Hello World"},
+			},
+			setup: func(svc *MockBlockService) {
+				svc.On("CreateBlock", mock.Anything, mock.MatchedBy(func(b *model.Block) bool {
+					return b.SpaceID == spaceID && b.Type == "text" && b.Title == "test block"
+				})).Return(nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:         "invalid block type",
+			spaceIDParam: spaceID.String(),
+			requestBody: CreateBlockReq{
+				ParentID: parentID,
+				Type:     "invalid-type",
+				Title:    "test block",
+			},
+			setup:          func(svc *MockBlockService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:         "service layer error",
+			spaceIDParam: spaceID.String(),
+			requestBody: CreateBlockReq{
+				ParentID: parentID,
+				Type:     "text",
+				Title:    "test block",
+			},
+			setup: func(svc *MockBlockService) {
+				svc.On("CreateBlock", mock.Anything, mock.Anything).Return(errors.New("creation failed"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockBlockService{}
+			tt.setup(mockService)
+
+			handler := NewBlockHandler(mockService)
+			router := setupRouter()
+			router.POST("/space/:space_id/block", handler.CreateBlock)
+
+			body, _ := json.Marshal(tt.requestBody)
+			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/block", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockService.AssertExpectations(t)
+		})
+	}
+}

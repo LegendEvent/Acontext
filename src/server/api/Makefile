@@ -1,15 +1,23 @@
 GO_DIR := ./go
 GO_BIN := $(shell go env GOPATH)/bin
 SWAG := $(GO_BIN)/swag
-SWAG_INSTALL := go install github.com/swaggo/swag
 
-.PHONY: ensure-tools swag swag-clean swag-fmt run doctor
+# Test parameters
+TEST_TIMEOUT=30m
+COVERAGE_DIR=$(GO_DIR)/coverage
+
+.PHONY: help ensure-tools swag swag-clean run doctor test test-unit test-integration test-e2e test-all test-coverage lint format tidy clean
+
+# Default target
+help: ## Show available commands
+	@echo "Available commands:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # check tools
 ensure-tools:
 	@if [ ! -x "$(SWAG)" ]; then \
 		echo "Installing swag..."; \
-		(cd $(GO_DIR) && $(SWAG_INSTALL)); \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
 	else \
 		echo "swag found at $(SWAG)"; \
 	fi
@@ -39,3 +47,50 @@ doctor:
 	@echo "GO_BIN: $(GO_BIN)"
 	@echo -n "swag version: "; if [ -x "$(SWAG)" ]; then $(SWAG) --version; else echo "not installed"; fi
 	@echo "main.go exists?"; [ -f $(GO_DIR)/cmd/server/main.go ] && echo "Yes" || (echo "No"; exit 1)
+
+# Dependency management
+tidy: ## Tidy dependencies
+	@echo "Tidying dependencies..."
+	cd $(GO_DIR) && go mod tidy
+
+# Clean targets
+clean: ## Clean coverage files
+	@echo "Cleaning coverage files..."
+	rm -rf $(COVERAGE_DIR)
+
+# Test targets
+test: test-unit ## Run unit tests
+
+test-unit: ## Run unit tests
+	@echo "Running unit tests..."
+	cd $(GO_DIR) && go test -v -timeout $(TEST_TIMEOUT) ./internal/... ./cmd/...
+
+test-integration: ## Run integration tests (requires DB, Redis, S3)
+	@echo "Running integration tests..."
+	cd $(GO_DIR) && go test -v -timeout $(TEST_TIMEOUT) -tags=integration ./tests/integration/...
+
+test-e2e: ## Run end-to-end tests (requires full service stack)
+	@echo "Running end-to-end tests..."
+	cd $(GO_DIR) && go test -v -timeout $(TEST_TIMEOUT) -tags=e2e ./tests/e2e/...
+
+test-all: test-unit test-integration test-e2e ## Run all tests
+
+test-coverage: ## Generate test coverage report
+	@echo "Generating test coverage report..."
+	@mkdir -p $(COVERAGE_DIR)
+	cd $(GO_DIR) && go test -coverprofile=$(COVERAGE_DIR)/coverage.out -covermode=atomic ./internal/... ./cmd/...
+	cd $(GO_DIR) && go tool cover -html=$(COVERAGE_DIR)/coverage.out -o $(COVERAGE_DIR)/coverage.html
+	@echo "Coverage report generated: $(COVERAGE_DIR)/coverage.html"
+
+# Code quality
+lint: ## Run code linting
+	@echo "Running code linting..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		cd $(GO_DIR) && golangci-lint run ./...; \
+	else \
+		echo "golangci-lint not installed, install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin"; \
+	fi
+
+format: ## Format code
+	@echo "Formatting code..."
+	cd $(GO_DIR) && go fmt ./...
