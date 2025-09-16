@@ -2,7 +2,7 @@ from .base import ORM_BASE
 from .project import Project
 from .space import Space
 from .session import Session
-from .message import Message, Part, Asset
+from .message import Message, Part, Asset, ToolCallMeta
 from .task import Task
 
 __all__ = [
@@ -12,6 +12,7 @@ __all__ = [
     "Session",
     "Message",
     "Part",
+    "ToolCallMeta",
     "Asset",
     "Task",
 ]

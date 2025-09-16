@@ -4,7 +4,7 @@ from sqlalchemy import String, ForeignKey, Index, CheckConstraint, Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from pydantic import BaseModel
-from typing import TYPE_CHECKING, Optional, List, Dict, Any
+from typing import TYPE_CHECKING, Optional, List, Dict, Any, Literal
 from .base import ORM_BASE, CommonMixin
 from ..utils import asUUID
 
@@ -24,10 +24,17 @@ class Asset(BaseModel):
     size_b: int
 
 
+class ToolCallMeta(BaseModel):
+    tool_name: str
+    arguments: dict
+
+
 class Part(BaseModel):
     """Message part model matching the GORM Part struct"""
 
-    type: str  # "text" | "image" | "audio" | "video" | "file" | "tool-call" | "tool-result" | "data"
+    type: Literal[
+        "text", "image", "audio", "video", "file", "tool-call", "tool-result", "data"
+    ]  # "text" | "image" | "audio" | "video" | "file" | "tool-call" | "tool-result" | "data"
 
     # text part
     text: Optional[str] = None

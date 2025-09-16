@@ -385,10 +385,15 @@ class AsyncSingleThreadMQConsumer:
                         r = (
                             task.result()
                         )  # This will raise the exception if task failed
-                        self._consumer_loop_tasks.remove(task)
-                        LOG.info(f"Consumer task completed. {r}")
+                        if task in self._consumer_loop_tasks:
+                            self._consumer_loop_tasks.remove(task)
+                            LOG.info(
+                                f"Consumer task completed. {r}. Remaining tasks: {len(self._consumer_loop_tasks)}"
+                            )
                     except Exception as e:
-                        LOG.error(f"Consumer task failed: {e}")
+                        LOG.error(
+                            f"Consumer task failed: {e}. Remaining tasks: {len(self._consumer_loop_tasks)}"
+                        )
                         return
             LOG.info("Shutdown event received")
         finally:

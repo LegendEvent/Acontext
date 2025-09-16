@@ -161,6 +161,27 @@ async def fetch_session_messages(
     return await fetch_messages_data_by_ids(db_session, message_ids)
 
 
+async def get_latest_message_id(
+    db_session: AsyncSession,
+    session_id: asUUID,
+    status: str = "pending",
+    limit: int = 1,
+) -> Result[List[asUUID]]:
+    query = (
+        select(Message.id)
+        .where(
+            Message.session_id == session_id,
+            Message.session_task_process_status == status,
+        )
+        .order_by(Message.created_at.desc())
+        .limit(limit)
+    )
+
+    result = await db_session.execute(query)
+    message_ids = list(result.scalars().all())
+    return Result.resolve(message_ids)
+
+
 async def check_session_message_status(
     db_session: AsyncSession, message_id: asUUID
 ) -> Result[str]:

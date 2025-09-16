@@ -119,14 +119,19 @@ async def buffer_new_message(body: InsertNewMessage, message: Message):
         f"Message {body.message_id} IDLE for {CONFIG.session_message_buffer_ttl_seconds} seconds, process it now"
     )
     async with DB_CLIENT.get_session_context() as session:
-        r = await MD.check_session_message_status(session, message_id=body.message_id)
-        message_status, eil = r.unpack()
+        r = await MD.get_latest_message_id(session, body.session_id)
+        message_ids, eil = r.unpack()
         if eil:
-            LOG.error(f"Exception while checking message status {eil}")
+            LOG.error(f"Exception while fetching latest message id {eil}")
             return
-
-        if message_status != "pending":
-            LOG.info(f"Message {body.message_id} already processed")
+        if not len(message_ids):
+            LOG.info(f"No pending message found for session {body.session_id}, ignore")
+            return
+        latest_pending_message_id = message_ids[0]
+        if body.message_id != latest_pending_message_id:
+            LOG.info(
+                f"Message {body.message_id} is not the latest pending message, ignore"
+            )
             return
 
     _l = await check_session_message_lock_or_set(str(body.session_id))

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from ..orm import Part
+from ..orm import Part, ToolCallMeta
 from ..utils import asUUID
 
 STRING_TYPES = {"text", "tool-call", "tool-result"}
@@ -19,7 +19,8 @@ def pack_message_line(role: str, part: Part) -> str:
     if part.type == "text":
         return f"<{role}> {part.text}"
     if part.type == "tool-call":
-        return f"<{role}> USE TOOL {part.meta['function_name']}, WITH PARAMS {part.meta['parameters']}"
+        tool_call_meta = ToolCallMeta(**part.meta)
+        return f"<{role}> USE TOOL {tool_call_meta.tool_name}, WITH PARAMS {tool_call_meta.arguments}"
 
 
 class MessageBlob(BaseModel):
