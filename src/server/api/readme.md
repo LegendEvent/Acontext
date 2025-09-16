@@ -14,12 +14,15 @@ Go REST API server for the Acontext platform. Provides project, space, and sessi
 ```bash
 API_EXPORT_PORT=8029
 ROOT_API_BEARER_TOKEN=your-root-token
+DATABASE_HOST=127.0.0.1
 DATABASE_USER=acontext
 DATABASE_PASSWORD=your-password
 DATABASE_NAME=acontext
 DATABASE_EXPORT_PORT=5432
+REDIS_HOST=127.0.0.1
 REDIS_EXPORT_PORT=6379
 REDIS_PASSWORD=your-redis-password
+RABBITMQ_HOST=127.0.0.1
 RABBITMQ_USER=acontext
 RABBITMQ_PASSWORD=your-rabbitmq-password
 RABBITMQ_EXPORT_PORT=5672

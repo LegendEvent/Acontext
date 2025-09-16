@@ -90,3 +90,44 @@ services:
       echo '✅ MinIO ready with bucket: ${S3_BUCKET}'
       "
     restart: "no"
+
+  # acontext-api
+  acontext-api:
+    build:
+      context: ./api/go
+      dockerfile: Dockerfile
+    container_name: acontext-api
+    restart: unless-stopped
+    environment:
+      API_EXPORT_PORT: 8029
+      ROOT_API_BEARER_TOKEN: ${ROOT_API_BEARER_TOKEN:-acontext}
+      DATABASE_HOST: acontext-server-pg
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_EXPORT_PORT: 5432
+      REDIST_HOST: acontext-server-redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_EXPORT_PORT: 6379
+      RABBITMQ_HOST: acontext-server-rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      RABBITMQ_VHOST_ENCODED: ${RABBITMQ_VHOST_ENCODED:-%2F}
+      RABBITMQ_EXPORT_PORT: 5672
+      S3_ENDPOINT: http://acontext-server-minio:9000
+      S3_REGION: ${S3_REGION}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+    ports:
+      - "${API_EXPORT_PORT:-8029}:8029"
+    depends_on:
+      acontext-server-pg:
+        condition: service_healthy
+      acontext-server-redis:
+        condition: service_healthy
+      acontext-server-rabbitmq:
+        condition: service_healthy
+      acontext-server-minio:
+        condition: service_healthy
