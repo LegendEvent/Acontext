@@ -8,6 +8,8 @@ from sqlalchemy import (
     Enum,
     text,
     CheckConstraint,
+    UniqueConstraint,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -29,11 +31,16 @@ class Task(CommonMixin):
     __tablename__ = "tasks"
 
     __table_args__ = (
-        Index("ix_session_session_id", "session_id"),
         CheckConstraint(
             "task_status IN ('success', 'failed', 'running', 'pending')",
             name="ck_task_status",
         ),
+        UniqueConstraint(
+            "session_id",
+            "task_order",
+            name="uq_session_id_task_order",
+        ),
+        Index("ix_session_session_id", "session_id"),
         Index("ix_session_session_id_task_id", "session_id", "id"),
         Index("ix_session_session_id_task_status", "session_id", "task_status"),
     )
@@ -59,6 +66,13 @@ class Task(CommonMixin):
                 nullable=False,
                 server_default="pending",
             )
+        },
+    )
+
+    is_planning_task: bool = field(
+        default=False,
+        metadata={
+            "db": Column(Boolean, nullable=False, default=False, server_default="false")
         },
     )
 

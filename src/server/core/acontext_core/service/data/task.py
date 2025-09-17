@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import List, Optional
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
 from ...schema.orm import Task
@@ -56,22 +56,50 @@ async def update_task(
 async def insert_task(
     db_session: AsyncSession,
     session_id: asUUID,
-    order: int,
+    after_order: int,
     data: dict,
     status: str = "pending",
-) -> Result[asUUID]:
-    # Create new task with pending status by default
+) -> Result[Task]:
+    # Lock all tasks in this session to prevent concurrent modifications
+    lock_query = (
+        select(Task.id)
+        .where(Task.session_id == session_id)
+        .with_for_update()  # This locks the rows
+    )
+    await db_session.execute(lock_query)
+
+    # Step 1: Move all tasks that need to be shifted to temporary negative values
+    assert after_order >= 0
+    temp_update_stmt = (
+        update(Task)
+        .where(Task.session_id == session_id)
+        .where(Task.task_order > after_order)
+        .values(task_order=-Task.task_order)
+    )
+    await db_session.execute(temp_update_stmt)
+    await db_session.flush()
+
+    # Step 2: Update them back to positive values, incremented by 1
+    final_update_stmt = (
+        update(Task)
+        .where(Task.session_id == session_id)
+        .where(Task.task_order < 0)
+        .values(task_order=-Task.task_order + 1)
+    )
+    await db_session.execute(final_update_stmt)
+    await db_session.flush()
+
+    # Step 3: Create new task
     task = Task(
         session_id=session_id,
-        task_order=order,
+        task_order=after_order + 1,
         task_data=data,
         task_status=status,
     )
 
     db_session.add(task)
-    await db_session.flush()  # Flush to get the ID
-
-    return Result.resolve(task.id)
+    await db_session.flush()
+    return Result.resolve(task)
 
 
 async def delete_task(db_session: AsyncSession, task_id: asUUID) -> Result[None]:

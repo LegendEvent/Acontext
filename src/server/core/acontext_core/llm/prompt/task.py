@@ -26,12 +26,15 @@ class TaskPrompt(BasePrompt):
 - `failed`: Encountered errors or abandoned
 
 ## Analysis Guidelines
+### Planning Detection
+- Look for explicit task planning language ("I need to...", "My goal is...", "I will follow ... steps")
+- Read out the planning, and separate the tasks from it.
+- Link those planning messages to the planning section, since they aren't related to any specific task execution.
+- Collect all current tasks without missing future ones
 
 ### New Task Detection
-- Look for explicit task language ("I need to...", "My goal is...")
 - Avoid creating tasks for simple questions answerable directly
-- Only collect tasks mentioned by agents, don't invent them
-- Collect all current tasks without missing future ones
+- Only collect tasks stated by agents/users, don't invent them
 - [think] The degree of task splitting should follow the agent's plan in the conversation; do not arbitrarily split into finer or coarser granularity.
 - [think] Notice any task modification from agent.
 - [think] Infer execution order and insert tasks sequentially, make sure you arrange the tasks in logical execution order, no the mentioned order.
@@ -49,12 +52,20 @@ class TaskPrompt(BasePrompt):
 - `failed`: When explicit errors occur or tasks are abandoned
 - `pending`: For tasks not yet started
 
+
+## Input Format
+- Input will be markdown-formatted text, with the following sections:
+  - `## Current Tasks`: existing tasks, their orders, descriptions, and statuses
+  - `## Previous Messages`: the messages that user/agent discussed before, help you understand the full context. [no message id]
+  - `## Current Message with IDs`: the current messages that you need to analyze [with message ids]
+- Message with ID format: <message id=N> ... </message>, inside the tag is the message content, the id field indicates the message id.
+
 ## Action Guidelines
 - Be precise, context-aware, and conservative. 
 - Focus on meaningful task management that organizes conversation objectives effectively. 
 - Use parallel tool calls when possible. 
-After completing all task management actions, call the `finish` tool.
-- Before tool calling, use one-two sentences to briefly describe your plan.
+- After completing all task management actions, call the `finish` tool.
+- Before tool calling, use one-two sentences to briefly describe your plan. Before appending messages for planning section or certain task, use one sentence to state why you think this action is correct.
 """
 
     @classmethod
@@ -129,6 +140,25 @@ Only when the conversation explicitly mention certain task's purpose should be m
             }
         )
 
+        append_messages_to_planning_tool = ToolSchema(
+            function={
+                "name": "append_messages_to_planning_section",
+                "description": """Save current message ids to the planning section.
+Use this when messages are about the agent/user is planning general plan, and those messages aren't related to any specific task execution.""",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message_ids": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "description": "List of message IDs to append to the planning section.",
+                        },
+                    },
+                    "required": ["message_ids"],
+                },
+            }
+        )
+
         append_messages_to_task_tool = ToolSchema(
             function={
                 "name": "append_messages_to_task",
@@ -168,6 +198,7 @@ If the task is marked as 'success' or 'failed', don't append messages to it.""",
         return [
             insert_task_tool,
             update_task_tool,
+            append_messages_to_planning_tool,
             append_messages_to_task_tool,
             finish_tool,
         ]

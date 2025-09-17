@@ -416,14 +416,16 @@ class TestInsertTask:
             await session.flush()
 
             task_data = {"name": "new_task", "description": "A new task"}
-            task_order = 1
+            after_order = 0  # Insert after position 0 (will become position 1)
 
-            result = await insert_task(session, test_session.id, task_order, task_data)
+            result = await insert_task(session, test_session.id, after_order, task_data)
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
-            assert isinstance(data, uuid.UUID)
+            assert isinstance(data, Task)  # Should return Task object, not UUID
+            assert data.task_order == 1  # Should be at position 1
+            assert data.task_data == task_data
 
             await session.delete(project)
 
@@ -450,26 +452,20 @@ class TestInsertTask:
             await session.flush()
 
             task_data = {"name": "custom_status_task"}
-            task_order = 2
+            after_order = 1  # Insert after position 1 (will become position 2)
             custom_status = "running"
 
             result = await insert_task(
-                session, test_session.id, task_order, task_data, status=custom_status
+                session, test_session.id, after_order, task_data, status=custom_status
             )
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
-
-            # Verify the task was created with custom status
-            query = select(Task).where(Task.id == data)
-            db_result = await session.execute(query)
-            created_task = db_result.scalars().first()
-
-            assert created_task is not None
-            assert created_task.task_status == custom_status
-            assert created_task.task_order == task_order
-            assert created_task.task_data == task_data
+            assert isinstance(data, Task)
+            assert data.task_status == custom_status
+            assert data.task_order == 2  # Should be at position 2
+            assert data.task_data == task_data
 
             await session.delete(project)
 
@@ -496,21 +492,16 @@ class TestInsertTask:
             await session.flush()
 
             task_data = {"name": "default_status_task"}
-            task_order = 3
+            after_order = 2  # Insert after position 2 (will become position 3)
 
-            result = await insert_task(session, test_session.id, task_order, task_data)
+            result = await insert_task(session, test_session.id, after_order, task_data)
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
-
-            # Verify the task was created with default status
-            query = select(Task).where(Task.id == data)
-            db_result = await session.execute(query)
-            created_task = db_result.scalars().first()
-
-            assert created_task is not None
-            assert created_task.task_status == "pending"
+            assert isinstance(data, Task)
+            assert data.task_status == "pending"  # Should have default status
+            assert data.task_order == 3  # Should be at position 3
 
             await session.delete(project)
 
@@ -549,19 +540,87 @@ class TestInsertTask:
                 ],
             }
 
-            result = await insert_task(session, test_session.id, 1, complex_data)
+            result = await insert_task(session, test_session.id, 0, complex_data)
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
+            assert isinstance(data, Task)
+            assert data.task_data == complex_data
 
-            # Verify the complex data was stored correctly
-            query = select(Task).where(Task.id == data)
-            db_result = await session.execute(query)
-            created_task = db_result.scalars().first()
+            await session.delete(project)
 
-            assert created_task is not None
-            assert created_task.task_data == complex_data
+    @pytest.mark.asyncio
+    async def test_insert_task_order_increment(self):
+        """Test that inserting a task increments subsequent task orders"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Create test data
+            project = Project(
+                secret_key_hmac="test_key_hmac_order",
+                secret_key_hash_phc="test_key_hash_order",
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            test_session = Session(project_id=project.id, space_id=space.id)
+            session.add(test_session)
+            await session.flush()
+
+            # Create initial tasks with orders 1, 2, 3
+            task1 = Task(
+                session_id=test_session.id,
+                task_order=1,
+                task_data={"name": "task1"},
+                task_status="pending",
+            )
+            task2 = Task(
+                session_id=test_session.id,
+                task_order=2,
+                task_data={"name": "task2"},
+                task_status="pending",
+            )
+            task3 = Task(
+                session_id=test_session.id,
+                task_order=3,
+                task_data={"name": "task3"},
+                task_status="pending",
+            )
+            session.add_all([task1, task2, task3])
+            await session.flush()
+
+            # Insert a new task after position 1 (should become position 2)
+            new_task_data = {"name": "inserted_task"}
+            result = await insert_task(session, test_session.id, 1, new_task_data)
+
+            new_task, error = result.unpack()
+            assert error is None
+            assert new_task.task_order == 2
+
+            # Fetch all tasks and verify the new ordering
+            fetch_result = await fetch_current_tasks(session, test_session.id)
+            all_tasks, _ = fetch_result.unpack()
+
+            assert len(all_tasks) == 4
+
+            # Verify the new order: task1(1), inserted_task(2), task2(3), task3(4)
+            assert all_tasks[0].task_data["name"] == "task1"
+            assert all_tasks[0].task_order == 1
+
+            assert all_tasks[1].task_data["name"] == "inserted_task"
+            assert all_tasks[1].task_order == 2
+
+            assert all_tasks[2].task_data["name"] == "task2"
+            assert all_tasks[2].task_order == 3  # Was 2, now 3
+
+            assert all_tasks[3].task_data["name"] == "task3"
+            assert all_tasks[3].task_order == 4  # Was 3, now 4
 
             await session.delete(project)
 
@@ -719,9 +778,10 @@ class TestIntegrationScenarios:
 
             # 1. Create a task
             initial_data = {"name": "lifecycle_task", "step": "created"}
-            create_result = await insert_task(session, test_session.id, 1, initial_data)
-            task_id, _ = create_result.unpack()
-            assert task_id is not None
+            create_result = await insert_task(session, test_session.id, 0, initial_data)
+            created_task, _ = create_result.unpack()
+            assert created_task is not None
+            task_id = created_task.id
 
             # 2. Update the task
             updated_data = {"name": "lifecycle_task", "step": "updated"}
@@ -776,9 +836,9 @@ class TestIntegrationScenarios:
             await session.flush()
 
             # Create tasks in each session
-            await insert_task(session, session1.id, 1, {"session": "1", "task": "A"})
-            await insert_task(session, session1.id, 2, {"session": "1", "task": "B"})
-            await insert_task(session, session2.id, 1, {"session": "2", "task": "A"})
+            await insert_task(session, session1.id, 0, {"session": "1", "task": "A"})
+            await insert_task(session, session1.id, 1, {"session": "1", "task": "B"})
+            await insert_task(session, session2.id, 0, {"session": "2", "task": "A"})
 
             # Fetch tasks for each session
             session1_tasks_result = await fetch_current_tasks(session, session1.id)
@@ -797,7 +857,7 @@ class TestIntegrationScenarios:
 
     @pytest.mark.asyncio
     async def test_task_ordering_after_updates(self):
-        """Test that task ordering is maintained after updates"""
+        """Test that task ordering is maintained after updates and insertions"""
         db_client = DatabaseClient()
         await db_client.create_tables()
 
@@ -817,32 +877,68 @@ class TestIntegrationScenarios:
             session.add(test_session)
             await session.flush()
 
-            # Create tasks with specific orders
+            # Create initial tasks in order
             task1_result = await insert_task(
-                session, test_session.id, 3, {"name": "task1"}
+                session,
+                test_session.id,
+                0,
+                {"name": "task1"},  # Insert after 0 -> position 1
             )
             task2_result = await insert_task(
-                session, test_session.id, 1, {"name": "task2"}
+                session,
+                test_session.id,
+                1,
+                {"name": "task2"},  # Insert after 1 -> position 2
             )
             task3_result = await insert_task(
-                session, test_session.id, 2, {"name": "task3"}
+                session,
+                test_session.id,
+                2,
+                {"name": "task3"},  # Insert after 2 -> position 3
             )
 
-            task1_id, _ = task1_result.unpack()
-            task2_id, _ = task2_result.unpack()
-            task3_id, _ = task3_result.unpack()
+            task1, _ = task1_result.unpack()
+            task2, _ = task2_result.unpack()
+            task3, _ = task3_result.unpack()
 
-            # Update task orders
-            await update_task(session, task1_id, order=1)  # Move task1 to first
-            await update_task(session, task2_id, order=3)  # Move task2 to last
+            # Insert a new task in the middle (after position 1)
+            middle_task_result = await insert_task(
+                session,
+                test_session.id,
+                1,
+                {"name": "middle_task"},  # Insert after 1 -> position 2
+            )
+            middle_task, _ = middle_task_result.unpack()
 
-            # Fetch and verify ordering
+            # Fetch and verify the new ordering
             fetch_result = await fetch_current_tasks(session, test_session.id)
             tasks, _ = fetch_result.unpack()
 
-            assert len(tasks) == 3
-            assert tasks[0].id == task1_id  # Should be first (order=1)
-            assert tasks[1].id == task3_id  # Should be second (order=2)
-            assert tasks[2].id == task2_id  # Should be last (order=3)
+            assert len(tasks) == 4
+
+            # Expected order: task1(1), middle_task(2), task2(3), task3(4)
+            assert tasks[0].id == task1.id
+            assert tasks[0].task_order == 1
+
+            assert tasks[1].id == middle_task.id
+            assert tasks[1].task_order == 2
+
+            assert tasks[2].id == task2.id
+            assert tasks[2].task_order == 3  # Was 2, incremented to 3
+
+            assert tasks[3].id == task3.id
+            assert tasks[3].task_order == 4  # Was 3, incremented to 4
+
+            # Now test manual order updates
+            await update_task(session, task1.id, order=10)  # Move task1 to the end
+
+            # Fetch again and verify
+            fetch_result2 = await fetch_current_tasks(session, test_session.id)
+            tasks2, _ = fetch_result2.unpack()
+
+            # Note: This doesn't automatically reorder other tasks - that would need
+            # additional logic. For now, just verify the update worked.
+            task1_updated = next(t for t in tasks2 if t.id == task1.id)
+            assert task1_updated.task_order == 10
 
             await session.delete(project)
