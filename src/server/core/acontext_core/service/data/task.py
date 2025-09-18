@@ -16,6 +16,7 @@ async def fetch_current_tasks(
     query = (
         select(Task)
         .where(Task.session_id == session_id)
+        .where(Task.is_planning_task == False)
         .options(selectinload(Task.messages))  # Eagerly load related messages
         .order_by(Task.task_order.asc())
     )
@@ -26,9 +27,11 @@ async def fetch_current_tasks(
     tasks_d = [
         TaskSchema(
             id=t.id,
+            session_id=t.session_id,
             task_order=t.task_order,
             task_status=t.task_status,
-            task_description=t.task_data["task_description"],
+            task_description=t.task_data.get("task_description", ""),
+            task_data=t.task_data,
             raw_message_ids=[msg.id for msg in t.messages],
         )
         for t in tasks
@@ -41,6 +44,7 @@ async def update_task(
     task_id: asUUID,
     status: str = None,
     order: int = None,
+    patch_data: dict = None,
     data: dict = None,
 ) -> Result[Task]:
     # Fetch the task to update
@@ -56,8 +60,14 @@ async def update_task(
         task.task_status = status
     if order is not None:
         task.task_order = order
+
     if data is not None:
         task.task_data = data
+    elif patch_data is not None:
+        new_data = task.task_data.copy()
+        new_data.update(patch_data)
+        task.task_data = new_data
+
     await db_session.flush()
     # Changes will be committed when the session context exits
     return Result.resolve(task)
@@ -116,3 +126,44 @@ async def delete_task(db_session: AsyncSession, task_id: asUUID) -> Result[None]
     # Fetch the task to delete
     await db_session.execute(delete(Task).where(Task.id == task_id))
     return Result.resolve(None)
+
+
+async def append_messages_to_task(
+    db_session: AsyncSession,
+    message_ids: list[asUUID],
+    task_id: asUUID,
+) -> Result[None]:
+    # set those messages' task_id to task_id
+    await db_session.execute(
+        update(Message).where(Message.id.in_(message_ids)).values(task_id=task_id)
+    )
+    await db_session.flush()
+    return Result.resolve(None)
+
+
+async def append_messages_to_planning_section(
+    db_session: AsyncSession,
+    session_id: asUUID,
+    message_ids: list[asUUID],
+) -> Result[None]:
+    # set those messages' task_id to task_id
+    query = (
+        select(Task)
+        .where(Task.session_id == session_id)
+        .where(Task.is_planning_task == True)
+    )
+    result = await db_session.execute(query)
+    planning_task = result.scalars().first()
+    if planning_task is None:
+        # add planning section
+        planning_task = Task(
+            session_id=session_id,
+            task_order=0,
+            task_data={},
+            is_planning_task=True,
+        )
+        db_session.add(planning_task)
+        await db_session.flush()
+    planning_section_id = planning_task.id
+    r = await append_messages_to_task(db_session, message_ids, planning_section_id)
+    return r

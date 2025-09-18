@@ -55,10 +55,12 @@ async def openai_complete(
         if response.choices[0].message.tool_calls
         else None
     )
+    if not _tu and _fc:
+        _tu = [_fc]
+
     llm_response = LLMResponse(
         role=response.choices[0].message.role,
         content=response.choices[0].message.content,
-        function_call=_fc,
         tool_calls=_tu,
     )
 

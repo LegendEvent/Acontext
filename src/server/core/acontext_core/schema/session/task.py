@@ -12,10 +12,12 @@ class TaskStatus(StrEnum):
 
 class TaskSchema(BaseModel):
     id: asUUID
+    session_id: asUUID
 
     task_order: int
     task_description: str
     task_status: TaskStatus
+    task_data: dict
     raw_message_ids: list[asUUID]
 
     def to_string(self) -> str:

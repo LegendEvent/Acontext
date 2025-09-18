@@ -5,6 +5,8 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
 from datetime import datetime
+from sqlalchemy import update
+from ...schema.session.task import TaskStatus
 from ...schema.orm import Message, Part, Asset
 from ...schema.result import Result
 from ...schema.utils import asUUID
@@ -213,3 +215,30 @@ async def fetch_previous_messages_by_datetime(
     message_ids = [dp[0] for dp in _dp]
 
     return await fetch_messages_data_by_ids(db_session, message_ids)
+
+
+async def rollback_message_status_to_pending(
+    db_session: AsyncSession, message_ids: List[asUUID]
+) -> Result[bool]:
+    """
+    Rollback message status from 'running' to 'pending' for retry.
+
+    Args:
+        db_session: Database session
+        message_ids: List of message IDs to rollback
+
+    Returns:
+        Result indicating success or failure
+    """
+
+    # Update all messages in one query
+    stmt = (
+        update(Message)
+        .where(Message.id.in_(message_ids))
+        .values(session_task_process_status=TaskStatus.PENDING.value)
+    )
+
+    await db_session.execute(stmt)
+    await db_session.flush()
+
+    return Result.resolve(True)

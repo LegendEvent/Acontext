@@ -391,6 +391,167 @@ class TestUpdateTask:
 
             await session.delete(project)
 
+    @pytest.mark.asyncio
+    async def test_update_task_patch_data_success(self):
+        """Test updating task using patch_data for partial updates"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Create test data
+            project = Project(
+                secret_key_hmac="test_key_hmac_patch",
+                secret_key_hash_phc="test_key_hash_patch",
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            test_session = Session(project_id=project.id, space_id=space.id)
+            session.add(test_session)
+            await session.flush()
+
+            # Create task with initial complex data
+            initial_data = {
+                "task_description": "original task",
+                "priority": "medium",
+                "metadata": {"tags": ["backend", "api"], "config": {"timeout": 300}},
+                "status_details": {"attempts": 0},
+            }
+            task = Task(
+                session_id=test_session.id,
+                task_order=1,
+                task_data=initial_data,
+                task_status="pending",
+            )
+            session.add(task)
+            await session.flush()
+
+            # Test 1: Simple patch_data update
+            patch_data = {"task_description": "updated task description"}
+            result = await update_task(session, task.id, patch_data=patch_data)
+
+            data, error = result.unpack()
+            assert error is None
+            assert data is not None
+
+            # Verify the patched field is updated
+            assert data.task_data["task_description"] == "updated task description"
+            # Verify other fields remain unchanged
+            assert data.task_data["priority"] == "medium"
+            assert data.task_data["metadata"] == initial_data["metadata"]
+            assert data.task_data["status_details"] == initial_data["status_details"]
+
+            # Test 2: Add new fields via patch_data
+            patch_data = {"new_field": "new_value", "assigned_to": "user123"}
+            result = await update_task(session, task.id, patch_data=patch_data)
+
+            data, error = result.unpack()
+            assert error is None
+            assert data is not None
+
+            # Verify new fields are added
+            assert data.task_data["new_field"] == "new_value"
+            assert data.task_data["assigned_to"] == "user123"
+            # Verify existing fields remain unchanged
+            assert data.task_data["task_description"] == "updated task description"
+            assert data.task_data["priority"] == "medium"
+
+            # Test 3: Update multiple existing fields
+            patch_data = {
+                "priority": "high",
+                "status_details": {"attempts": 1, "last_error": None},
+            }
+            result = await update_task(session, task.id, patch_data=patch_data)
+
+            data, error = result.unpack()
+            assert error is None
+            assert data is not None
+
+            # Verify updated fields
+            assert data.task_data["priority"] == "high"
+            assert data.task_data["status_details"] == {
+                "attempts": 1,
+                "last_error": None,
+            }
+            # Verify other fields remain unchanged
+            assert data.task_data["task_description"] == "updated task description"
+            assert data.task_data["new_field"] == "new_value"
+
+            # Test 4: Verify data parameter takes precedence over patch_data
+            complete_new_data = {"completely": "new", "data": "structure"}
+            patch_data = {"should": "be_ignored"}
+
+            result = await update_task(
+                session, task.id, data=complete_new_data, patch_data=patch_data
+            )
+
+            data, error = result.unpack()
+            assert error is None
+            assert data is not None
+
+            # Verify data parameter took precedence
+            assert data.task_data == complete_new_data
+            assert "should" not in data.task_data
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_update_task_patch_data_with_status_and_order(self):
+        """Test updating task using patch_data combined with status and order updates"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Create test data
+            project = Project(
+                secret_key_hmac="test_key_hmac_patch2",
+                secret_key_hash_phc="test_key_hash_patch2",
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            test_session = Session(project_id=project.id, space_id=space.id)
+            session.add(test_session)
+            await session.flush()
+
+            task = Task(
+                session_id=test_session.id,
+                task_order=1,
+                task_data={"task_description": "original", "step": "init"},
+                task_status="pending",
+            )
+            session.add(task)
+            await session.flush()
+
+            # Update multiple aspects of the task
+            patch_data = {
+                "task_description": "patched description",
+                "step": "processing",
+            }
+            result = await update_task(
+                session, task.id, status="running", order=5, patch_data=patch_data
+            )
+
+            data, error = result.unpack()
+            assert error is None
+            assert data is not None
+
+            # Verify all updates were applied
+            assert data.task_status == "running"
+            assert data.task_order == 5
+            assert data.task_data["task_description"] == "patched description"
+            assert data.task_data["step"] == "processing"
+
+            await session.delete(project)
+
 
 class TestInsertTask:
     @pytest.mark.asyncio

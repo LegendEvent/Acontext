@@ -1,6 +1,7 @@
 from typing import Optional
 from .base import BasePrompt
 from ...schema.llm import ToolSchema
+from ...llm.agent.task_tools import TASK_TOOLS
 
 
 class TaskPrompt(BasePrompt):
@@ -90,110 +91,13 @@ Please analyze the above information and determine the actions.
 
     @classmethod
     def tool_schema(cls) -> list[ToolSchema]:
-        insert_task_tool = ToolSchema(
-            function={
-                "name": "insert_task",
-                "description": "Create a new task by inserting it after the specified task order. This is used when identifying new tasks from conversation messages.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "after_task_order": {
-                            "type": "integer",
-                            "description": "The task order after which to insert the new task. Use 0 to insert at the beginning.",
-                        },
-                        "task_description": {
-                            "type": "string",
-                            "description": "A clear, concise description of the task, of what's should be done and what's the expected result if any.",
-                        },
-                    },
-                    "required": ["after_task_order", "task_description"],
-                },
-            }
-        )
-
-        update_task_tool = ToolSchema(
-            function={
-                "name": "update_task",
-                "description": """Update an existing task's description and/or status. 
-Use this when task progress changes or task details need modification.
-Mostly use it to update the task status, if you're confident about a task is running, completed or failed.
-Only when the conversation explicitly mention certain task's purpose should be modified, then use this tool to update the task description.""",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "task_order": {
-                            "type": "integer",
-                            "description": "The order number of the task to update.",
-                        },
-                        "task_status": {
-                            "type": "string",
-                            "enum": ["pending", "running", "success", "failed"],
-                            "description": "New status for the task. Use 'pending' for not started, 'running' for in progress, 'success' for completed, 'failed' for encountered errors.",
-                        },
-                        "task_description": {
-                            "type": "string",
-                            "description": "Update description for the task, of what's should be done and what's the expected result if any. (optional).",
-                        },
-                    },
-                    "required": ["task_order"],
-                },
-            }
-        )
-
-        append_messages_to_planning_tool = ToolSchema(
-            function={
-                "name": "append_messages_to_planning_section",
-                "description": """Save current message ids to the planning section.
-Use this when messages are about the agent/user is planning general plan, and those messages aren't related to any specific task execution.""",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "message_ids": {
-                            "type": "array",
-                            "items": {"type": "integer"},
-                            "description": "List of message IDs to append to the planning section.",
-                        },
-                    },
-                    "required": ["message_ids"],
-                },
-            }
-        )
-
-        append_messages_to_task_tool = ToolSchema(
-            function={
-                "name": "append_messages_to_task",
-                "description": """Link current message ids to a task for tracking progress and context.
-Use this to associate conversation messages with relevant tasks.
-If the task is marked as 'success' or 'failed', don't append messages to it.""",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "task_order": {
-                            "type": "integer",
-                            "description": "The order number of the task to link messages to.",
-                        },
-                        "message_ids": {
-                            "type": "array",
-                            "items": {"type": "integer"},
-                            "description": "List of message IDs to append to the task.",
-                        },
-                    },
-                    "required": ["task_order", "message_ids"],
-                },
-            }
-        )
-
-        finish_tool = ToolSchema(
-            function={
-                "name": "finish",
-                "description": "Call it when you have completed the actions for task management.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "required": [],
-                },
-            }
-        )
+        insert_task_tool = TASK_TOOLS["insert_task"].schema
+        update_task_tool = TASK_TOOLS["update_task"].schema
+        append_messages_to_planning_tool = TASK_TOOLS[
+            "append_messages_to_planning_section"
+        ].schema
+        append_messages_to_task_tool = TASK_TOOLS["append_messages_to_task"].schema
+        finish_tool = TASK_TOOLS["finish"].schema
 
         return [
             insert_task_tool,

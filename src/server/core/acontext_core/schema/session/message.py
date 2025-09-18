@@ -8,6 +8,7 @@ STRING_TYPES = {"text", "tool-call", "tool-result"}
 REPLACE_NAME = {
     "assistant": "agent",
     "tool": "agent_action",
+    "tool-result": "agent_action_result",
     "function": "agent_action",
 }
 
