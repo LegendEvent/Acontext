@@ -3,27 +3,37 @@ import json
 from typing import List, Optional
 from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import ValidationError
-from ...schema.orm import Task
+from sqlalchemy.orm import selectinload
+from ...schema.orm import Task, Message
 from ...schema.result import Result
 from ...schema.utils import asUUID
-from ...infra.s3 import S3_CLIENT
-from ...env import LOG
+from ...schema.session.task import TaskSchema
 
 
 async def fetch_current_tasks(
     db_session: AsyncSession, session_id: asUUID, status: str = None
-) -> Result[List[Task]]:
+) -> Result[List[TaskSchema]]:
     query = (
         select(Task)
         .where(Task.session_id == session_id)
+        .options(selectinload(Task.messages))  # Eagerly load related messages
         .order_by(Task.task_order.asc())
     )
     if status:
         query = query.where(Task.task_status == status)
     result = await db_session.execute(query)
     tasks = list(result.scalars().all())
-    return Result.resolve(tasks)
+    tasks_d = [
+        TaskSchema(
+            id=t.id,
+            task_order=t.task_order,
+            task_status=t.task_status,
+            task_description=t.task_data["task_description"],
+            raw_message_ids=[msg.id for msg in t.messages],
+        )
+        for t in tasks
+    ]
+    return Result.resolve(tasks_d)  # Fixed: return tasks_d instead of tasks
 
 
 async def update_task(
@@ -48,7 +58,7 @@ async def update_task(
         task.task_order = order
     if data is not None:
         task.task_data = data
-
+    await db_session.flush()
     # Changes will be committed when the session context exits
     return Result.resolve(task)
 

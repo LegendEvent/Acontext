@@ -22,7 +22,7 @@ class CoreConfig(BaseModel):
     session_message_processing_timeout_seconds: int = 60
 
     # MQ Configuration
-    mq_url: str = "amqp://acontext:helloworld@localhost:15672/"
+    mq_url: str = "amqp://acontext:helloworld@127.0.0.1:15672/"
     mq_connection_name: str = "acontext_core"
     mq_global_qos: int = 100
     mq_consumer_handler_timeout: float = 96
@@ -33,11 +33,11 @@ class CoreConfig(BaseModel):
 
     # Database Configuration
     database_pool_size: int = 64
-    database_url: str = "postgresql://acontext:helloworld@localhost:15432/acontext"
+    database_url: str = "postgresql://acontext:helloworld@127.0.0.1:15432/acontext"
 
     # Redis Configuration
     redis_pool_size: int = 32
-    redis_url: str = "redis://:helloworld@localhost:16379"
+    redis_url: str = "redis://:helloworld@127.0.0.1:16379"
 
     # S3 Configuration (MinIO defaults based on docker-compose)
     s3_endpoint: str = "http://127.0.0.1:19000"  # MinIO API endpoint
