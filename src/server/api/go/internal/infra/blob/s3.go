@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"mime/multipart"
@@ -20,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/bytedance/sonic"
 	"github.com/memodb-io/Acontext/internal/config"
 )
 
@@ -176,7 +176,7 @@ func (u *S3Deps) UploadFormFile(ctx context.Context, keyPrefix string, fh *multi
 // UploadJSON uploads JSON data to S3 and returns metadata
 func (u *S3Deps) UploadJSON(ctx context.Context, keyPrefix string, data interface{}) (*UploadedMeta, error) {
 	// Serialize data to JSON
-	jsonData, err := json.Marshal(data)
+	jsonData, err := sonic.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("marshal json: %w", err)
 	}
@@ -235,7 +235,7 @@ func (u *S3Deps) DownloadJSON(ctx context.Context, key string, target interface{
 	}
 
 	// Unmarshal JSON
-	if err := json.Unmarshal(buf.Bytes(), target); err != nil {
+	if err := sonic.Unmarshal(buf.Bytes(), target); err != nil {
 		return fmt.Errorf("unmarshal json: %w", err)
 	}
 

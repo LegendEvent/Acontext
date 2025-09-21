@@ -2,10 +2,10 @@ package mq
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
+	"github.com/bytedance/sonic"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 )
@@ -35,7 +35,7 @@ func NewPublisher(conn *amqp.Connection, log *zap.Logger) (*Publisher, error) {
 func (p *Publisher) Close() error { return p.ch.Close() }
 
 func (p *Publisher) PublishJSON(ctx context.Context, exchangeName string, routingKey string, body any) error {
-	b, err := json.Marshal(body)
+	b, err := sonic.Marshal(body)
 	if err != nil {
 		return err
 	}

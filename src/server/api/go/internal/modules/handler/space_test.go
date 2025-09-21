@@ -3,12 +3,12 @@ package handler
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
@@ -116,7 +116,7 @@ func TestSpaceHandler_CreateSpace(t *testing.T) {
 				handler.CreateSpace(c)
 			})
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/space", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -240,7 +240,7 @@ func TestSpaceHandler_UpdateConfigs(t *testing.T) {
 			router := setupSpaceRouter()
 			router.PUT("/space/:space_id/configs", handler.UpdateConfigs)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("PUT", "/space/"+tt.spaceIDParam+"/configs", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -349,7 +349,7 @@ func TestSpaceHandler_GetSemanticAnswer(t *testing.T) {
 			router := setupSpaceRouter()
 			router.POST("/space/:space_id/semantic_answer", handler.GetSemanticAnswer)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/semantic_answer", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -398,7 +398,7 @@ func TestSpaceHandler_GetSemanticGlobal(t *testing.T) {
 			router := setupSpaceRouter()
 			router.POST("/space/:space_id/semantic_global", handler.GetSemanticGlobal)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/semantic_global", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -447,7 +447,7 @@ func TestSpaceHandler_GetSemanticGrep(t *testing.T) {
 			router := setupSpaceRouter()
 			router.POST("/space/:space_id/semantic_grep", handler.GetSemanticGrep)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/semantic_grep", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()

@@ -3,12 +3,12 @@ package handler
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
@@ -146,7 +146,7 @@ func TestSessionHandler_CreateSession(t *testing.T) {
 				handler.CreateSession(c)
 			})
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/session", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -274,7 +274,7 @@ func TestSessionHandler_UpdateConfigs(t *testing.T) {
 			router := setupSessionRouter()
 			router.PUT("/session/:session_id/configs", handler.UpdateConfigs)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("PUT", "/session/"+tt.sessionIDParam+"/configs", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -410,7 +410,7 @@ func TestSessionHandler_ConnectToSpace(t *testing.T) {
 			router := setupSessionRouter()
 			router.POST("/session/:session_id/connect_to_space", handler.ConnectToSpace)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/session/"+tt.sessionIDParam+"/connect_to_space", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -511,7 +511,7 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 				handler.SendMessage(c)
 			})
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/session/"+tt.sessionIDParam+"/messages", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()

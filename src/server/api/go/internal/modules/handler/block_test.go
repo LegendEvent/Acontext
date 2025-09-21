@@ -3,12 +3,12 @@ package handler
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
@@ -167,7 +167,7 @@ func TestBlockHandler_CreatePage(t *testing.T) {
 			router := setupRouter()
 			router.POST("/space/:space_id/page", handler.CreatePage)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/page", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -307,7 +307,7 @@ func TestBlockHandler_CreateBlock(t *testing.T) {
 			router := setupRouter()
 			router.POST("/space/:space_id/block", handler.CreateBlock)
 
-			body, _ := json.Marshal(tt.requestBody)
+			body, _ := sonic.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/space/"+tt.spaceIDParam+"/block", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()

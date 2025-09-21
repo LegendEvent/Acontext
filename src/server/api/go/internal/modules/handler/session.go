@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"mime/multipart"
@@ -9,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -248,7 +248,7 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 	fileMap := map[string]*multipart.FileHeader{}
 	if strings.HasPrefix(ct, "multipart/form-data") {
 		if p := c.PostForm("payload"); p != "" {
-			if err := json.Unmarshal([]byte(p), &req); err != nil {
+			if err := sonic.Unmarshal([]byte(p), &req); err != nil {
 				c.JSON(http.StatusBadRequest, serializer.ParamErr("invalid payload json", err))
 				return
 			}
