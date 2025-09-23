@@ -35,7 +35,7 @@ type CreateFileReq struct {
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			artifact_id	path		string	true	"Artifact ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			file_path	formData	string	false	"File path in the artifact storage (optional, defaults to '/filename')"
+//	@Param			file_path	formData	string	false	"File path in the artifact storage (optional, defaults to '/')"
 //	@Param			file		formData	file	true	"File to upload"
 //	@Param			meta		formData	string	false	"Custom metadata as JSON string (optional, system metadata will be stored under '__file_info__' key)"
 //	@Security		BearerAuth
