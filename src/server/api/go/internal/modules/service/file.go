@@ -96,10 +96,7 @@ func (s *fileService) Create(ctx context.Context, artifactID uuid.UUID, path str
 		return nil, fmt.Errorf("file '%s' already exists in path '%s'", filename, path)
 	}
 
-	// Generate S3 key
-	s3Key := fmt.Sprintf("artifacts/%s/%s", artifactID.String(), filename)
-
-	uploadedMeta, err := s.s3.UploadFormFile(ctx, s3Key, fileHeader)
+	uploadedMeta, err := s.s3.UploadFormFile(ctx, "artifacts/"+artifactID.String(), fileHeader)
 	if err != nil {
 		return nil, fmt.Errorf("upload file to S3: %w", err)
 	}
@@ -217,10 +214,7 @@ func (s *fileService) UpdateFile(ctx context.Context, artifactID uuid.UUID, file
 		return nil, fmt.Errorf("file '%s' already exists in path '%s'", filename, path)
 	}
 
-	// Generate new S3 key
-	s3Key := fmt.Sprintf("artifacts/%s/%s", artifactID.String(), filename)
-
-	uploadedMeta, err := s.s3.UploadFormFile(ctx, s3Key, fileHeader)
+	uploadedMeta, err := s.s3.UploadFormFile(ctx, "artifacts/"+artifactID.String(), fileHeader)
 	if err != nil {
 		return nil, fmt.Errorf("upload file to S3: %w", err)
 	}
@@ -281,10 +275,7 @@ func (s *fileService) UpdateFileByPath(ctx context.Context, artifactID uuid.UUID
 		return nil, fmt.Errorf("file '%s' already exists in path '%s'", targetFilename, targetPath)
 	}
 
-	// Generate new S3 key
-	s3Key := fmt.Sprintf("artifacts/%s/%s", artifactID.String(), targetFilename)
-
-	uploadedMeta, err := s.s3.UploadFormFile(ctx, s3Key, fileHeader)
+	uploadedMeta, err := s.s3.UploadFormFile(ctx, "artifacts/"+artifactID.String(), fileHeader)
 	if err != nil {
 		return nil, fmt.Errorf("upload file to S3: %w", err)
 	}
