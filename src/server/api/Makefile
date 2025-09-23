@@ -78,8 +78,8 @@ test-all: test-unit test-integration test-e2e ## Run all tests
 test-coverage: ## Generate test coverage report
 	@echo "Generating test coverage report..."
 	@mkdir -p $(COVERAGE_DIR)
-	cd $(GO_DIR) && go test -coverprofile=$(COVERAGE_DIR)/coverage.out -covermode=atomic ./internal/... ./cmd/...
-	cd $(GO_DIR) && go tool cover -html=$(COVERAGE_DIR)/coverage.out -o $(COVERAGE_DIR)/coverage.html
+	cd $(GO_DIR) && go test -coverprofile=coverage/coverage.out -covermode=atomic ./internal/... ./cmd/...
+	cd $(GO_DIR) && go tool cover -html=coverage/coverage.out -o coverage/coverage.html
 	@echo "Coverage report generated: $(COVERAGE_DIR)/coverage.html"
 
 # Code quality
