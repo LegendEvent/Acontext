@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -61,10 +60,14 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 		return
 	}
 
-	req.FilePath = strings.TrimSuffix(req.FilePath, "/") + "/"
+	// Parse FilePath to extract path and filename
+	filePath, _ := path.SplitFilePath(req.FilePath)
+
+	// Use the filename from the uploaded file, not from the path
+	actualFilename := file.Filename
 
 	// Validate the path parameter
-	if err := path.ValidatePath(req.FilePath); err != nil {
+	if err := path.ValidatePath(filePath); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("invalid path", err))
 		return
 	}
@@ -87,7 +90,7 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 		}
 	}
 
-	fileRecord, err := h.svc.Create(c.Request.Context(), artifactID, req.FilePath, file.Filename, file, userMeta)
+	fileRecord, err := h.svc.Create(c.Request.Context(), artifactID, filePath, actualFilename, file, userMeta)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return

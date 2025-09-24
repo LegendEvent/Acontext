@@ -110,11 +110,11 @@ func TestFileHandler_CreateFile(t *testing.T) {
 				expectedFile := &model.File{
 					ID:         uuid.New(),
 					ArtifactID: artifactID,
-					Path:       "/test",
+					Path:       "/test/",
 					Filename:   "test.txt",
 					Meta: map[string]interface{}{
 						model.FileInfoKey: map[string]interface{}{
-							"path":     "/test",
+							"path":     "/test/",
 							"filename": "test.txt",
 							"mime":     "text/plain",
 							"size":     12,
