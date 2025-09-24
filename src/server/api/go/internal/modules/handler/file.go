@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,7 @@ func NewFileHandler(s service.FileService) *FileHandler {
 }
 
 type CreateFileReq struct {
-	FilePath string `form:"file_path" json:"file_path"` // Optional, defaults to "/filename" (root directory with uploaded file name)
+	FilePath string `form:"file_path" json:"file_path"` // Optional, defaults to "/"
 	Meta     string `form:"meta" json:"meta"`
 }
 
@@ -60,23 +61,10 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 		return
 	}
 
-	// Parse FilePath to extract path and filename
-	var filePath, filename string
-	if req.FilePath == "" {
-		// Default to root directory with uploaded file name
-		filePath = "/"
-		filename = file.Filename
-	} else {
-		// Extract path and filename from FilePath
-		filePath, filename = path.SplitFilePath(req.FilePath)
-		if filename == "" {
-			// If no filename in FilePath, use uploaded file name
-			filename = file.Filename
-		}
-	}
+	req.FilePath = strings.TrimSuffix(req.FilePath, "/") + "/"
 
 	// Validate the path parameter
-	if err := path.ValidatePath(filePath); err != nil {
+	if err := path.ValidatePath(req.FilePath); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("invalid path", err))
 		return
 	}
@@ -99,7 +87,7 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 		}
 	}
 
-	fileRecord, err := h.svc.Create(c.Request.Context(), artifactID, filePath, filename, file, userMeta)
+	fileRecord, err := h.svc.Create(c.Request.Context(), artifactID, req.FilePath, file.Filename, file, userMeta)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
