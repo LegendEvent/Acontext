@@ -196,7 +196,6 @@ async def unpending_session_messages_to_running(
     )
     result = await db_session.execute(query)
     rdp = sorted(result.mappings().all(), key=lambda x: x["created_at"])
-    print(rdp)
     message_ids = [rdp["id"] for rdp in rdp]
     await db_session.flush()
     return Result.resolve(message_ids)

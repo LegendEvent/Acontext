@@ -2,12 +2,24 @@ import json
 from typing import Optional
 from .clients import get_openai_async_client_instance
 from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletionMessageToolCall
 from ...env import LOG, CONFIG
 from ...schema.llm import LLMResponse
 
 
+def convert_openai_tool_to_llm_tool(tool_body: ChatCompletionMessageToolCall) -> dict:
+    return {
+        "id": tool_body.id,
+        "type": tool_body.type,
+        "function": {
+            "name": tool_body.function.name,
+            "arguments": json.loads(tool_body.function.arguments),
+        },
+    }
+
+
 async def openai_complete(
-    prompt,
+    prompt=None,
     model=None,
     system_prompt=None,
     history_messages=[],
@@ -29,7 +41,11 @@ async def openai_complete(
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.extend(history_messages)
-    messages.append({"role": "user", "content": prompt})
+    if prompt:
+        messages.append({"role": "user", "content": prompt})
+
+    if not messages:
+        raise ValueError("No messages provided")
 
     response: ChatCompletion = await openai_async_client.chat.completions.create(
         model=model,
@@ -45,21 +61,26 @@ async def openai_complete(
         f"cached {cached_tokens}, input {response.usage.prompt_tokens}, total {response.usage.total_tokens}"
     )
 
-    _fc = (
-        response.choices[0].message.function_call.model_dump()
-        if response.choices[0].message.function_call
-        else None
-    )
+    # Only support tool calls
+    # _fc = (
+    #     response.choices[0].message.function_call.model_dump()
+    #     if response.choices[0].message.function_call
+    #     else None
+    # )
     _tu = (
-        [tool.model_dump() for tool in response.choices[0].message.tool_calls]
+        [
+            convert_openai_tool_to_llm_tool(tool)
+            for tool in response.choices[0].message.tool_calls
+        ]
         if response.choices[0].message.tool_calls
         else None
     )
-    if not _tu and _fc:
-        _tu = [_fc]
+    # if not _tu and _fc:
+    #     _tu = [_fc]
 
     llm_response = LLMResponse(
         role=response.choices[0].message.role,
+        raw_response=response,
         content=response.choices[0].message.content,
         tool_calls=_tu,
     )

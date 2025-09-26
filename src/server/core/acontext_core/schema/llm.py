@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
 
 
 class FunctionSchema(BaseModel):
@@ -15,17 +15,18 @@ class ToolSchema(BaseModel):
 
 class LLMFunction(BaseModel):
     name: str
-    arguments: Optional[str] = None
+    arguments: dict[str, Any]
 
 
 class LLMToolCall(BaseModel):
     id: str
     function: Optional[LLMFunction] = None
-    type: Literal["function", "tool"]
+    type: Literal["function"]
 
 
 class LLMResponse(BaseModel):
     role: Literal["user", "assistant", "system", "tool"]
+    raw_response: BaseModel
 
     content: Optional[str] = None
     json_content: Optional[dict] = None

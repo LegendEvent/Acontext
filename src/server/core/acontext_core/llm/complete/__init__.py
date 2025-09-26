@@ -16,7 +16,7 @@ FACTORIES: Mapping[str, COMPLETE_FUNC] = {
 
 
 async def llm_complete(
-    prompt,
+    prompt=None,
     model=None,
     system_prompt=None,
     history_messages=[],
@@ -59,3 +59,26 @@ async def llm_sanity_check():
     if eil:
         raise ValueError(f"LLM check failed: {eil}")
     LOG.info("LLM check passed")
+
+
+def response_to_sendable_message(message: LLMResponse) -> dict:
+    if CONFIG.llm_sdk == "openai":
+        return message.raw_response.choices[0].message.model_dump()
+    elif CONFIG.llm_sdk == "anthropic":
+        dp = {"role": message.role, "content": []}
+        if message.content:
+            dp["content"].append({"type": "text", "text": message.content})
+        if not message.tool_calls:
+            return dp
+        for tool_call in message.tool_calls:
+            dp["content"].append(
+                {
+                    "type": "tool_use",
+                    "id": tool_call.id,
+                    "name": tool_call.function.name,
+                    "input": tool_call.function.arguments,
+                }
+            )
+        return dp
+    else:
+        raise ValueError(f"Unsupported LLM SDK: {CONFIG.llm_sdk}")

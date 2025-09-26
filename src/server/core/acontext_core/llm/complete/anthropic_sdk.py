@@ -1,3 +1,4 @@
+from hmac import new
 import json
 from typing import Optional
 from .clients import get_anthropic_async_client_instance
@@ -17,8 +18,41 @@ def convert_openai_tool_to_anthropic_tool(tools: list[dict]) -> list[dict]:
     ]
 
 
+def process_messages(messages: list[dict]) -> list[dict]:
+    new_messages = []
+    for m in messages:
+        if isinstance(m, dict) and m["role"] == "tool" and "tool_call_id" in m:
+            if (
+                isinstance(new_messages[-1], dict)
+                and new_messages[-1]["role"] == "user"
+            ):
+                new_messages[-1]["content"].append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": m["tool_call_id"],
+                        "content": m["content"],
+                    }
+                )
+            else:
+                new_messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": m["tool_call_id"],
+                                "content": m["content"],
+                            }
+                        ],
+                    }
+                )
+        else:
+            new_messages.append(m)
+    return new_messages
+
+
 async def anthropic_complete(
-    prompt,
+    prompt=None,
     model=None,
     system_prompt=None,
     history_messages=[],
@@ -37,8 +71,13 @@ async def anthropic_complete(
     messages = []
     messages.extend(history_messages)
     # Add the current user prompt
-    messages.append({"role": "user", "content": prompt})
+    if prompt:
+        messages.append({"role": "user", "content": prompt})
 
+    if not messages:
+        raise ValueError("No messages provided")
+
+    messages = process_messages(messages)
     # Prepare request parameters
     request_params = {
         "model": model,
@@ -77,7 +116,6 @@ async def anthropic_complete(
         # Extract content from response
         content = ""
         tool_calls = []
-
         for content_block in response.content:
             if content_block.type == "text":
                 content += content_block.text
@@ -88,17 +126,14 @@ async def anthropic_complete(
                     "type": "function",
                     "function": {
                         "name": content_block.name,
-                        "arguments": (
-                            json.dumps(content_block.input)
-                            if content_block.input
-                            else "{}"
-                        ),
+                        "arguments": (content_block.input or {}),
                     },
                 }
                 tool_calls.append(tool_call)
 
         llm_response = LLMResponse(
             role="assistant",
+            raw_response=response,
             content=content if content else None,
             tool_calls=tool_calls if tool_calls else None,
         )
@@ -116,4 +151,4 @@ async def anthropic_complete(
 
     except Exception as e:
         LOG.error(f"Anthropic completion failed: {str(e)}")
-        raise
+        raise e

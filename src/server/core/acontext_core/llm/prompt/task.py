@@ -66,12 +66,15 @@ class TaskPrompt(BasePrompt):
   - `## Current Message with IDs`: the current messages that you need to analyze [with message ids]
 - Message with ID format: <message id=N> ... </message>, inside the tag is the message content, the id field indicates the message id.
 
+## Think before calling tools
+- Use extremely brief sentences to state the plans & tasks conversation mentioned, if any.
+- Use one-two sentences to briefly describe your plan.
+
 ## Action Guidelines
 - Be precise, context-aware, and conservative. 
 - Focus on meaningful task management that organizes conversation objectives effectively. 
-- Use parallel tool calls when possible. 
+- Use parallel tool calls when possible, and make sure you call the tools in the correct order.
 - After completing all task management actions, call the `finish` tool.
-- Before tool calling, use one-two sentences to briefly describe your plan. Before appending messages for planning section or certain task, use one sentence to state why you think this action is correct.
 """
 
     @classmethod

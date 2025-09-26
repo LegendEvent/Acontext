@@ -1,16 +1,17 @@
 from typing import List
-import json
-from ...env import LOG, bound_logging_vars
+from urllib import response
+from ...env import LOG, CONFIG, bound_logging_vars
 from ...infra.db import AsyncSession, DB_CLIENT
 from ...schema.result import Result
 from ...schema.utils import asUUID
 from ...schema.session.task import TaskSchema, TaskStatus
 from ...schema.session.message import MessageBlob
 from ...service.data import task as TD
-from ..complete import llm_complete
+from ..complete import llm_complete, response_to_sendable_message
 from ..prompt.task import TaskPrompt, TASK_TOOLS
 from ...util.generate_ids import track_process
 from ..tool.task_lib.ctx import TaskCtx
+from ...schema.llm import LLMResponse
 
 
 def pack_task_section(tasks: List[TaskSchema]) -> str:
@@ -51,16 +52,25 @@ async def task_agent_curd(
 
     json_tools = [tool.model_dump() for tool in TaskPrompt.tool_schema()]
     already_iterations = 0
-    while already_iterations < max_iterations:
-        r = await llm_complete(
-            prompt=TaskPrompt.pack_task_input(
+    _messages = [
+        {
+            "role": "user",
+            "content": TaskPrompt.pack_task_input(
                 previous_messages_section, current_messages_section, task_section
             ),
+        }
+    ]
+    while already_iterations < max_iterations:
+        r = await llm_complete(
             system_prompt=TaskPrompt.system_prompt(),
+            history_messages=_messages,
             tools=json_tools,
             prompt_kwargs=TaskPrompt.prompt_kwargs(),
         )
         llm_return, eil = r.unpack()
+        if eil:
+            return r
+        _messages.append(response_to_sendable_message(llm_return))
         if eil:
             return r
         LOG.info(f"LLM Response: {llm_return.content}...")
@@ -84,7 +94,7 @@ async def task_agent_curd(
                         LOG.info("finish function is called")
                         just_finish = True
                         continue
-                    tool_arguments = json.loads(tool_call.function.arguments)
+                    tool_arguments = tool_call.function.arguments
                     tool = TASK_TOOLS[tool_name]
                     LOG.info(f"Tool Call: {tool_name} - {tool_arguments}")
                     with bound_logging_vars(tool=tool_name):
@@ -95,19 +105,16 @@ async def task_agent_curd(
                     LOG.info(f"Tool Response: {tool_name} - {t}")
                     tool_response.append(
                         {
-                            "role": tool_call.type,
+                            "role": "tool",
                             "tool_call_id": tool_call.id,
                             "content": t,
                         }
                     )
-                except json.JSONDecodeError as e:
-                    return Result.reject(
-                        f"LLM tool arugments JSON decode error: {str(e)}"
-                    )
-                except KeyError:
-                    return Result.reject(f"Tool {tool_name} not found")
+                except KeyError as e:
+                    return Result.reject(f"Tool {tool_name} not found: {str(e)}")
                 except Exception as e:
                     return Result.reject(f"Tool {tool_name} error: {str(e)}")
+        _messages.extend(tool_response)
         if just_finish:
             break
         already_iterations += 1

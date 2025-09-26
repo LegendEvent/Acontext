@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from acontext_core.entry import MQ_CLIENT, setup, cleanup
+from acontext_core.entry import MQ_CLIENT, LOG, setup, cleanup
 
 
 async def app(scope, receive, send):
@@ -11,7 +11,7 @@ async def app(scope, receive, send):
                 try:
                     await setup()
                 except Exception as e:
-                    print(traceback.format_exc())
+                    LOG.error(f"Startup failed: {str(e)}")
                     await send({"type": "lifespan.startup.failed", "message": str(e)})
                     return
                 asyncio.create_task(MQ_CLIENT.start())
