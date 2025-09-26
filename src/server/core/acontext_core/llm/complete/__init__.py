@@ -47,8 +47,7 @@ async def llm_complete(
         _end_s = time.perf_counter()
         LOG.info(f"LLM Complete finished in {_end_s - _start_s:.4f}s")
     except Exception as e:
-        LOG.error(f"LLM complete failed - error: {str(e)}")
-        return Result.reject(str(e))
+        return Result.reject(f"LLM complete failed - error: {str(e)}")
 
     return Result.resolve(response)
 

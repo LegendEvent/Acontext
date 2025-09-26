@@ -70,8 +70,7 @@ async def session_message_length(
         return Result.resolve(count)
 
     except Exception as e:
-        LOG.error(f"Error counting messages for session {session_id}: {e}")
-        return Result.reject(f"Failed to count messages: {e}")
+        return Result.reject(f"Error counting messages for session {session_id}: {e}")
 
 
 async def fetch_messages_data_by_ids(
@@ -127,8 +126,7 @@ async def fetch_messages_data_by_ids(
         return Result.resolve(ordered_messages)
 
     except Exception as e:
-        LOG.error(f"Error fetching messages by IDs {message_ids}: {e}")
-        return Result.reject(f"Failed to fetch messages: {e}")
+        return Result.reject(f"Error fetching messages by IDs {message_ids}: {e}")
 
 
 async def fetch_session_messages(
@@ -184,6 +182,26 @@ async def get_latest_message_id(
     return Result.resolve(message_ids)
 
 
+async def unpending_session_messages_to_running(
+    db_session: AsyncSession, session_id: asUUID
+) -> Result[List[asUUID]]:
+    query = (
+        update(Message)
+        .where(
+            Message.session_id == session_id,
+            Message.session_task_process_status == TaskStatus.PENDING.value,
+        )
+        .values(session_task_process_status=TaskStatus.RUNNING.value)
+        .returning(Message.id, Message.created_at)
+    )
+    result = await db_session.execute(query)
+    rdp = sorted(result.mappings().all(), key=lambda x: x["created_at"])
+    print(rdp)
+    message_ids = [rdp["id"] for rdp in rdp]
+    await db_session.flush()
+    return Result.resolve(message_ids)
+
+
 async def check_session_message_status(
     db_session: AsyncSession, message_id: asUUID
 ) -> Result[str]:
@@ -217,8 +235,8 @@ async def fetch_previous_messages_by_datetime(
     return await fetch_messages_data_by_ids(db_session, message_ids)
 
 
-async def rollback_message_status_to_pending(
-    db_session: AsyncSession, message_ids: List[asUUID]
+async def update_message_status_to(
+    db_session: AsyncSession, message_ids: List[asUUID], status: TaskStatus
 ) -> Result[bool]:
     """
     Rollback message status from 'running' to 'pending' for retry.
@@ -235,7 +253,7 @@ async def rollback_message_status_to_pending(
     stmt = (
         update(Message)
         .where(Message.id.in_(message_ids))
-        .values(session_task_process_status=TaskStatus.PENDING.value)
+        .values(session_task_process_status=status.value)
     )
 
     await db_session.execute(stmt)

@@ -161,6 +161,7 @@ async def append_messages_to_planning_section(
             session_id=session_id,
             task_order=0,
             task_data={},
+            task_status="pending",
             is_planning_task=True,
         )
         db_session.add(planning_task)

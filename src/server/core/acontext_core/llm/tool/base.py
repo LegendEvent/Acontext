@@ -14,6 +14,7 @@ class Tool:
         return self
 
     def use_handler(self, handler: Callable[..., Awaitable[Result[str]]]) -> "Tool":
+        self.handler = handler
         return self
 
 

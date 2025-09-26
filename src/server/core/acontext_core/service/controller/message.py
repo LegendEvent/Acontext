@@ -8,18 +8,22 @@ from ...llm.agent import task as AT
 
 
 async def process_session_pending_message(session_id: asUUID):
+    pending_message_ids = None
     try:
-        pending_message_ids = []
         async with DB_CLIENT.get_session_context() as session:
-            r = await MD.fetch_session_messages(session, session_id, status="pending")
+            r = await MD.unpending_session_messages_to_running(session, session_id)
+            pending_message_ids, eil = r.unpack()
+            if eil:
+                LOG.error(f"Exception while unpending session messages: {eil}")
+                return
+
+        async with DB_CLIENT.get_session_context() as session:
+            r = await MD.fetch_messages_data_by_ids(session, pending_message_ids)
             messages, eil = r.unpack()
             if eil:
                 LOG.error(f"Exception while fetching session messages: {eil}")
                 return
-            for m in messages:
-                m.session_task_process_status = TaskStatus.RUNNING.value
-            await session.flush()
-            pending_message_ids.extend([m.id for m in messages])
+
             r = await MD.fetch_previous_messages_by_datetime(
                 session, session_id, messages[0].created_at, limit=1
             )
@@ -37,10 +41,19 @@ async def process_session_pending_message(session_id: asUUID):
             ]
 
         r = await AT.task_agent_curd(session_id, previous_messages_data, messages_data)
+
+        async with DB_CLIENT.get_session_context() as session:
+            await MD.update_message_status_to(
+                session, pending_message_ids, TaskStatus.SUCCESS
+            )
     except Exception as e:
+        if pending_message_ids is None:
+            raise e
         LOG.error(
             f"Exception while processing session pending message: {e}, rollback {len(pending_message_ids)} message status to pending"
         )
         async with DB_CLIENT.get_session_context() as session:
-            await MD.rollback_message_status_to_pending(session, pending_message_ids)
+            await MD.update_message_status_to(
+                session, pending_message_ids, TaskStatus.FAILED
+            )
         raise e

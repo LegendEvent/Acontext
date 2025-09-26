@@ -79,11 +79,11 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
     _l = await check_session_message_lock_or_set(str(body.session_id))
     if not _l:
         LOG.info(
-            f"Current Session is processing."
-            f"wait {CONFIG.session_message_buffer_ttl_seconds} seconds for next resend. "
+            f"Current Session is processing. "
+            f"wait {CONFIG.session_message_session_lock_wait_seconds} seconds for next resend. "
             f"Message {body.message_id}"
         )
-        await asyncio.sleep(CONFIG.session_message_buffer_ttl_seconds)
+        await asyncio.sleep(CONFIG.session_message_session_lock_wait_seconds)
         await message.reject(requeue=True)  # requeue to insert queue
         return
 

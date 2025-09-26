@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Generic, TypeVar, Type, Optional
 from .error_code import Code
+from ..env import LOG
 
 T = TypeVar("T")
 
@@ -28,6 +29,7 @@ class Result(BaseModel, Generic[T]):
     @classmethod
     def reject(cls, errmsg: str, status: Code = Code.INTERNAL_ERROR) -> "Result[T]":
         assert status != Code.SUCCESS, "status must not be SUCCESS"
+        LOG.error(f"[{status}]: {errmsg}")
         return cls(data=None, error=Error.init(status, errmsg))
 
     def unpack(self) -> tuple[Optional[T], Optional[Error]]:

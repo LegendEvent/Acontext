@@ -1,6 +1,6 @@
 from typing import List
-
-from ...env import LOG
+import json
+from ...env import LOG, bound_logging_vars
 from ...infra.db import AsyncSession, DB_CLIENT
 from ...schema.result import Result
 from ...schema.utils import asUUID
@@ -8,7 +8,7 @@ from ...schema.session.task import TaskSchema, TaskStatus
 from ...schema.session.message import MessageBlob
 from ...service.data import task as TD
 from ..complete import llm_complete
-from ..prompt.task import TaskPrompt
+from ..prompt.task import TaskPrompt, TASK_TOOLS
 from ...util.generate_ids import track_process
 from ..tool.task_lib.ctx import TaskCtx
 
@@ -45,9 +45,9 @@ async def task_agent_curd(
     previous_messages_section = pack_previous_messages_section(previous_messages)
     current_messages_section = pack_current_message_with_ids(messages)
 
-    from rich import print
-
-    print(task_section, previous_messages_section, current_messages_section)
+    LOG.info(f"Task Section: {task_section}")
+    LOG.info(f"Previous Messages Section: {previous_messages_section}")
+    LOG.info(f"Current Messages Section: {current_messages_section}")
 
     json_tools = [tool.model_dump() for tool in TaskPrompt.tool_schema()]
     already_iterations = 0
@@ -63,12 +63,52 @@ async def task_agent_curd(
         llm_return, eil = r.unpack()
         if eil:
             return r
-        LOG.info(f"LLM Response: {llm_return.model_dump_json()}")
-        print(llm_return)
+        LOG.info(f"LLM Response: {llm_return.content}...")
         if not llm_return.tool_calls:
             LOG.info("No tool calls found, stop iterations")
             break
-        break
         use_tools = llm_return.tool_calls
+        just_finish = False
+        async with DB_CLIENT.get_session_context() as db_session:
+            use_ctx = TaskCtx(
+                db_session=db_session,
+                session_id=session_id,
+                task_ids_index=[t.id for t in tasks],
+                message_ids_index=[m.message_id for m in messages],
+            )
+            tool_response = []
+            for tool_call in use_tools:
+                try:
+                    tool_name = tool_call.function.name
+                    if tool_name == "finish":
+                        LOG.info("finish function is called")
+                        just_finish = True
+                        continue
+                    tool_arguments = json.loads(tool_call.function.arguments)
+                    tool = TASK_TOOLS[tool_name]
+                    LOG.info(f"Tool Call: {tool_name} - {tool_arguments}")
+                    with bound_logging_vars(tool=tool_name):
+                        r = await tool.handler(use_ctx, tool_arguments)
+                        t, eil = r.unpack()
+                        if eil:
+                            return r
+                    LOG.info(f"Tool Response: {tool_name} - {t}")
+                    tool_response.append(
+                        {
+                            "role": tool_call.type,
+                            "tool_call_id": tool_call.id,
+                            "content": t,
+                        }
+                    )
+                except json.JSONDecodeError as e:
+                    return Result.reject(
+                        f"LLM tool arugments JSON decode error: {str(e)}"
+                    )
+                except KeyError:
+                    return Result.reject(f"Tool {tool_name} not found")
+                except Exception as e:
+                    return Result.reject(f"Tool {tool_name} error: {str(e)}")
+        if just_finish:
+            break
         already_iterations += 1
-    return r
+    return Result.resolve(None)

@@ -60,6 +60,7 @@ class Task(CommonMixin):
     task_data: dict = field(metadata={"db": Column(JSONB, nullable=False)})
 
     task_status: str = field(
+        default="pending",
         metadata={
             "db": Column(
                 String,

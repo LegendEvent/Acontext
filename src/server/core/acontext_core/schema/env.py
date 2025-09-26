@@ -19,6 +19,7 @@ class CoreConfig(BaseModel):
 
     session_message_buffer_max_turns: int = 6
     session_message_buffer_ttl_seconds: int = 10
+    session_message_session_lock_wait_seconds: int = 1
     session_message_processing_timeout_seconds: int = 60
 
     # MQ Configuration
