@@ -80,6 +80,7 @@ async def insert_task(
     data: dict,
     status: str = "pending",
 ) -> Result[Task]:
+    """This function will cause the session' tasks row be locked for update, make sure the DB session will be closed soonly after this function is called"""
     # Lock all tasks in this session to prevent concurrent modifications
     lock_query = (
         select(Task.id)

@@ -36,9 +36,7 @@ async def process_session_pending_message(session_id: asUUID):
                 for m in previous_messages
             ]
 
-        r = await AT.process_current_messages(
-            session_id, previous_messages_data, messages_data
-        )
+        r = await AT.task_agent_curd(session_id, previous_messages_data, messages_data)
     except Exception as e:
         LOG.error(
             f"Exception while processing session pending message: {e}, rollback {len(pending_message_ids)} message status to pending"

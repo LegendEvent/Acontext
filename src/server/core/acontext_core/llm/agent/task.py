@@ -10,6 +10,7 @@ from ...service.data import task as TD
 from ..complete import llm_complete
 from ..prompt.task import TaskPrompt
 from ...util.generate_ids import track_process
+from ..tool.task_lib.ctx import TaskCtx
 
 
 def pack_task_section(tasks: List[TaskSchema]) -> str:
@@ -44,6 +45,10 @@ async def task_agent_curd(
     previous_messages_section = pack_previous_messages_section(previous_messages)
     current_messages_section = pack_current_message_with_ids(messages)
 
+    from rich import print
+
+    print(task_section, previous_messages_section, current_messages_section)
+
     json_tools = [tool.model_dump() for tool in TaskPrompt.tool_schema()]
     already_iterations = 0
     while already_iterations < max_iterations:
@@ -59,10 +64,11 @@ async def task_agent_curd(
         if eil:
             return r
         LOG.info(f"LLM Response: {llm_return.model_dump_json()}")
+        print(llm_return)
         if not llm_return.tool_calls:
             LOG.info("No tool calls found, stop iterations")
             break
-
+        break
         use_tools = llm_return.tool_calls
         already_iterations += 1
     return r
