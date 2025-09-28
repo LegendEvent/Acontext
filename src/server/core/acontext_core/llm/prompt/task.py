@@ -28,20 +28,20 @@ class TaskPrompt(BasePrompt):
 
 ## Analysis Guidelines
 ### Planning Detection
-- Look for explicit task planning language ("I need to...", "My goal is...", "I will follow ... steps")
-- Read out the planning, and separate the tasks from it.
-- Link those planning messages to the planning section, since they aren't related to any specific task execution.
-- Collect all current tasks without missing future ones
-- 
+- Look for explicit task planning language ("My plan is to...")
+- Look for user requirements and preferences.
+- General plannings from user/agent.
+- The messages that cause you to create/update tasks.
 
 ### New Task Detection
 - Avoid creating tasks for simple questions answerable directly
 - Only collect tasks stated by agents/users, don't invent them
 - User's requirement should be confimed by the agent's response, then it becomes a valid task, and append those requirements to planning section.
-- [think] The degree of task splitting should follow the agent's plan in the conversation; do not arbitrarily split into finer or coarser granularity.
-- [think] Notice any task modification from agent.
-- [think] Infer execution order and insert tasks sequentially, make sure you arrange the tasks in logical execution order, no the mentioned order.
-- [think] Ensure no task overlap, make sure the tasks are MECE(mutually exclusive, collectively exhaustive).
+- The degree of task splitting should follow the agent's plan in the conversation; do not arbitrarily split into finer or coarser granularity.
+- Notice any task modification from agent.
+- Infer execution order and insert tasks sequentially, make sure you arrange the tasks in logical execution order, no the mentioned order.
+- Ensure no task overlap, make sure the tasks are MECE(mutually exclusive, collectively exhaustive).
+- When valid new tasks mentioned, always try to capture them all, not only the first one.
 
 ### Task Assignment  
 - Match agent responses/actions to existing task descriptions and contexts
@@ -66,15 +66,16 @@ class TaskPrompt(BasePrompt):
   - `## Current Message with IDs`: the current messages that you need to analyze [with message ids]
 - Message with ID format: <message id=N> ... </message>, inside the tag is the message content, the id field indicates the message id.
 
-## Think before calling tools
+## Report your thinking before calling tools
 - Use extremely brief sentences to state the plans & tasks conversation mentioned, if any.
 - Use one-two sentences to briefly describe your plan.
+- At the end, confirm you can call finish tool and call it at the end of your actions.
 
 ## Action Guidelines
 - Be precise, context-aware, and conservative. 
 - Focus on meaningful task management that organizes conversation objectives effectively. 
-- Use parallel tool calls when possible, and make sure you call the tools in the correct order.
-- After completing all task management actions, call the `finish` tool.
+- Use parallel tool calls, and make sure you call the tools in the correct order.
+- Make sure you called every tool that you need to call based on your report.
 """
 
     @classmethod

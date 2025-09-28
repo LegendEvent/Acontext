@@ -1,3 +1,4 @@
+import re
 from typing import List
 from urllib import response
 from ...env import LOG, CONFIG, bound_logging_vars
@@ -34,7 +35,7 @@ async def task_agent_curd(
     session_id: asUUID,
     previous_messages: List[MessageBlob],
     messages: List[MessageBlob],
-    max_iterations=3,
+    max_iterations=1,  # task curd agent only receive one turn of actions
 ) -> Result[None]:
     async with DB_CLIENT.get_session_context() as db_session:
         r = await TD.fetch_current_tasks(db_session, session_id)
@@ -87,7 +88,7 @@ async def task_agent_curd(
             use_ctx = TaskCtx(
                 db_session=db_session,
                 session_id=session_id,
-                task_ids_index=[t.id for t in tasks],
+                task_ids_index=[t.id for t in current_tasks],
                 message_ids_index=[m.message_id for m in messages],
             )
             tool_response = []

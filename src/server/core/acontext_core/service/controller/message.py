@@ -3,6 +3,7 @@ from ...infra.db import DB_CLIENT
 from ...schema.session.task import TaskStatus
 from ...schema.session.message import MessageBlob
 from ...schema.utils import asUUID
+from ...schema.result import ResultError
 from ...env import LOG, CONFIG
 from ...llm.agent import task as AT
 
@@ -41,15 +42,19 @@ async def process_session_pending_message(session_id: asUUID):
             ]
 
         r = await AT.task_agent_curd(session_id, previous_messages_data, messages_data)
+
+        after_status = TaskStatus.SUCCESS
+        if not r.ok():
+            after_status = TaskStatus.FAILED
         async with DB_CLIENT.get_session_context() as session:
             await MD.update_message_status_to(
-                session, pending_message_ids, TaskStatus.SUCCESS
+                session, pending_message_ids, after_status
             )
     except Exception as e:
         if pending_message_ids is None:
             raise e
         LOG.error(
-            f"Exception while processing session pending message: {e}, rollback {len(pending_message_ids)} message status to pending"
+            f"Exception while processing session pending message: {e}, rollback {len(pending_message_ids)} message status to failed"
         )
         async with DB_CLIENT.get_session_context() as session:
             await MD.update_message_status_to(

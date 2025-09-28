@@ -205,7 +205,7 @@ class AsyncSingleThreadMQConsumer:
                             f"Message processing unknown error - queue: {config.queue_name}, "
                             f"attempt: {retry_count}/{config.max_retries}, "
                             f"retry after {_wait_for}s, "
-                            f"error: {str(e)}. {traceback.format_exc()}",
+                            f"error: {str(e)}.",
                             extra={"traceback": traceback.format_exc()},
                         )
                         await asyncio.sleep(_wait_for)  # Exponential backoff

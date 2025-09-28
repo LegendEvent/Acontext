@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from acontext_core.entry import MQ_CLIENT, LOG, setup, cleanup
+from acontext_core.di import MQ_CLIENT, LOG, setup, cleanup
 
 
 async def app(scope, receive, send):

@@ -6,6 +6,10 @@ from ..env import LOG
 T = TypeVar("T")
 
 
+class ResultError(Exception):
+    pass
+
+
 class Error(BaseModel):
     status: Code = Code.SUCCESS
     errmsg: str = ""
@@ -41,3 +45,7 @@ class Result(BaseModel, Generic[T]):
         if self.error.status != Code.SUCCESS:
             return False
         return True
+
+    def raise_error(self):
+        if self.error.status != Code.SUCCESS:
+            raise ResultError(str(self.error))
