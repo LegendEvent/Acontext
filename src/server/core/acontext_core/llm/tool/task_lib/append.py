@@ -26,9 +26,9 @@ async def _append_messages_to_task_handler(
         )
     actually_task_id = ctx.task_ids_index[task_order - 1]
     actually_message_ids = [
-        ctx.message_ids_index[i]
+        ctx.message_ids_index[i - 1]
         for i in message_order_indexes
-        if i < len(ctx.message_ids_index)
+        if i <= len(ctx.message_ids_index)
     ]
     if not actually_message_ids:
         return Result.resolve(
@@ -39,8 +39,13 @@ async def _append_messages_to_task_handler(
         actually_message_ids,
         actually_task_id,
     )
-    return r
-    pass
+    return (
+        Result.resolve(
+            f"Messages {message_order_indexes} appended to task {task_order}"
+        )
+        if r.ok()
+        else r
+    )
 
 
 _append_messages_to_task_tool = (

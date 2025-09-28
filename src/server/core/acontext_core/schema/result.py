@@ -36,3 +36,8 @@ class Result(BaseModel, Generic[T]):
         if self.error.status != Code.SUCCESS:
             return None, self.error
         return self.data, None
+
+    def ok(self) -> bool:
+        if self.error.status != Code.SUCCESS:
+            return False
+        return True

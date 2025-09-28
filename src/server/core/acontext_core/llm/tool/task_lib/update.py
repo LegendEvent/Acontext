@@ -30,9 +30,13 @@ async def update_task_handler(
         ctx.db_session,
         actually_task_id,
         status=status,
-        patch_data={
-            "task_description": description,
-        },
+        patch_data=(
+            {
+                "task_description": description,
+            }
+            if description
+            else None
+        ),
     )
     t, eil = r.unpack()
     if eil:

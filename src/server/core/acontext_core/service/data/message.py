@@ -161,7 +161,7 @@ async def fetch_session_messages(
     return await fetch_messages_data_by_ids(db_session, message_ids)
 
 
-async def get_latest_message_id(
+async def get_latest_message_ids(
     db_session: AsyncSession,
     session_id: asUUID,
     status: str = "pending",

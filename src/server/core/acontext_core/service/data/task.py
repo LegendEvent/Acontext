@@ -4,6 +4,7 @@ from typing import List, Optional
 from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from yaml.resolver import Resolver
 from ...schema.orm import Task, Message
 from ...schema.result import Result
 from ...schema.utils import asUUID
@@ -37,6 +38,29 @@ async def fetch_current_tasks(
         for t in tasks
     ]
     return Result.resolve(tasks_d)  # Fixed: return tasks_d instead of tasks
+
+
+async def fetch_planning_section(
+    db_session: AsyncSession, session_id: asUUID
+) -> Result[TaskSchema]:
+    query = (
+        select(Task)
+        .where(Task.session_id == session_id)
+        .where(Task.is_planning_task == True)
+        .options(selectinload(Task.messages))
+    )
+    result = await db_session.execute(query)
+    task = result.scalars().first()
+    return Resolver.resolve(
+        TaskSchema(
+            id=task.id,
+            session_id=task.session_id,
+            task_order=task.task_order,
+            task_status=task.task_status,
+            task_data=task.task_data,
+            raw_message_ids=[msg.id for msg in task.messages],
+        )
+    )
 
 
 async def update_task(

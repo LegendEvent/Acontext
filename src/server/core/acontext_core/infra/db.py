@@ -1,5 +1,4 @@
-from ast import Or
-import os
+import traceback
 from typing import AsyncGenerator, Optional
 from contextlib import asynccontextmanager
 
@@ -141,6 +140,7 @@ class DatabaseClient:
             await session.commit()
         except Exception as e:
             logger.error(f"DB Session failed: {str(e)}. Rollback...")
+            logger.error(traceback.format_exc(), extra={"__internal__": True})
             await session.rollback()
             raise e
         finally:

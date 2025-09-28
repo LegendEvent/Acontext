@@ -80,6 +80,10 @@ async def task_agent_curd(
         use_tools = llm_return.tool_calls
         just_finish = False
         async with DB_CLIENT.get_session_context() as db_session:
+            r = await TD.fetch_current_tasks(db_session, session_id)
+            current_tasks, eil = r.unpack()
+            if eil:
+                return r
             use_ctx = TaskCtx(
                 db_session=db_session,
                 session_id=session_id,

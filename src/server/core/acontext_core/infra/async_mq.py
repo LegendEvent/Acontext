@@ -180,7 +180,7 @@ class AsyncSingleThreadMQConsumer:
                                 timeout=config.timeout,
                             )
                             _end_s = perf_counter()
-                            LOG.info(
+                            LOG.debug(
                                 f"Queue: {config.queue_name} processed in {_end_s - _start_s:.4f}s"
                             )
                     except ValidationError as e:

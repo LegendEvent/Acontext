@@ -41,7 +41,6 @@ async def process_session_pending_message(session_id: asUUID):
             ]
 
         r = await AT.task_agent_curd(session_id, previous_messages_data, messages_data)
-
         async with DB_CLIENT.get_session_context() as session:
             await MD.update_message_status_to(
                 session, pending_message_ids, TaskStatus.SUCCESS

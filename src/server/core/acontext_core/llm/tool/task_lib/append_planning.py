@@ -29,11 +29,10 @@ async def _append_messages_to_planning_section_handler(
         ctx.session_id,
         actually_message_ids,
     )
-    _, eil = r.unpack()
-    if eil:
-        return r
-    return Result.resolve(
-        f"Messages {message_order_indexes} appended to planning section"
+    return (
+        Result.resolve(f"Messages {message_order_indexes} appended to planning section")
+        if r.ok()
+        else r
     )
 
 

@@ -102,7 +102,7 @@ class Message(CommonMixin):
         metadata={
             "db": Column(
                 UUID(as_uuid=True),
-                ForeignKey("tasks.id", ondelete="CASCADE"),
+                ForeignKey("tasks.id", ondelete="SET NULL"),
                 nullable=True,
             )
         },
