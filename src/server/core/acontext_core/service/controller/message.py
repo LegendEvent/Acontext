@@ -18,7 +18,10 @@ async def process_session_pending_message(
             r = await MD.get_message_ids(
                 session,
                 session_id,
-                limit=project_config.project_session_message_buffer_max_overflow_turns,
+                limit=(
+                    project_config.project_session_message_buffer_max_overflow
+                    + project_config.project_session_message_buffer_max_turns
+                ),
                 asc=True,
             )
             pending_message_ids, eil = r.unpack()

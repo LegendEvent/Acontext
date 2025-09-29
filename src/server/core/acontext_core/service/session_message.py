@@ -97,7 +97,7 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
 
     _l = await check_session_message_lock_or_set(str(body.session_id))
     if not _l:
-        LOG.info(
+        LOG.debug(
             f"Current Session is locked. "
             f"wait {DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds} seconds for next resend. "
             f"Message {body.message_id}"
@@ -113,14 +113,14 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
         LOG.info(
             f"Session message buffer is full (size: {pending_message_length}), start process"
         )
-        if (
-            pending_message_length
-            > project_config.project_session_message_buffer_max_overflow_turns
+        if pending_message_length > (
+            project_config.project_session_message_buffer_max_overflow
+            + project_config.project_session_message_buffer_max_turns
         ):
             LOG.info(
                 f"Session message buffer is overflow "
-                f"(size: {pending_message_length} > {project_config.project_session_message_buffer_max_overflow_turns}), "
-                f"Truncate the buffer, the rest will be processed later in {DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds} seconds"
+                f"(size: {pending_message_length} > {project_config.project_session_message_buffer_max_overflow} + {project_config.project_session_message_buffer_max_turns}), "
+                f"Truncate the buffer, the rest will be re-inserted in {DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds} seconds"
             )
             await MQ_CLIENT.publish(
                 exchange_name=EX.session_message,

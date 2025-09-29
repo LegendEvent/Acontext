@@ -64,7 +64,7 @@ Only when the conversation explicitly mention certain task's purpose should be m
                         "task_status": {
                             "type": "string",
                             "enum": ["pending", "running", "success", "failed"],
-                            "description": "New status for the task. Use 'pending' for not started, 'running' for in progress, 'success' for completed, 'failed' for encountered errors.",
+                            "description": "New status for the task. (optional).",
                         },
                         "task_description": {
                             "type": "string",

@@ -42,6 +42,7 @@ class TaskPrompt(BasePrompt):
 - Infer execution order and insert tasks sequentially, make sure you arrange the tasks in logical execution order, no the mentioned order.
 - Ensure no task overlap, make sure the tasks are MECE(mutually exclusive, collectively exhaustive).
 - When valid new tasks mentioned, always try to capture them all, not only the first one.
+- When user asked for tasks modification and agent confirmed, make sure you will create new tasks or modify existing tasks using `update_task` tool.
 
 ### Task Assignment  
 - Match agent responses/actions to existing task descriptions and contexts
@@ -56,8 +57,7 @@ class TaskPrompt(BasePrompt):
 - `failed`: When explicit errors occur or tasks are abandoned
 - `pending`: For tasks not yet started
 #### Description Updates
-- Only when the user explicitly mention current task's purpose, update the task description if any changes.
-
+- When user asked for existing tasks modification and agent confirmed, make sure you will modify existing tasks' descriptions using `update_task` tool.
 
 ## Input Format
 - Input will be markdown-formatted text, with the following sections:
@@ -69,7 +69,7 @@ class TaskPrompt(BasePrompt):
 ## Report your thinking before calling tools
 - Use extremely brief sentences to state the plans & tasks conversation mentioned, if any.
 - Use one-two sentences to briefly describe your plan.
-- At the end, confirm you can call finish tool and call it at the end of your actions.
+- Make sure you will call tools based on your thinking, and sync with the current conversation.
 
 ## Action Guidelines
 - Be precise, context-aware, and conservative. 
