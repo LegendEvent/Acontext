@@ -15,7 +15,7 @@ from sqlalchemy.exc import DisconnectionError, OperationalError
 # from ..schema.orm import Base
 from ..schema.orm import ORM_BASE
 from ..env import LOG as logger
-from ..env import CONFIG
+from ..env import DEFAULT_CORE_CONFIG
 
 
 class DatabaseClient:
@@ -31,7 +31,7 @@ class DatabaseClient:
     """
 
     def __init__(self, database_url: Optional[str] = None):
-        self.database_url = database_url or CONFIG.database_url
+        self.database_url = database_url or DEFAULT_CORE_CONFIG.database_url
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -72,8 +72,8 @@ class DatabaseClient:
             self.database_url,
             # Connection pool settings
             poolclass=AsyncAdaptedQueuePool,
-            pool_size=CONFIG.database_pool_size,  # Number of connections to maintain
-            max_overflow=CONFIG.database_pool_size,  # Additional connections beyond pool_size
+            pool_size=DEFAULT_CORE_CONFIG.database_pool_size,  # Number of connections to maintain
+            max_overflow=DEFAULT_CORE_CONFIG.database_pool_size,  # Additional connections beyond pool_size
             pool_timeout=30,  # Seconds to wait for a connection
             pool_recycle=600,  # Recycle connections after 10 minutes
             pool_pre_ping=True,  # Verify connections before use

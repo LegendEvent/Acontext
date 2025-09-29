@@ -12,7 +12,7 @@ from aio_pika.abc import (
     AbstractQueue,
     AbstractExchange,
 )
-from ..env import LOG, CONFIG, bound_logging_vars
+from ..env import LOG, DEFAULT_CORE_CONFIG, bound_logging_vars
 from ..util.handler_spec import check_handler_function_sanity, get_handler_body_type
 from time import perf_counter
 
@@ -35,14 +35,14 @@ class ConsumerConfigData:
     durable: bool = True
     auto_delete: bool = False
     # Configuration
-    prefetch_count: int = CONFIG.mq_global_qos
-    message_ttl_seconds: int = CONFIG.mq_default_message_ttl_seconds
-    timeout: float = CONFIG.mq_consumer_handler_timeout
-    max_retries: int = CONFIG.mq_default_max_retries
-    retry_delay: float = CONFIG.mq_default_retry_delay_unit_sec
+    prefetch_count: int = DEFAULT_CORE_CONFIG.mq_global_qos
+    message_ttl_seconds: int = DEFAULT_CORE_CONFIG.mq_default_message_ttl_seconds
+    timeout: float = DEFAULT_CORE_CONFIG.mq_consumer_handler_timeout
+    max_retries: int = DEFAULT_CORE_CONFIG.mq_default_max_retries
+    retry_delay: float = DEFAULT_CORE_CONFIG.mq_default_retry_delay_unit_sec
     # DLX setup
     need_dlx_queue: bool = False
-    dlx_ttl_days: int = CONFIG.mq_default_dlx_ttl_days
+    dlx_ttl_days: int = DEFAULT_CORE_CONFIG.mq_default_dlx_ttl_days
     use_dlx_ex_rk: Optional[tuple[str, str]] = None
     dlx_suffix: str = "dead"
 
@@ -75,7 +75,7 @@ class ConnectionConfig:
     """MQ connection configuration"""
 
     url: str
-    connection_name: str = CONFIG.mq_connection_name
+    connection_name: str = DEFAULT_CORE_CONFIG.mq_connection_name
     heartbeat: int = 600
     blocked_connection_timeout: int = 300
 
@@ -344,7 +344,7 @@ class AsyncSingleThreadMQConsumer:
         exchange = await self._publish_channle.get_exchange(exchange_name)
         await exchange.publish(message, routing_key=routing_key)
 
-        LOG.info(
+        LOG.debug(
             f"Published message to exchange: {exchange_name}, routing_key: {routing_key}"
         )
 
@@ -452,8 +452,8 @@ def register_consumer(
 
 MQ_CLIENT = AsyncSingleThreadMQConsumer(
     ConnectionConfig(
-        url=CONFIG.mq_url,
-        connection_name=CONFIG.mq_connection_name,
+        url=DEFAULT_CORE_CONFIG.mq_url,
+        connection_name=DEFAULT_CORE_CONFIG.mq_connection_name,
     )
 )
 

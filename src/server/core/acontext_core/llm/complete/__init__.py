@@ -4,7 +4,7 @@ from .openai_sdk import openai_complete
 from .anthropic_sdk import anthropic_complete
 from ...schema.llm import LLMResponse
 from ...schema.result import Result
-from ...env import LOG, CONFIG, get_logging_contextvars, bound_logging_vars
+from ...env import LOG, DEFAULT_CORE_CONFIG, get_logging_contextvars, bound_logging_vars
 
 
 COMPLETE_FUNC = Callable[..., Awaitable[LLMResponse]]
@@ -28,8 +28,8 @@ async def llm_complete(
 ) -> Result[LLMResponse]:
     _context_vars = get_logging_contextvars()
 
-    use_model = model or CONFIG.llm_simple_model
-    use_complete_func = FACTORIES[CONFIG.llm_sdk]
+    use_model = model or DEFAULT_CORE_CONFIG.llm_simple_model
+    use_complete_func = FACTORIES[DEFAULT_CORE_CONFIG.llm_sdk]
 
     try:
         _start_s = time.perf_counter()
@@ -45,7 +45,7 @@ async def llm_complete(
             **kwargs,
         )
         _end_s = time.perf_counter()
-        LOG.info(f"LLM Complete finished in {_end_s - _start_s:.4f}s")
+        LOG.debug(f"LLM Complete finished in {_end_s - _start_s:.4f}s")
     except Exception as e:
         return Result.reject(f"LLM complete failed - error: {str(e)}")
 
@@ -62,9 +62,9 @@ async def llm_sanity_check():
 
 
 def response_to_sendable_message(message: LLMResponse) -> dict:
-    if CONFIG.llm_sdk == "openai":
+    if DEFAULT_CORE_CONFIG.llm_sdk == "openai":
         return message.raw_response.choices[0].message.model_dump()
-    elif CONFIG.llm_sdk == "anthropic":
+    elif DEFAULT_CORE_CONFIG.llm_sdk == "anthropic":
         dp = {"role": message.role, "content": []}
         if message.content:
             dp["content"].append({"type": "text", "text": message.content})
@@ -81,4 +81,4 @@ def response_to_sendable_message(message: LLMResponse) -> dict:
             )
         return dp
     else:
-        raise ValueError(f"Unsupported LLM SDK: {CONFIG.llm_sdk}")
+        raise ValueError(f"Unsupported LLM SDK: {DEFAULT_CORE_CONFIG.llm_sdk}")

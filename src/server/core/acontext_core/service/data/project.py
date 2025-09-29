@@ -1,0 +1,27 @@
+import asyncio
+import json
+from typing import List, Optional
+from sqlalchemy import select, delete, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from ...schema.orm import Project
+from ...schema.config import ProjectConfig, filter_value_from_json
+from ...schema.result import Result
+from ...schema.utils import asUUID
+from ...util.config import DEFAULT_PROJECT_CONFIG
+
+
+async def get_project_config(
+    db_session: AsyncSession, project_id: asUUID
+) -> Result[ProjectConfig]:
+    query = select(Project).where(Project.id == project_id)
+    result = await db_session.execute(query)
+    project = result.scalars().first()
+    if project is None:
+        return Result.reject(f"Project not found: {project_id}")
+    if not project.configs or "project_config" not in project.configs:
+        return Result.resolve(DEFAULT_PROJECT_CONFIG)
+    return Result.resolve(
+        ProjectConfig(
+            **filter_value_from_json(project.configs["project_config"], ProjectConfig)
+        )
+    )

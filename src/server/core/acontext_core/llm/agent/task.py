@@ -1,7 +1,7 @@
 import re
 from typing import List
 from urllib import response
-from ...env import LOG, CONFIG, bound_logging_vars
+from ...env import LOG, DEFAULT_CORE_CONFIG, bound_logging_vars
 from ...infra.db import AsyncSession, DB_CLIENT
 from ...schema.result import Result
 from ...schema.utils import asUUID

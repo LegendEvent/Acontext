@@ -3,7 +3,7 @@ from typing import Optional
 from .clients import get_openai_async_client_instance
 from openai.types.chat import ChatCompletion
 from openai.types.chat import ChatCompletionMessageToolCall
-from ...env import LOG, CONFIG
+from ...env import LOG, DEFAULT_CORE_CONFIG
 from ...schema.llm import LLMResponse
 
 
@@ -50,7 +50,7 @@ async def openai_complete(
     response: ChatCompletion = await openai_async_client.chat.completions.create(
         model=model,
         messages=messages,
-        timeout=CONFIG.llm_response_timeout,
+        timeout=DEFAULT_CORE_CONFIG.llm_response_timeout,
         max_tokens=max_tokens,
         tools=tools,
         **kwargs,

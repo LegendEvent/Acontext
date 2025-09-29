@@ -1,7 +1,12 @@
 import os
 import yaml
 from pydantic import BaseModel, Field
-from typing import Literal, Mapping, Optional, Any
+from typing import Literal, Mapping, Optional, Any, Type
+
+
+class ProjectConfig(BaseModel):
+    project_session_message_buffer_max_turns: int = 6
+    project_session_message_buffer_ttl_seconds: int = 10
 
 
 class CoreConfig(BaseModel):
@@ -16,9 +21,6 @@ class CoreConfig(BaseModel):
 
     # Core Configuration
     logging_format: str = "text"
-
-    session_message_buffer_max_turns: int = 6
-    session_message_buffer_ttl_seconds: int = 10
     session_message_session_lock_wait_seconds: int = 1
     session_message_processing_timeout_seconds: int = 60
 
@@ -52,8 +54,8 @@ class CoreConfig(BaseModel):
     s3_read_timeout: float = 60.0
 
 
-def filter_value_from_env() -> dict[str, Any]:
-    config_keys = CoreConfig.model_fields.keys()
+def filter_value_from_env(CLS: Type[BaseModel]) -> dict[str, Any]:
+    config_keys = CLS.model_fields.keys()
     env_already_keys = {}
     for key in config_keys:
         value = os.getenv(key.upper(), None)
@@ -63,16 +65,30 @@ def filter_value_from_env() -> dict[str, Any]:
     return env_already_keys
 
 
-def filter_value_from_yaml(yaml_string) -> dict[str, Any]:
+def filter_value_from_yaml(yaml_string, CLS: Type[BaseModel]) -> dict[str, Any]:
     yaml_config_data: dict | None = yaml.safe_load(yaml_string)
     if yaml_config_data is None:
         return {}
 
     yaml_already_keys = {}
-    config_keys = CoreConfig.model_fields.keys()
+    config_keys = CLS.model_fields.keys()
     for key in config_keys:
         value = yaml_config_data.get(key, None)
         if value is None:
             continue
         yaml_already_keys[key] = value
     return yaml_already_keys
+
+
+def filter_value_from_json(
+    json_config_data: dict, CLS: Type[BaseModel]
+) -> dict[str, Any]:
+
+    json_already_keys = {}
+    config_keys = CLS.model_fields.keys()
+    for key in config_keys:
+        value = json_config_data.get(key, None)
+        if value is None:
+            continue
+        json_already_keys[key] = value
+    return json_already_keys

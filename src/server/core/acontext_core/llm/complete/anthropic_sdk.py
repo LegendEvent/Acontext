@@ -3,7 +3,7 @@ import json
 from typing import Optional
 from .clients import get_anthropic_async_client_instance
 from anthropic.types import Message, ContentBlock
-from ...env import LOG, CONFIG
+from ...env import LOG, DEFAULT_CORE_CONFIG
 from ...schema.llm import LLMResponse
 
 

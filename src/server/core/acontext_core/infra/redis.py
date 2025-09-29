@@ -10,7 +10,7 @@ from redis.exceptions import (
 )
 
 from ..env import LOG as logger
-from ..env import CONFIG
+from ..env import DEFAULT_CORE_CONFIG
 
 
 class RedisClient:
@@ -39,7 +39,7 @@ class RedisClient:
 
     def _build_redis_url(self) -> str:
         """Build Redis URL from environment variables."""
-        redis_url = CONFIG.redis_url
+        redis_url = DEFAULT_CORE_CONFIG.redis_url
         return redis_url
 
     @property
@@ -57,7 +57,7 @@ class RedisClient:
         pool = ConnectionPool.from_url(
             self.redis_url,
             # Connection pool settings
-            max_connections=CONFIG.redis_pool_size,  # Maximum number of connections in the pool
+            max_connections=DEFAULT_CORE_CONFIG.redis_pool_size,  # Maximum number of connections in the pool
             retry_on_timeout=True,  # Retry on timeout errors
             retry_on_error=[ConnectionError, TimeoutError],  # Retry on these errors
             # Connection settings

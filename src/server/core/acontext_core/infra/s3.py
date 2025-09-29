@@ -10,7 +10,7 @@ from aiobotocore.session import get_session as get_aiobotocore_session
 from botocore.exceptions import ClientError, NoCredentialsError
 
 from ..env import LOG as logger
-from ..env import CONFIG
+from ..env import DEFAULT_CORE_CONFIG
 
 
 def _handle_s3_client_error(
@@ -67,20 +67,24 @@ class S3Client:
     """
 
     def __init__(self, s3_config: Dict[str, Any] = {}):
-        # Use provided config or fall back to global CONFIG
-        self.endpoint = s3_config.get("endpoint", CONFIG.s3_endpoint)
-        self.region = s3_config.get("region", CONFIG.s3_region)
-        self.access_key = s3_config.get("access_key", CONFIG.s3_access_key)
-        self.secret_key = s3_config.get("secret_key", CONFIG.s3_secret_key)
-        self.bucket = s3_config.get("bucket", CONFIG.s3_bucket)
-        self.use_path_style = s3_config.get("use_path_style", CONFIG.s3_use_path_style)
+        # Use provided config or fall back to global DEFAULT_CORE_CONFIG
+        self.endpoint = s3_config.get("endpoint", DEFAULT_CORE_CONFIG.s3_endpoint)
+        self.region = s3_config.get("region", DEFAULT_CORE_CONFIG.s3_region)
+        self.access_key = s3_config.get("access_key", DEFAULT_CORE_CONFIG.s3_access_key)
+        self.secret_key = s3_config.get("secret_key", DEFAULT_CORE_CONFIG.s3_secret_key)
+        self.bucket = s3_config.get("bucket", DEFAULT_CORE_CONFIG.s3_bucket)
+        self.use_path_style = s3_config.get(
+            "use_path_style", DEFAULT_CORE_CONFIG.s3_use_path_style
+        )
         self.max_pool_connections = s3_config.get(
-            "max_pool_connections", CONFIG.s3_max_pool_connections
+            "max_pool_connections", DEFAULT_CORE_CONFIG.s3_max_pool_connections
         )
         self.connection_timeout = s3_config.get(
-            "connection_timeout", CONFIG.s3_connection_timeout
+            "connection_timeout", DEFAULT_CORE_CONFIG.s3_connection_timeout
         )
-        self.read_timeout = s3_config.get("read_timeout", CONFIG.s3_read_timeout)
+        self.read_timeout = s3_config.get(
+            "read_timeout", DEFAULT_CORE_CONFIG.s3_read_timeout
+        )
 
         if not self.bucket:
             raise ValueError("S3 bucket name is required")

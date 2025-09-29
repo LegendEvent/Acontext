@@ -4,7 +4,7 @@ from ...schema.session.task import TaskStatus
 from ...schema.session.message import MessageBlob
 from ...schema.utils import asUUID
 from ...schema.result import ResultError
-from ...env import LOG, CONFIG
+from ...env import LOG, DEFAULT_CORE_CONFIG
 from ...llm.agent import task as AT
 
 
