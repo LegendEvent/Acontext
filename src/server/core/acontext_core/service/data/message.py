@@ -181,7 +181,7 @@ async def get_message_ids(
 
 
 async def unpending_session_messages_to_running(
-    db_session: AsyncSession, session_id: asUUID
+    db_session: AsyncSession, session_id: asUUID, limit: int
 ) -> Result[List[asUUID]]:
     query = (
         update(Message)

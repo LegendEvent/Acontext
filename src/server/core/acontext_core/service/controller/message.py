@@ -15,10 +15,19 @@ async def process_session_pending_message(
     pending_message_ids = None
     try:
         async with DB_CLIENT.get_session_context() as session:
-            r = await MD.unpending_session_messages_to_running(session, session_id)
+            r = await MD.get_message_ids(
+                session,
+                session_id,
+                limit=project_config.project_session_message_buffer_max_overflow_turns,
+                asc=True,
+            )
             pending_message_ids, eil = r.unpack()
             if eil:
                 return
+            await MD.update_message_status_to(
+                session, pending_message_ids, TaskStatus.RUNNING
+            )
+        LOG.info(f"Unpending {len(pending_message_ids)} session messages to process")
 
         async with DB_CLIENT.get_session_context() as session:
             r = await MD.fetch_messages_data_by_ids(session, pending_message_ids)

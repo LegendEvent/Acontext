@@ -63,7 +63,7 @@ class CustomTextFormatter(logging.Formatter):
         base_msg = super().format(record)
 
         # Check if there are extra fields (beyond the standard ones)
-        printout_attrs = {"traceback"}
+        printout_attrs = {"traceback", "session_id", "message_id"}
 
         all_fields = record.__dict__
         extra_fields = []
