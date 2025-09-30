@@ -24,8 +24,28 @@ def pack_task_section(tasks: List[TaskSchema]) -> str:
     return section
 
 
-def pack_previous_messages_section(messages: list[MessageBlob]) -> str:
-    return "\n".join([m.to_string() for m in messages])
+def pack_previous_messages_section(
+    planning_task: TaskSchema | None,
+    tasks: list[TaskSchema],
+    messages: list[MessageBlob],
+) -> str:
+    task_ids = [m.task_id for m in messages]
+    mappings = {t.id: t for t in tasks}
+    task_descs = []
+    for ti in task_ids:
+        if ti is None:
+            task_descs.append("(no task linked)")
+            continue
+        elif ti in mappings:
+            task_descs.append(f"(append to task_{mappings[ti].task_order})")
+        elif planning_task is not None and ti == planning_task.id:
+            task_descs.append("(append to planning_section)")
+        else:
+            LOG.warning(f"Unknown task id: {ti}")
+            task_descs.append("(no task linked)")
+    return "\n---\n".join(
+        [f"{td}\n{m.to_string()}" for td, m in zip(task_descs, messages)]
+    )
 
 
 def pack_current_message_with_ids(messages: list[MessageBlob]) -> str:
@@ -64,8 +84,15 @@ async def task_agent_curd(
         if eil:
             return r
 
+        r = await TD.fetch_planning_task(db_session, session_id)
+        planning_section, eil = r.unpack()
+        if eil:
+            return r
+
     task_section = pack_task_section(tasks)
-    previous_messages_section = pack_previous_messages_section(previous_messages)
+    previous_messages_section = pack_previous_messages_section(
+        planning_section, tasks, previous_messages
+    )
     current_messages_section = pack_current_message_with_ids(messages)
 
     LOG.info(f"Task Section: {task_section}")

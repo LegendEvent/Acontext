@@ -11,6 +11,32 @@ from ...schema.utils import asUUID
 from ...schema.session.task import TaskSchema
 
 
+async def fetch_planning_task(
+    db_session: AsyncSession, session_id: asUUID
+) -> Result[TaskSchema | None]:
+    query = (
+        select(Task)
+        .where(Task.session_id == session_id)
+        .options(selectinload(Task.messages))
+        .where(Task.is_planning_task == True)
+    )
+    result = await db_session.execute(query)
+    planning = result.scalars().first()
+    if planning is None:
+        return Result.resolve(None)
+    return Result.resolve(
+        TaskSchema(
+            id=planning.id,
+            session_id=planning.session_id,
+            task_order=planning.task_order,
+            task_status=planning.task_status,
+            task_description="",
+            task_data=planning.task_data,
+            raw_message_ids=[msg.id for msg in planning.messages],
+        )
+    )
+
+
 async def fetch_current_tasks(
     db_session: AsyncSession, session_id: asUUID, status: str = None
 ) -> Result[List[TaskSchema]]:
@@ -38,29 +64,6 @@ async def fetch_current_tasks(
         for t in tasks
     ]
     return Result.resolve(tasks_d)  # Fixed: return tasks_d instead of tasks
-
-
-async def fetch_planning_section(
-    db_session: AsyncSession, session_id: asUUID
-) -> Result[TaskSchema]:
-    query = (
-        select(Task)
-        .where(Task.session_id == session_id)
-        .where(Task.is_planning_task == True)
-        .options(selectinload(Task.messages))
-    )
-    result = await db_session.execute(query)
-    task = result.scalars().first()
-    return Resolver.resolve(
-        TaskSchema(
-            id=task.id,
-            session_id=task.session_id,
-            task_order=task.task_order,
-            task_status=task.task_status,
-            task_data=task.task_data,
-            raw_message_ids=[msg.id for msg in task.messages],
-        )
-    )
 
 
 async def update_task(

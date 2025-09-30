@@ -48,11 +48,15 @@ async def process_session_pending_message(
             if eil:
                 return
             messages_data = [
-                MessageBlob(message_id=m.id, role=m.role, parts=m.parts)
+                MessageBlob(
+                    message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id
+                )
                 for m in messages
             ]
             previous_messages_data = [
-                MessageBlob(message_id=m.id, role=m.role, parts=m.parts)
+                MessageBlob(
+                    message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id
+                )
                 for m in previous_messages
             ]
 
