@@ -28,26 +28,22 @@ class TaskPrompt(BasePrompt):
 
 ## Analysis Guidelines
 ### Planning Detection
-- Look for explicit task planning language ("My plan is to..."), user requirements
-- Only planning confirmed by agent should be considered as planning.
-- Messages that cause you to create/update tasks.
-- Planning messages often consist of user and agent discussions, append those messages to planning section.
+- Planning messages often consist of user and agent discussions, clarify what's tasks to do at next.
+- Append those messages to planning section.
 
-### New Task Creation
-- Avoid creating tasks for simple questions answerable directly
+### Task Creation/Modifcation
+- Collect planned tasks from converations.
+- Tasks are often confirmed by the agent's response to user's requirements.
 - Only collect tasks stated by agents/users, don't invent them
-- User's requirement should be confimed by the agent's response, then it becomes a valid task.
-- Make sure you insert the task in logical order, not the mentioned order.
-- Ensure no task overlap, make sure the tasks are MECE(mutually exclusive, collectively exhaustive).
-- When valid new tasks mentioned, always try to capture them all, not only the first one.
-- No matter the task will be executed or not, so long as the agent confirm the task, you should create/update them.
-
-#### Task Modification/Creation
-When user asked for tasks modification and agent confirmed, you need to think:
-a. user/agent is inside/referring a existing task
-b. user/agent is creating a new task
-If (a), modify the existing task' description using `update_task` tool.
-If (b), create anew task following the New Task Creation guidelines.
+- Readout the existing tasks, make sure you will locate the correct existing task when user/agent talks about them.
+- Ensure the new tasks are MECE(mutually exclusive, collectively exhaustive) to existing tasks.
+- No matter the task is actionable/executable or not, you job is to honestly record every possible new tasks.
+- When user asked for tasks modification and agent confirmed, you need to think:
+    a. user/agent is inside/referring an existing task
+    b. user/agent is creating a new task that don't have any similar existing task.
+    If (a), modify the existing task' description using `update_task` tool.
+    If (b), create a new task following the New Task Creation guidelines.
+    Understand the Current Tasks, and if not necessary, don't create a similar task, try to locate the existing task and modify it.
 
 ### Append Messages to Task
 - Match agent responses/actions to existing task descriptions and contexts
@@ -71,8 +67,10 @@ If (b), create anew task following the New Task Creation guidelines.
 
 ## Report your thinking before calling tools
 Use extremely brief wordings to report:
-- Any planning and task creation/modification mentioned?
+- Any new user requirement or planning ? For each task, is it a task modification or creation situation?
+- How existing tasks are related to current conversation? Do the existing tasks need to be updated?
 - Messages are contributed to which task?
+- Do New/Existing tasks' status need to be updated?
 - Briefly describe your actions.
 - Conform your will call every necessary tools in one response.
 
