@@ -56,6 +56,7 @@ type MQCfg struct {
 
 type S3Cfg struct {
 	Endpoint         string
+	InternalEndpoint string
 	Region           string
 	AccessKey        string
 	SecretKey        string

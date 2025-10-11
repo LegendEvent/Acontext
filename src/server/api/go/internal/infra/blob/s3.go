@@ -46,21 +46,51 @@ func NewS3(ctx context.Context, cfg *config.Config) (*S3Deps, error) {
 		return nil, err
 	}
 
-	s3Opts := func(o *s3.Options) {
-		if ep := strings.TrimSpace(cfg.S3.Endpoint); ep != "" {
-			if !strings.HasPrefix(ep, "http://") && !strings.HasPrefix(ep, "https://") {
-				ep = "https://" + ep
-			}
-			if u, uerr := url.Parse(ep); uerr == nil {
+	// Helper function to normalize endpoint URL
+	normalizeEndpoint := func(endpoint string) string {
+		ep := strings.TrimSpace(endpoint)
+		if ep == "" {
+			return ""
+		}
+		if !strings.HasPrefix(ep, "http://") && !strings.HasPrefix(ep, "https://") {
+			ep = "https://" + ep
+		}
+		return ep
+	}
+
+	// Use InternalEndpoint for S3 operations if available, otherwise fall back to Endpoint
+	internalEp := cfg.S3.InternalEndpoint
+	if internalEp == "" {
+		internalEp = cfg.S3.Endpoint
+	}
+	internalEp = normalizeEndpoint(internalEp)
+
+	// S3 client options for internal operations
+	s3InternalOpts := func(o *s3.Options) {
+		if internalEp != "" {
+			if u, uerr := url.Parse(internalEp); uerr == nil {
 				o.BaseEndpoint = aws.String(u.String())
 			}
 		}
 		o.UsePathStyle = cfg.S3.UsePathStyle
 	}
 
-	client := s3.NewFromConfig(acfg, s3Opts)
+	// Create client and uploader using internal endpoint
+	client := s3.NewFromConfig(acfg, s3InternalOpts)
 	uploader := manager.NewUploader(client)
-	presigner := s3.NewPresignClient(client)
+
+	// Create presigner using public endpoint for external access
+	publicEp := normalizeEndpoint(cfg.S3.Endpoint)
+	s3PublicOpts := func(o *s3.Options) {
+		if publicEp != "" {
+			if u, uerr := url.Parse(publicEp); uerr == nil {
+				o.BaseEndpoint = aws.String(u.String())
+			}
+		}
+		o.UsePathStyle = cfg.S3.UsePathStyle
+	}
+	presignerClient := s3.NewFromConfig(acfg, s3PublicOpts)
+	presigner := s3.NewPresignClient(presignerClient)
 
 	var sse *s3types.ServerSideEncryption
 	if cfg.S3.SSE != "" {
