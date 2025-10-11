@@ -39,10 +39,73 @@ interface NodeProps extends NodeRendererProps<TreeNode> {
   loadingNodes: Set<string>;
 }
 
+function truncateMiddle(str: string, maxLength: number = 30): string {
+  if (str.length <= maxLength) return str;
+
+  const ellipsis = "...";
+  const charsToShow = maxLength - ellipsis.length;
+  const frontChars = Math.ceil(charsToShow / 2);
+  const backChars = Math.floor(charsToShow / 2);
+
+  return str.substring(0, frontChars) + ellipsis + str.substring(str.length - backChars);
+}
+
 function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
   const indent = node.level * 12;
   const isFolder = node.data.type === "folder";
   const isLoading = loadingNodes.has(node.id);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [displayName, setDisplayName] = useState(node.data.name);
+
+  useEffect(() => {
+    const updateDisplayName = () => {
+      if (!textRef.current) return;
+
+      const container = textRef.current.parentElement;
+      if (!container) return;
+
+      // Get available width (container width - icon width - gap - padding)
+      const containerWidth = container.clientWidth;
+      const iconWidth = isFolder ? 56 : 40; // Total width of icon and spacing
+      const availableWidth = containerWidth - iconWidth;
+
+      // Create temporary element to measure text width
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.fontSize = "14px"; // text-sm
+      tempSpan.style.fontFamily = getComputedStyle(textRef.current).fontFamily;
+      tempSpan.textContent = node.data.name;
+      document.body.appendChild(tempSpan);
+
+      const fullWidth = tempSpan.offsetWidth;
+      document.body.removeChild(tempSpan);
+
+      // If text width is less than available width, display full name
+      if (fullWidth <= availableWidth) {
+        setDisplayName(node.data.name);
+        return;
+      }
+
+      // Calculate number of characters to display
+      const charWidth = fullWidth / node.data.name.length;
+      const maxChars = Math.floor(availableWidth / charWidth);
+
+      setDisplayName(truncateMiddle(node.data.name, Math.max(10, maxChars)));
+    };
+
+    updateDisplayName();
+
+    // Add window resize listener
+    const resizeObserver = new ResizeObserver(updateDisplayName);
+    if (textRef.current?.parentElement) {
+      resizeObserver.observe(textRef.current.parentElement);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [node.data.name, indent, isFolder]);
 
   return (
     <div
@@ -64,7 +127,7 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
     >
       <div
         style={{ marginLeft: `${indent}px` }}
-        className="flex items-center gap-1.5 flex-1"
+        className="flex items-center gap-1.5 flex-1 min-w-0"
       >
         {isFolder ? (
           <>
@@ -90,7 +153,13 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
             <File className="h-4 w-4 shrink-0 text-muted-foreground" />
           </>
         )}
-        <span className="truncate">{node.data.name}</span>
+        <span
+          ref={textRef}
+          className="min-w-0"
+          title={node.data.name}
+        >
+          {displayName}
+        </span>
       </div>
     </div>
   );
@@ -103,14 +172,14 @@ export default function ArtifactPage() {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-  // Artifact 相关状态
+  // Artifact related states
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [selectedArtifact, setSelectedArtifact] = useState<Artifact | null>(
     null
   );
   const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(true);
 
-  // 组件挂载时加载 artifact 列表
+  // Load artifact list when component mounts
   useEffect(() => {
     const loadArtifacts = async () => {
       try {
@@ -149,7 +218,7 @@ export default function ArtifactPage() {
     return [...directories, ...files];
   };
 
-  // 当选择 artifact 时，加载根目录文件
+  // Load root directory files when artifact is selected
   const handleArtifactSelect = async (artifact: Artifact) => {
     setSelectedArtifact(artifact);
     setTreeData([]);
@@ -174,14 +243,14 @@ export default function ArtifactPage() {
     const node = treeRef.current?.get(nodeId);
     if (!node || node.data.type !== "folder" || !selectedArtifact) return;
 
-    // 如果已经加载过，直接返回
+    // Return if already loaded
     if (node.data.isLoaded) return;
 
-    // 标记为加载中
+    // Mark as loading
     setLoadingNodes((prev) => new Set(prev).add(nodeId));
 
     try {
-      // 使用统一的接口加载子项，传入 artifact_id 和 path
+      // Load children using unified interface with artifact_id and path
       const children = await getListFiles(selectedArtifact.id, node.data.path);
       if (children.code !== 0 || !children.data) {
         console.error(children.message);
@@ -189,7 +258,7 @@ export default function ArtifactPage() {
       }
       const files = formatFiles(node.data.path, children.data);
 
-      // 更新节点数据
+      // Update node data
       setTreeData((prevData) => {
         const updateNode = (nodes: TreeNode[]): TreeNode[] => {
           return nodes.map((n) => {
@@ -214,7 +283,7 @@ export default function ArtifactPage() {
     } catch (error) {
       console.error("Failed to load children:", error);
     } finally {
-      // 移除加载状态
+      // Remove loading state
       setLoadingNodes((prev) => {
         const next = new Set(prev);
         next.delete(nodeId);
@@ -237,7 +306,7 @@ export default function ArtifactPage() {
           <div className="mb-4 space-y-3">
             <h2 className="text-lg font-semibold">File Explorer</h2>
 
-            {/* Artifact 选择器 */}
+            {/* Artifact selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -252,15 +321,17 @@ export default function ArtifactPage() {
                     </>
                   ) : selectedArtifact ? (
                     <>
-                      <span>{selectedArtifact.id}</span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
+                      <span className="mr-2 min-w-0 truncate" title={selectedArtifact.id}>
+                        {selectedArtifact.id}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                     </>
                   ) : (
                     <>
                       <span className="text-muted-foreground">
                         Select an artifact
                       </span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                     </>
                   )}
                 </Button>
@@ -270,8 +341,11 @@ export default function ArtifactPage() {
                   <DropdownMenuItem
                     key={artifact.id}
                     onClick={() => handleArtifactSelect(artifact)}
+                    title={artifact.id}
                   >
-                    {artifact.id}
+                    <span className="truncate block w-full">
+                      {artifact.id}
+                    </span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
