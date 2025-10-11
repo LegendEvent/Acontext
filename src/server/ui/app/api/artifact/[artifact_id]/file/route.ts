@@ -66,7 +66,7 @@ export async function POST(
     const file_path = formData.get("file_path");
     const meta = formData.get("meta");
 
-    if (!file || !(file instanceof File)) {
+    if (!file || typeof file === "string") {
       return createApiError("file is required");
     }
 
