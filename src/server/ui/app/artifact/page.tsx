@@ -426,15 +426,28 @@ export default function ArtifactPage() {
         return;
       }
 
+      // Clear file selection and preview
+      setSelectedFile(null);
+      setImageUrl(null);
+      setFileUrl(null);
+
       // If the deleted artifact is the currently selected one, clear selection
       if (selectedArtifact?.id === artifactToDelete.id) {
         setSelectedArtifact(null);
         setTreeData([]);
-        setSelectedFile(null);
       }
 
       // Reload artifacts list
       await loadArtifacts();
+
+      // If there's a selected artifact (and it's not the one being deleted), reload its file tree
+      if (selectedArtifact && selectedArtifact.id !== artifactToDelete.id) {
+        setTreeData([]);
+        const filesRes = await getListFiles(selectedArtifact.id, "/");
+        if (filesRes.code === 0 && filesRes.data) {
+          setTreeData(formatFiles("/", filesRes.data));
+        }
+      }
     } catch (error) {
       console.error("Failed to delete artifact:", error);
     } finally {
@@ -589,44 +602,69 @@ export default function ArtifactPage() {
       // Clear selected file
       setSelectedFile(null);
 
-      // Reload the file list for the parent path
-      const parentPath = fileToDelete.path;
-      if (parentPath === "/") {
-        // Reload root directory
-        const filesRes = await getListFiles(selectedArtifact.id, "/");
-        if (filesRes.code === 0 && filesRes.data) {
-          setTreeData(formatFiles("/", filesRes.data));
-        }
-      } else {
-        // Reload the specific folder
-        const filesRes = await getListFiles(selectedArtifact.id, parentPath);
-        if (filesRes.code === 0 && filesRes.data) {
-          const files = formatFiles(parentPath, filesRes.data);
+      // Helper function to get parent path
+      const getParentPath = (path: string): string | null => {
+        if (path === "/") return null;
+        // Remove trailing slash if exists
+        const normalizedPath = path.endsWith("/") ? path.slice(0, -1) : path;
+        const lastSlashIndex = normalizedPath.lastIndexOf("/");
+        if (lastSlashIndex <= 0) return "/";
+        return normalizedPath.substring(0, lastSlashIndex + 1);
+      };
 
-          // Update the tree data
-          setTreeData((prevData) => {
-            const updateNode = (nodes: TreeNode[]): TreeNode[] => {
-              return nodes.map((n) => {
-                if (n.path === parentPath) {
-                  return {
-                    ...n,
-                    children: files,
-                    isLoaded: true,
-                  };
-                }
-                if (n.children) {
-                  return {
-                    ...n,
-                    children: updateNode(n.children),
-                  };
-                }
-                return n;
-              });
-            };
-            return updateNode(prevData);
-          });
+      // Recursive function to reload directory and check if empty
+      const reloadDirectoryRecursively = async (currentPath: string): Promise<void> => {
+        const filesRes = await getListFiles(selectedArtifact.id, currentPath);
+
+        if (filesRes.code !== 0 || !filesRes.data) {
+          console.error(filesRes.message);
+          return;
         }
-      }
+
+        const files = formatFiles(currentPath, filesRes.data);
+        const isEmpty = files.length === 0;
+
+        if (currentPath === "/") {
+          // Update root directory
+          setTreeData(files);
+          return;
+        }
+
+        // Update the tree data
+        setTreeData((prevData) => {
+          const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+            return nodes.map((n) => {
+              if (n.path === currentPath) {
+                return {
+                  ...n,
+                  children: files,
+                  isLoaded: true,
+                };
+              }
+              if (n.children) {
+                return {
+                  ...n,
+                  children: updateNode(n.children),
+                };
+              }
+              return n;
+            });
+          };
+          return updateNode(prevData);
+        });
+
+        // If directory is empty, recursively reload parent directory
+        if (isEmpty) {
+          const parentPath = getParentPath(currentPath);
+          if (parentPath !== null) {
+            await reloadDirectoryRecursively(parentPath);
+          }
+        }
+      };
+
+      // Start reloading from the parent path
+      const parentPath = fileToDelete.path;
+      await reloadDirectoryRecursively(parentPath);
     } catch (error) {
       console.error("Failed to delete file:", error);
     } finally {
