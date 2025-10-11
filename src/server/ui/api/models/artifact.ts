@@ -30,3 +30,31 @@ export const deleteArtifact = async (
 ): Promise<Res<null>> => {
   return await service.delete(`/api/artifact/${artifact_id}`);
 };
+
+export const uploadFile = async (
+  artifact_id: string,
+  file_path: string,
+  file: File
+): Promise<Res<null>> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("file_path", file_path);
+
+  const response = await fetch(`/api/artifact/${artifact_id}/file`, {
+    method: "POST",
+    body: formData,
+  });
+
+  return await response.json();
+};
+
+export const deleteFile = async (
+  artifact_id: string,
+  file_path: string
+): Promise<Res<null>> => {
+  return await service.delete(
+    `/api/artifact/${artifact_id}/file?file_path=${encodeURIComponent(
+      file_path
+    )}`
+  );
+};

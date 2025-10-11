@@ -36,6 +36,7 @@ import {
   Plus,
   Trash2,
   RefreshCw,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -44,6 +45,8 @@ import {
   getFile,
   createArtifact,
   deleteArtifact,
+  uploadFile,
+  deleteFile,
 } from "@/api/models/artifact";
 import { Artifact, ListFilesResp, File as FileInfo } from "@/types";
 
@@ -59,6 +62,8 @@ interface TreeNode {
 
 interface NodeProps extends NodeRendererProps<TreeNode> {
   loadingNodes: Set<string>;
+  onUploadClick: (path: string) => void;
+  isUploading: boolean;
 }
 
 function truncateMiddle(str: string, maxLength: number = 30): string {
@@ -76,12 +81,13 @@ function truncateMiddle(str: string, maxLength: number = 30): string {
   );
 }
 
-function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
+function Node({ node, style, dragHandle, loadingNodes, onUploadClick, isUploading }: NodeProps) {
   const indent = node.level * 12;
   const isFolder = node.data.type === "folder";
   const isLoading = loadingNodes.has(node.id);
   const textRef = useRef<HTMLSpanElement>(null);
   const [displayName, setDisplayName] = useState(node.data.name);
+  const [showUploadButton, setShowUploadButton] = useState(false);
 
   useEffect(() => {
     const updateDisplayName = () => {
@@ -138,11 +144,13 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
       ref={dragHandle}
       style={style}
       className={cn(
-        "flex items-center cursor-pointer px-2 py-1.5 text-sm rounded-md transition-colors",
+        "flex items-center cursor-pointer px-2 py-1.5 text-sm rounded-md transition-colors group",
         "hover:bg-accent hover:text-accent-foreground",
         node.isSelected && "bg-accent text-accent-foreground",
         node.state.isDragging && "opacity-50"
       )}
+      onMouseEnter={() => isFolder && setShowUploadButton(true)}
+      onMouseLeave={() => setShowUploadButton(false)}
       onClick={() => {
         if (isFolder) {
           node.toggle();
@@ -183,6 +191,23 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
           {displayName}
         </span>
       </div>
+      {isFolder && showUploadButton && (
+        <button
+          className="shrink-0 ml-2 p-1 rounded hover:bg-muted"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUploadClick(node.data.path);
+          }}
+          disabled={isUploading}
+          title="Upload file to this folder"
+        >
+          {isUploading ? (
+            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          ) : (
+            <Upload className="h-3 w-3 text-muted-foreground" />
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -212,6 +237,16 @@ export default function ArtifactPage() {
     null
   );
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Delete file confirmation dialog states
+  const [deleteFileDialogOpen, setDeleteFileDialogOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<TreeNode | null>(null);
+  const [isDeletingFile, setIsDeletingFile] = useState(false);
+
+  // Upload file states
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentUploadPath, setCurrentUploadPath] = useState<string>("/");
 
   // Create artifact states
   const [isCreating, setIsCreating] = useState(false);
@@ -243,7 +278,7 @@ export default function ArtifactPage() {
 
   const formatFiles = (path: string, res: ListFilesResp) => {
     const files: TreeNode[] = res.files.map((file) => ({
-      id: file.path,
+      id: `${file.path}${file.filename}`,
       name: file.filename,
       type: "file",
       path: file.path,
@@ -251,7 +286,7 @@ export default function ArtifactPage() {
       fileInfo: file,
     }));
     const directories: TreeNode[] = res.directories.map((directory) => ({
-      id: directory,
+      id: `${path}${directory}/`,
       name: directory,
       type: "folder",
       path: `${path}${directory}/`,
@@ -413,6 +448,151 @@ export default function ArtifactPage() {
     }
   };
 
+  // Handle upload file button click
+  const handleUploadClick = (path: string = "/") => {
+    setCurrentUploadPath(path);
+    fileInputRef.current?.click();
+  };
+
+  // Handle file selection and upload
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !selectedArtifact) return;
+
+    const file = files[0];
+
+    try {
+      setIsUploading(true);
+      const res = await uploadFile(
+        selectedArtifact.id,
+        currentUploadPath,
+        file
+      );
+
+      if (res.code !== 0) {
+        console.error(res.message);
+        return;
+      }
+
+      // Reload the file list for the current path
+      if (currentUploadPath === "/") {
+        // Reload root directory
+        const filesRes = await getListFiles(selectedArtifact.id, "/");
+        if (filesRes.code === 0 && filesRes.data) {
+          setTreeData(formatFiles("/", filesRes.data));
+        }
+      } else {
+        // Reload the specific folder by refreshing tree data
+        const filesRes = await getListFiles(selectedArtifact.id, currentUploadPath);
+        if (filesRes.code === 0 && filesRes.data) {
+          const files = formatFiles(currentUploadPath, filesRes.data);
+
+          // Update the tree data
+          setTreeData((prevData) => {
+            const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+              return nodes.map((n) => {
+                if (n.path === currentUploadPath) {
+                  return {
+                    ...n,
+                    children: files,
+                    isLoaded: true,
+                  };
+                }
+                if (n.children) {
+                  return {
+                    ...n,
+                    children: updateNode(n.children),
+                  };
+                }
+                return n;
+              });
+            };
+            return updateNode(prevData);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to upload file:", error);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Handle delete file click
+  const handleDeleteFileClick = () => {
+    if (!selectedFile) return;
+    setFileToDelete(selectedFile);
+    setDeleteFileDialogOpen(true);
+  };
+
+  // Handle delete file confirmation
+  const handleDeleteFile = async () => {
+    if (!fileToDelete || !selectedArtifact || !fileToDelete.fileInfo) return;
+
+    try {
+      setIsDeletingFile(true);
+      const fullPath = `${fileToDelete.path}${fileToDelete.fileInfo.filename}`;
+      const res = await deleteFile(selectedArtifact.id, fullPath);
+
+      if (res.code !== 0) {
+        console.error(res.message);
+        return;
+      }
+
+      // Clear selected file
+      setSelectedFile(null);
+
+      // Reload the file list for the parent path
+      const parentPath = fileToDelete.path;
+      if (parentPath === "/") {
+        // Reload root directory
+        const filesRes = await getListFiles(selectedArtifact.id, "/");
+        if (filesRes.code === 0 && filesRes.data) {
+          setTreeData(formatFiles("/", filesRes.data));
+        }
+      } else {
+        // Reload the specific folder
+        const filesRes = await getListFiles(selectedArtifact.id, parentPath);
+        if (filesRes.code === 0 && filesRes.data) {
+          const files = formatFiles(parentPath, filesRes.data);
+
+          // Update the tree data
+          setTreeData((prevData) => {
+            const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+              return nodes.map((n) => {
+                if (n.path === parentPath) {
+                  return {
+                    ...n,
+                    children: files,
+                    isLoaded: true,
+                  };
+                }
+                if (n.children) {
+                  return {
+                    ...n,
+                    children: updateNode(n.children),
+                  };
+                }
+                return n;
+              });
+            };
+            return updateNode(prevData);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete file:", error);
+    } finally {
+      setIsDeletingFile(false);
+      setDeleteFileDialogOpen(false);
+      setFileToDelete(null);
+    }
+  };
+
   // Load file when a file is selected
   useEffect(() => {
     const loadFile = async () => {
@@ -463,6 +643,14 @@ export default function ArtifactPage() {
         <div className="h-full bg-background p-4">
           <div className="mb-4 space-y-3">
             <h2 className="text-lg font-semibold">File Explorer</h2>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+            />
 
             {/* Artifact selector with create button */}
             <div className="flex gap-2">
@@ -582,20 +770,51 @@ export default function ArtifactPage() {
                 </div>
               </div>
             ) : (
-              <Tree
-                ref={treeRef}
-                data={treeData}
-                openByDefault={false}
-                width="100%"
-                height={800}
-                indent={12}
-                rowHeight={32}
-                className="p-2"
-                onToggle={handleToggle}
-                onSelect={handleSelect}
-              >
-                {(props) => <Node {...props} loadingNodes={loadingNodes} />}
-              </Tree>
+              <div className="h-full flex flex-col p-2">
+                {/* Fake root directory with upload button */}
+                <div className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors group">
+                  <div className="flex items-center gap-1.5">
+                    <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm">/</span>
+                  </div>
+                  <button
+                    className="shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleUploadClick("/")}
+                    disabled={isUploading}
+                    title="Upload file to root directory"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Upload className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+
+                {/* File tree */}
+                <div className="flex-1">
+                  <Tree
+                    ref={treeRef}
+                    data={treeData}
+                    openByDefault={false}
+                    width="100%"
+                    height={750}
+                    indent={12}
+                    rowHeight={32}
+                    onToggle={handleToggle}
+                    onSelect={handleSelect}
+                  >
+                    {(props) => (
+                      <Node
+                        {...props}
+                        loadingNodes={loadingNodes}
+                        onUploadClick={handleUploadClick}
+                        isUploading={isUploading}
+                      />
+                    )}
+                  </Tree>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -658,6 +877,28 @@ export default function ArtifactPage() {
                       ).toLocaleString()}
                     </p>
                   </div>
+                </div>
+
+                {/* Delete file button */}
+                <div className="border-t pt-4">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleDeleteFileClick}
+                    disabled={isDeletingFile}
+                  >
+                    {isDeletingFile ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete File
+                      </>
+                    )}
+                  </Button>
                 </div>
 
                 {/* Image preview */}
@@ -740,7 +981,7 @@ export default function ArtifactPage() {
         </div>
       </ResizablePanel>
 
-      {/* Delete confirmation dialog */}
+      {/* Delete artifact confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -762,6 +1003,39 @@ export default function ArtifactPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete file confirmation dialog */}
+      <AlertDialog open={deleteFileDialogOpen} onOpenChange={setDeleteFileDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete File</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete file{" "}
+              <span className="font-mono font-semibold">
+                {fileToDelete?.fileInfo?.filename}
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingFile}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteFile}
+              disabled={isDeletingFile}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingFile ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Deleting...
