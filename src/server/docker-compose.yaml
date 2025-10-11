@@ -95,12 +95,12 @@ services:
       "
     restart: "no"
 
-  # acontext-api
-  acontext-api:
+  # acontext-server-api
+  acontext-server-api:
     build:
       context: ./api/go
       dockerfile: Dockerfile.dev
-    container_name: acontext-api
+    container_name: acontext-server-api
     restart: unless-stopped
     environment:
       API_EXPORT_PORT: 8029
@@ -136,3 +136,27 @@ services:
         condition: service_healthy
       acontext-server-minio:
         condition: service_healthy
+
+  # acontext-server-ui
+  acontext-server-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://127.0.0.1:3000}
+        NEXT_PUBLIC_API_SERVER_URL: http://acontext-server-api:8029
+        NEXT_PUBLIC_BASE_PATH: ""
+        ROOT_API_BEARER_TOKEN: ${ROOT_API_BEARER_TOKEN:-your-root-api-bearer-token}
+    container_name: acontext-server-ui
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://127.0.0.1:3000}
+      NEXT_PUBLIC_API_SERVER_URL: http://acontext-server-api:8029
+      NEXT_PUBLIC_BASE_PATH: ""
+      ROOT_API_BEARER_TOKEN: ${ROOT_API_BEARER_TOKEN:-your-root-api-bearer-token}
+    ports:
+      - "${UI_EXPORT_PORT:-3000}:3000"
+    depends_on:
+      - acontext-server-api

@@ -6,9 +6,7 @@
     "env:sync": "node scripts/sync-env.mjs",
     "predev": "pnpm run env:sync",
     "dev": "next dev --turbopack",
-    "prebuild": "pnpm run env:sync",
     "build": "next build --turbopack",
-    "prestart": "pnpm run env:sync",
     "start": "next start",
     "lint": "eslint"
   },
