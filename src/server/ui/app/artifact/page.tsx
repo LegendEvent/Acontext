@@ -195,7 +195,7 @@ function Node({ node, style, dragHandle, loadingNodes, onUploadClick, isUploadin
       </div>
       {isFolder && showUploadButton && (
         <button
-          className="shrink-0 ml-2 p-1 rounded hover:bg-muted"
+          className="shrink-0 ml-2 p-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             onUploadClick(node.data.path);
@@ -204,9 +204,9 @@ function Node({ node, style, dragHandle, loadingNodes, onUploadClick, isUploadin
           title="Upload file to this folder"
         >
           {isUploading ? (
-            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
           ) : (
-            <Upload className="h-3 w-3 text-muted-foreground" />
+            <Upload className="h-3 w-3 text-primary" />
           )}
         </button>
       )}
@@ -859,15 +859,15 @@ export default function ArtifactPage() {
                     <span className="text-sm">/</span>
                   </div>
                   <button
-                    className="shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="shrink-0 p-1 rounded-md bg-primary/10 hover:bg-primary/20 opacity-0 group-hover:opacity-100 transition-all"
                     onClick={() => handleUploadClick("/")}
                     disabled={isUploading}
                     title="Upload file to root directory"
                   >
                     {isUploading ? (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
                     ) : (
-                      <Upload className="h-3 w-3 text-muted-foreground" />
+                      <Upload className="h-3 w-3 text-primary" />
                     )}
                   </button>
                 </div>
