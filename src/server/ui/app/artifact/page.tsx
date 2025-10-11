@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Tree, NodeRendererProps, TreeApi, NodeApi } from "react-arborist";
 import {
   ResizableHandle,
@@ -21,10 +22,11 @@ import {
   FolderOpen,
   Loader2,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getArtifacts, getListFiles } from "@/api/models/artifact";
-import { Artifact, ListFilesResp } from "@/types";
+import { getArtifacts, getListFiles, getFile } from "@/api/models/artifact";
+import { Artifact, ListFilesResp, File as FileInfo } from "@/types";
 
 interface TreeNode {
   id: string;
@@ -33,6 +35,7 @@ interface TreeNode {
   path: string;
   children?: TreeNode[];
   isLoaded?: boolean;
+  fileInfo?: FileInfo; // Store complete file information
 }
 
 interface NodeProps extends NodeRendererProps<TreeNode> {
@@ -47,7 +50,11 @@ function truncateMiddle(str: string, maxLength: number = 30): string {
   const frontChars = Math.ceil(charsToShow / 2);
   const backChars = Math.floor(charsToShow / 2);
 
-  return str.substring(0, frontChars) + ellipsis + str.substring(str.length - backChars);
+  return (
+    str.substring(0, frontChars) +
+    ellipsis +
+    str.substring(str.length - backChars)
+  );
 }
 
 function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
@@ -153,11 +160,7 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
             <File className="h-4 w-4 shrink-0 text-muted-foreground" />
           </>
         )}
-        <span
-          ref={textRef}
-          className="min-w-0"
-          title={node.data.name}
-        >
+        <span ref={textRef} className="min-w-0" title={node.data.name}>
           {displayName}
         </span>
       </div>
@@ -178,6 +181,11 @@ export default function ArtifactPage() {
     null
   );
   const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(true);
+
+  // File preview states
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   // Load artifact list when component mounts
   useEffect(() => {
@@ -207,6 +215,7 @@ export default function ArtifactPage() {
       type: "file",
       path: file.path,
       isLoaded: false,
+      fileInfo: file,
     }));
     const directories: TreeNode[] = res.directories.map((directory) => ({
       id: directory,
@@ -299,6 +308,50 @@ export default function ArtifactPage() {
     }
   };
 
+  // Load file when a file is selected
+  useEffect(() => {
+    const loadFile = async () => {
+      if (!selectedFile || !selectedArtifact || !selectedFile.fileInfo) {
+        setImageUrl(null);
+        setFileUrl(null);
+        return;
+      }
+
+      const mime = selectedFile.fileInfo.meta.__file_info__.mime;
+      const isImage = mime.startsWith("image/");
+
+      try {
+        setIsLoadingImage(isImage);
+        const res = await getFile(
+          selectedArtifact.id,
+          `${selectedFile.path}${selectedFile.fileInfo.filename}`
+        );
+        if (res.code !== 0) {
+          console.error(res.message);
+          setImageUrl(null);
+          setFileUrl(null);
+          return;
+        }
+
+        if (isImage) {
+          setImageUrl(res.data?.public_url || null);
+          setFileUrl(null);
+        } else {
+          setFileUrl(res.data?.public_url || null);
+          setImageUrl(null);
+        }
+      } catch (error) {
+        console.error("Failed to load file:", error);
+        setImageUrl(null);
+        setFileUrl(null);
+      } finally {
+        setIsLoadingImage(false);
+      }
+    };
+
+    loadFile();
+  }, [selectedFile, selectedArtifact]);
+
   return (
     <ResizablePanelGroup direction="horizontal" className="h-screen">
       <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
@@ -321,7 +374,10 @@ export default function ArtifactPage() {
                     </>
                   ) : selectedArtifact ? (
                     <>
-                      <span className="mr-2 min-w-0 truncate" title={selectedArtifact.id}>
+                      <span
+                        className="mr-2 min-w-0 truncate"
+                        title={selectedArtifact.id}
+                      >
                         {selectedArtifact.id}
                       </span>
                       <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
@@ -343,9 +399,7 @@ export default function ArtifactPage() {
                     onClick={() => handleArtifactSelect(artifact)}
                     title={artifact.id}
                   >
-                    <span className="truncate block w-full">
-                      {artifact.id}
-                    </span>
+                    <span className="truncate block w-full">{artifact.id}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -389,14 +443,134 @@ export default function ArtifactPage() {
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel>
-        <div className="h-full bg-background p-4">
+        <div className="h-full bg-background p-4 overflow-auto">
           <h2 className="mb-4 text-lg font-semibold">Content</h2>
-          <div className="rounded-md border bg-card p-4">
-            {selectedFile ? (
-              <div>
-                <h3 className="text-base font-medium mb-3">
-                  {selectedFile.name}
-                </h3>
+          <div className="rounded-md border bg-card p-6">
+            {selectedFile && selectedFile.fileInfo ? (
+              <div className="space-y-6">
+                {/* File header */}
+                <div className="border-b pb-4">
+                  <h3 className="text-xl font-semibold mb-2">
+                    {selectedFile.fileInfo.filename}
+                  </h3>
+                  <p className="text-sm text-muted-foreground font-mono">
+                    {selectedFile.path}
+                  </p>
+                </div>
+
+                {/* File details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      MIME Type
+                    </p>
+                    <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                      {selectedFile.fileInfo.meta.__file_info__.mime}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Size
+                    </p>
+                    <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                      {selectedFile.fileInfo.meta.__file_info__.size}{" "}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Created At
+                    </p>
+                    <p className="text-sm bg-muted px-2 py-1 rounded">
+                      {new Date(
+                        selectedFile.fileInfo.created_at
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Updated At
+                    </p>
+                    <p className="text-sm bg-muted px-2 py-1 rounded">
+                      {new Date(
+                        selectedFile.fileInfo.updated_at
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Image preview */}
+                {selectedFile.fileInfo.meta.__file_info__.mime.startsWith(
+                  "image/"
+                ) ? (
+                  <div className="border-t pt-6">
+                    <p className="text-sm font-medium text-muted-foreground mb-3">
+                      Preview
+                    </p>
+                    {isLoadingImage ? (
+                      <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+                        <div className="flex flex-col items-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            Loading image...
+                          </p>
+                        </div>
+                      </div>
+                    ) : imageUrl ? (
+                      <div className="rounded-md border bg-muted p-4">
+                        <div className="relative w-full min-h-[200px]">
+                          <Image
+                            src={imageUrl}
+                            alt={selectedFile.fileInfo.filename}
+                            width={800}
+                            height={600}
+                            className="max-w-full h-auto rounded-md shadow-sm"
+                            style={{ objectFit: "contain" }}
+                            unoptimized
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+                        <p className="text-sm text-muted-foreground">
+                          Failed to load image
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border-t pt-6">
+                    <p className="text-sm font-medium text-muted-foreground mb-3">
+                      Download
+                    </p>
+                    {fileUrl ? (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          if (!selectedFile.fileInfo) return;
+                          const link = document.createElement("a");
+                          link.href = fileUrl;
+                          link.download = selectedFile.fileInfo.filename;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Click to Download
+                      </Button>
+                    ) : (
+                      <div className="flex items-center justify-center h-20 bg-muted rounded-md">
+                        <p className="text-sm text-muted-foreground">
+                          No download link available
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">

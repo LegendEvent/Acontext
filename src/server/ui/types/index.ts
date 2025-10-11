@@ -26,3 +26,8 @@ export interface ListFilesResp {
   files: File[];
   directories: string[];
 }
+
+export interface GetFileResp {
+  file: File;
+  public_url: string | null;
+}
