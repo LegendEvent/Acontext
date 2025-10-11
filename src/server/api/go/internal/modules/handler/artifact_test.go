@@ -34,6 +34,14 @@ func (m *MockArtifactService) Delete(ctx context.Context, projectID uuid.UUID, a
 	return args.Error(0)
 }
 
+func (m *MockArtifactService) List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*model.Artifact), args.Error(1)
+}
+
 func setupArtifactRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
@@ -105,6 +113,80 @@ func TestArtifactHandler_CreateArtifact(t *testing.T) {
 					assert.Contains(t, response["message"], tt.expectedError)
 				}
 			} else if tt.expectedStatus == http.StatusCreated {
+				var response map[string]interface{}
+				err := sonic.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.NotNil(t, response["data"])
+			}
+
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestArtifactHandler_ListArtifacts(t *testing.T) {
+	projectID := uuid.New()
+	artifact1 := createTestArtifact()
+	artifact1.ProjectID = projectID
+	artifact2 := createTestArtifact()
+	artifact2.ProjectID = projectID
+
+	tests := []struct {
+		name           string
+		setup          func(*MockArtifactService)
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name: "successful list with artifacts",
+			setup: func(svc *MockArtifactService) {
+				svc.On("List", mock.Anything, projectID).Return([]*model.Artifact{artifact1, artifact2}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "successful list with empty result",
+			setup: func(svc *MockArtifactService) {
+				svc.On("List", mock.Anything, projectID).Return([]*model.Artifact{}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "service error",
+			setup: func(svc *MockArtifactService) {
+				svc.On("List", mock.Anything, projectID).Return(nil, errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockArtifactService{}
+			tt.setup(mockService)
+			handler := NewArtifactHandler(mockService)
+
+			router := setupArtifactRouter()
+			router.GET("/artifact", func(c *gin.Context) {
+				c.Set("project", &model.Project{ID: projectID})
+				handler.ListArtifacts(c)
+			})
+
+			req := httptest.NewRequest("GET", "/artifact", nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if tt.expectedError != "" {
+				var response map[string]interface{}
+				err := sonic.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				if response["message"] != nil {
+					assert.Contains(t, response["message"], tt.expectedError)
+				}
+			} else if tt.expectedStatus == http.StatusOK {
 				var response map[string]interface{}
 				err := sonic.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)

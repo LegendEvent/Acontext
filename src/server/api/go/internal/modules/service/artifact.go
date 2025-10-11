@@ -14,6 +14,7 @@ import (
 type ArtifactService interface {
 	Create(ctx context.Context, projectID uuid.UUID) (*model.Artifact, error)
 	Delete(ctx context.Context, projectID uuid.UUID, artifactID uuid.UUID) error
+	List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error)
 }
 
 type artifactService struct {
@@ -43,4 +44,8 @@ func (s *artifactService) Delete(ctx context.Context, projectID uuid.UUID, artif
 		return errors.New("artifact id is empty")
 	}
 	return s.r.Delete(ctx, projectID, artifactID)
+}
+
+func (s *artifactService) List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error) {
+	return s.r.List(ctx, projectID)
 }

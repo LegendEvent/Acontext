@@ -45,6 +45,32 @@ func (h *ArtifactHandler) CreateArtifact(c *gin.Context) {
 	c.JSON(http.StatusCreated, serializer.Response{Data: artifact})
 }
 
+// ListArtifacts godoc
+//
+//	@Summary		List artifacts
+//	@Description	List all artifacts under a project
+//	@Tags			artifact
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	serializer.Response{data=[]model.Artifact}
+//	@Router			/artifact [get]
+func (h *ArtifactHandler) ListArtifacts(c *gin.Context) {
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
+	artifacts, err := h.svc.List(c.Request.Context(), project.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, serializer.Response{Data: artifacts})
+}
+
 // DeleteArtifact godoc
 //
 //	@Summary		Delete artifact

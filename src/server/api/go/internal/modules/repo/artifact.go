@@ -11,6 +11,7 @@ import (
 type ArtifactRepo interface {
 	Create(ctx context.Context, a *model.Artifact) error
 	Delete(ctx context.Context, projectID uuid.UUID, artifactID uuid.UUID) error
+	List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error)
 }
 
 type artifactRepo struct{ db *gorm.DB }
@@ -25,4 +26,10 @@ func (r *artifactRepo) Create(ctx context.Context, a *model.Artifact) error {
 
 func (r *artifactRepo) Delete(ctx context.Context, projectID uuid.UUID, artifactID uuid.UUID) error {
 	return r.db.WithContext(ctx).Where("id = ? AND project_id = ?", artifactID, projectID).Delete(&model.Artifact{}).Error
+}
+
+func (r *artifactRepo) List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error) {
+	var artifacts []*model.Artifact
+	err := r.db.WithContext(ctx).Where("project_id = ?", projectID).Order("created_at DESC").Find(&artifacts).Error
+	return artifacts, err
 }

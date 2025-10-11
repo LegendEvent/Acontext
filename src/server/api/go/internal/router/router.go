@@ -161,6 +161,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 		artifact := v1.Group("/artifact")
 		{
+			artifact.GET("", d.ArtifactHandler.ListArtifacts)
 			artifact.POST("", d.ArtifactHandler.CreateArtifact)
 			artifact.DELETE("/:artifact_id", d.ArtifactHandler.DeleteArtifact)
 

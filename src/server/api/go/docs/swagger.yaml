@@ -404,6 +404,29 @@ info:
   version: "1.0"
 paths:
   /artifact:
+    get:
+      consumes:
+      - application/json
+      description: List all artifacts under a project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Artifact'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: List artifacts
+      tags:
+      - artifact
     post:
       consumes:
       - application/json

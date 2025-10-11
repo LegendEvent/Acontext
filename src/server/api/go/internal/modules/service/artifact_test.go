@@ -28,6 +28,14 @@ func (m *MockArtifactRepo) Delete(ctx context.Context, projectID uuid.UUID, arti
 	return args.Error(0)
 }
 
+func (m *MockArtifactRepo) List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*model.Artifact), args.Error(1)
+}
+
 // MockS3Deps is a mock implementation of blob.S3Deps
 type MockS3Deps struct {
 	mock.Mock
@@ -74,6 +82,10 @@ func (s *testArtifactService) Delete(ctx context.Context, projectID uuid.UUID, a
 		return errors.New("artifact id is empty")
 	}
 	return s.r.Delete(ctx, projectID, artifactID)
+}
+
+func (s *testArtifactService) List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error) {
+	return s.r.List(ctx, projectID)
 }
 
 func createTestArtifact() *model.Artifact {
@@ -134,6 +146,73 @@ func TestArtifactService_Create(t *testing.T) {
 				assert.NotNil(t, artifact)
 				assert.Equal(t, projectID, artifact.ProjectID)
 				assert.NotEqual(t, uuid.Nil, artifact.ID)
+			}
+
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestArtifactService_List(t *testing.T) {
+	projectID := uuid.New()
+	artifact1 := createTestArtifact()
+	artifact1.ProjectID = projectID
+	artifact2 := createTestArtifact()
+	artifact2.ProjectID = projectID
+
+	tests := []struct {
+		name        string
+		setup       func(*MockArtifactRepo)
+		expectError bool
+		errorMsg    string
+		expectCount int
+	}{
+		{
+			name: "successful list with artifacts",
+			setup: func(repo *MockArtifactRepo) {
+				repo.On("List", mock.Anything, projectID).Return([]*model.Artifact{artifact1, artifact2}, nil)
+			},
+			expectError: false,
+			expectCount: 2,
+		},
+		{
+			name: "successful list with empty result",
+			setup: func(repo *MockArtifactRepo) {
+				repo.On("List", mock.Anything, projectID).Return([]*model.Artifact{}, nil)
+			},
+			expectError: false,
+			expectCount: 0,
+		},
+		{
+			name: "repo error",
+			setup: func(repo *MockArtifactRepo) {
+				repo.On("List", mock.Anything, projectID).Return(nil, errors.New("list error"))
+			},
+			expectError: true,
+			errorMsg:    "list error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &MockArtifactRepo{}
+			tt.setup(mockRepo)
+
+			service := newTestArtifactService(mockRepo, &MockS3Deps{})
+
+			artifacts, err := service.List(context.Background(), projectID)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, artifacts)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, artifacts)
+				assert.Len(t, artifacts, tt.expectCount)
+				for _, artifact := range artifacts {
+					assert.Equal(t, projectID, artifact.ProjectID)
+				}
 			}
 
 			mockRepo.AssertExpectations(t)
