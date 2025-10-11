@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   /* config options here */
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
 };
 
 export default withNextIntl(nextConfig);

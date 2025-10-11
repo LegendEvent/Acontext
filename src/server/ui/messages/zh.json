@@ -1,1 +1,9 @@
-{}
+{
+  "navigation": {
+    "github": "GitHub",
+    "docs": "文档"
+  },
+  "sidebar": {
+    "artifact": "文件"
+  }
+}

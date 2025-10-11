@@ -1,1 +1,9 @@
-{}
+{
+  "navigation": {
+    "github": "GitHub",
+    "docs": "Docs"
+  },
+  "sidebar": {
+    "artifact": "Artifact"
+  }
+}

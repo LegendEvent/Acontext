@@ -6,6 +6,7 @@ import { getLocale, getMessages } from "next-intl/server";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import CommonLayout from "@/components/common-layout";
 
 export const metadata: Metadata = {
   title: "Acontext",
@@ -13,14 +14,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        media: '(prefers-color-scheme: light)',
-        url: '/ico_black.svg',
-        href: '/ico_black.svg',
+        media: "(prefers-color-scheme: light)",
+        url: "/ico_black.svg",
+        href: "/ico_black.svg",
       },
       {
-        media: '(prefers-color-scheme: dark)',
-        url: '/ico_white.svg',
-        href: '/ico_white.svg',
+        media: "(prefers-color-scheme: dark)",
+        url: "/ico_white.svg",
+        href: "/ico_white.svg",
       },
     ],
   },
@@ -47,8 +48,10 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <Toaster />
+            <CommonLayout>
+              {children}
+              <Toaster />
+            </CommonLayout>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
