@@ -230,8 +230,8 @@ export default function ArtifactPage() {
 
   // File preview states
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isLoadingImage, setIsLoadingImage] = useState(false);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [isLoadingDownload, setIsLoadingDownload] = useState(false);
 
   // Delete confirmation dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -429,7 +429,6 @@ export default function ArtifactPage() {
       // Clear file selection and preview
       setSelectedFile(null);
       setImageUrl(null);
-      setFileUrl(null);
 
       // If the deleted artifact is the currently selected one, clear selection
       if (selectedArtifact?.id === artifactToDelete.id) {
@@ -464,7 +463,6 @@ export default function ArtifactPage() {
       // Clear file selection and preview
       setSelectedFile(null);
       setImageUrl(null);
-      setFileUrl(null);
 
       // Reload artifacts list
       await loadArtifacts();
@@ -674,49 +672,63 @@ export default function ArtifactPage() {
     }
   };
 
-  // Load file when a file is selected
+  // Reset preview states when file selection changes
   useEffect(() => {
-    const loadFile = async () => {
-      if (!selectedFile || !selectedArtifact || !selectedFile.fileInfo) {
-        setImageUrl(null);
-        setFileUrl(null);
+    setImageUrl(null);
+  }, [selectedFile]);
+
+  // Handle preview button click
+  const handlePreviewClick = async () => {
+    if (!selectedFile || !selectedArtifact || !selectedFile.fileInfo) return;
+
+    try {
+      setIsLoadingPreview(true);
+      const res = await getFile(
+        selectedArtifact.id,
+        `${selectedFile.path}${selectedFile.fileInfo.filename}`
+      );
+      if (res.code !== 0) {
+        console.error(res.message);
+        return;
+      }
+      setImageUrl(res.data?.public_url || null);
+    } catch (error) {
+      console.error("Failed to load preview:", error);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  // Handle download button click
+  const handleDownloadClick = async () => {
+    if (!selectedFile || !selectedArtifact || !selectedFile.fileInfo) return;
+
+    try {
+      setIsLoadingDownload(true);
+      const res = await getFile(
+        selectedArtifact.id,
+        `${selectedFile.path}${selectedFile.fileInfo.filename}`
+      );
+      if (res.code !== 0) {
+        console.error(res.message);
         return;
       }
 
-      const mime = selectedFile.fileInfo.meta.__file_info__.mime;
-      const isImage = mime.startsWith("image/");
-
-      try {
-        setIsLoadingImage(isImage);
-        const res = await getFile(
-          selectedArtifact.id,
-          `${selectedFile.path}${selectedFile.fileInfo.filename}`
-        );
-        if (res.code !== 0) {
-          console.error(res.message);
-          setImageUrl(null);
-          setFileUrl(null);
-          return;
-        }
-
-        if (isImage) {
-          setImageUrl(res.data?.public_url || null);
-          setFileUrl(null);
-        } else {
-          setFileUrl(res.data?.public_url || null);
-          setImageUrl(null);
-        }
-      } catch (error) {
-        console.error("Failed to load file:", error);
-        setImageUrl(null);
-        setFileUrl(null);
-      } finally {
-        setIsLoadingImage(false);
+      const downloadUrl = res.data?.public_url;
+      if (downloadUrl) {
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = selectedFile.fileInfo.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
-    };
-
-    loadFile();
-  }, [selectedFile, selectedArtifact]);
+    } catch (error) {
+      console.error("Failed to download file:", error);
+    } finally {
+      setIsLoadingDownload(false);
+    }
+  };
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-screen">
@@ -980,37 +992,57 @@ export default function ArtifactPage() {
                   return null;
                 })()}
 
-                {/* Delete file button */}
+                {/* Action buttons - Download and Delete side by side */}
                 <div className="border-t pt-4">
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={handleDeleteFileClick}
-                    disabled={isDeletingFile}
-                  >
-                    {isDeletingFile ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete File
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleDownloadClick}
+                      disabled={isLoadingDownload}
+                    >
+                      {isLoadingDownload ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={handleDeleteFileClick}
+                      disabled={isDeletingFile}
+                    >
+                      {isDeletingFile ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Image preview */}
+                {/* Preview section for images */}
                 {selectedFile.fileInfo.meta.__file_info__.mime.startsWith(
                   "image/"
-                ) ? (
+                ) && (
                   <div className="border-t pt-6">
                     <p className="text-sm font-medium text-muted-foreground mb-3">
                       Preview
                     </p>
-                    {isLoadingImage ? (
+                    {isLoadingPreview ? (
                       <div className="flex items-center justify-center h-64 bg-muted rounded-md">
                         <div className="flex flex-col items-center gap-2">
                           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1035,39 +1067,13 @@ export default function ArtifactPage() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-64 bg-muted rounded-md">
-                        <p className="text-sm text-muted-foreground">
-                          Failed to load image
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="border-t pt-6">
-                    <p className="text-sm font-medium text-muted-foreground mb-3">
-                      Download
-                    </p>
-                    {fileUrl ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          if (!selectedFile.fileInfo) return;
-                          const link = document.createElement("a");
-                          link.href = fileUrl;
-                          link.download = selectedFile.fileInfo.filename;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Click to Download
-                      </Button>
-                    ) : (
-                      <div className="flex items-center justify-center h-20 bg-muted rounded-md">
-                        <p className="text-sm text-muted-foreground">
-                          No download link available
-                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={handlePreviewClick}
+                          disabled={isLoadingPreview}
+                        >
+                          Load Preview
+                        </Button>
                       </div>
                     )}
                   </div>
