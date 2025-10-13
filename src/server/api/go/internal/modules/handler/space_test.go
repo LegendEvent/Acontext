@@ -45,9 +45,84 @@ func (m *MockSpaceService) GetByID(ctx context.Context, s *model.Space) (*model.
 	return args.Get(0).(*model.Space), args.Error(1)
 }
 
+func (m *MockSpaceService) List(ctx context.Context, projectID uuid.UUID) ([]model.Space, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Space), args.Error(1)
+}
+
 func setupSpaceRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
+}
+
+func TestSpaceHandler_GetSpaces(t *testing.T) {
+	projectID := uuid.New()
+
+	tests := []struct {
+		name           string
+		setup          func(*MockSpaceService)
+		expectedStatus int
+	}{
+		{
+			name: "successful spaces retrieval",
+			setup: func(svc *MockSpaceService) {
+				expectedSpaces := []model.Space{
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+						Configs:   datatypes.JSONMap{"theme": "dark"},
+					},
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+						Configs:   datatypes.JSONMap{"language": "zh-CN"},
+					},
+				}
+				svc.On("List", mock.Anything, projectID).Return(expectedSpaces, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "empty spaces list",
+			setup: func(svc *MockSpaceService) {
+				svc.On("List", mock.Anything, projectID).Return([]model.Space{}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "service layer error",
+			setup: func(svc *MockSpaceService) {
+				svc.On("List", mock.Anything, projectID).Return(nil, errors.New("database error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockSpaceService{}
+			tt.setup(mockService)
+
+			handler := NewSpaceHandler(mockService)
+			router := setupSpaceRouter()
+			router.GET("/space", func(c *gin.Context) {
+				project := &model.Project{ID: projectID}
+				c.Set("project", project)
+				handler.GetSpaces(c)
+			})
+
+			req := httptest.NewRequest("GET", "/space", nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockService.AssertExpectations(t)
+		})
+	}
 }
 
 func TestSpaceHandler_CreateSpace(t *testing.T) {

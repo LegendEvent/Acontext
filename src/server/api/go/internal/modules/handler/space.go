@@ -24,6 +24,32 @@ type CreateSpaceReq struct {
 	Configs map[string]interface{} `form:"configs" json:"configs"`
 }
 
+// GetSpaces godoc
+//
+//	@Summary		Get spaces
+//	@Description	Get all spaces under a project
+//	@Tags			space
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	serializer.Response{data=[]model.Space}
+//	@Router			/space [get]
+func (h *SpaceHandler) GetSpaces(c *gin.Context) {
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
+	spaces, err := h.svc.List(c.Request.Context(), project.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, serializer.Response{Data: spaces})
+}
+
 // CreateSpace godoc
 //
 //	@Summary		Create space

@@ -62,9 +62,84 @@ func (m *MockSessionService) GetMessages(ctx context.Context, in service.GetMess
 	return args.Get(0).(*service.GetMessagesOutput), args.Error(1)
 }
 
+func (m *MockSessionService) List(ctx context.Context, projectID uuid.UUID) ([]model.Session, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Session), args.Error(1)
+}
+
 func setupSessionRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
+}
+
+func TestSessionHandler_GetSessions(t *testing.T) {
+	projectID := uuid.New()
+
+	tests := []struct {
+		name           string
+		setup          func(*MockSessionService)
+		expectedStatus int
+	}{
+		{
+			name: "successful sessions retrieval",
+			setup: func(svc *MockSessionService) {
+				expectedSessions := []model.Session{
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+						Configs:   datatypes.JSONMap{"temperature": 0.7},
+					},
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+						Configs:   datatypes.JSONMap{"model": "gpt-4"},
+					},
+				}
+				svc.On("List", mock.Anything, projectID).Return(expectedSessions, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "empty sessions list",
+			setup: func(svc *MockSessionService) {
+				svc.On("List", mock.Anything, projectID).Return([]model.Session{}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "service layer error",
+			setup: func(svc *MockSessionService) {
+				svc.On("List", mock.Anything, projectID).Return(nil, errors.New("database error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockSessionService{}
+			tt.setup(mockService)
+
+			handler := NewSessionHandler(mockService)
+			router := setupSessionRouter()
+			router.GET("/session", func(c *gin.Context) {
+				project := &model.Project{ID: projectID}
+				c.Set("project", project)
+				handler.GetSessions(c)
+			})
+
+			req := httptest.NewRequest("GET", "/session", nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockService.AssertExpectations(t)
+		})
+	}
 }
 
 func TestSessionHandler_CreateSession(t *testing.T) {

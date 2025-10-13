@@ -31,6 +31,32 @@ type CreateSessionReq struct {
 	Configs map[string]interface{} `form:"configs" json:"configs"`
 }
 
+// GetSessions godoc
+//
+//	@Summary		Get sessions
+//	@Description	Get all sessions under a project
+//	@Tags			session
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	serializer.Response{data=[]model.Session}
+//	@Router			/session [get]
+func (h *SessionHandler) GetSessions(c *gin.Context) {
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
+	sessions, err := h.svc.List(c.Request.Context(), project.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, serializer.Response{Data: sessions})
+}
+
 // CreateSession godoc
 //
 //	@Summary		Create session

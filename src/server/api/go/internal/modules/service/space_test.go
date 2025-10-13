@@ -39,6 +39,14 @@ func (m *MockSpaceRepo) Get(ctx context.Context, s *model.Space) (*model.Space, 
 	return args.Get(0).(*model.Space), args.Error(1)
 }
 
+func (m *MockSpaceRepo) List(ctx context.Context, projectID uuid.UUID) ([]model.Space, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Space), args.Error(1)
+}
+
 func TestSpaceService_Create(t *testing.T) {
 	ctx := context.Background()
 	projectID := uuid.New()
@@ -288,6 +296,73 @@ func TestSpaceService_GetByID(t *testing.T) {
 
 			service := NewSpaceService(repo)
 			result, err := service.GetByID(ctx, tt.space)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestSpaceService_List(t *testing.T) {
+	ctx := context.Background()
+	projectID := uuid.New()
+
+	tests := []struct {
+		name    string
+		setup   func(*MockSpaceRepo)
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "successful spaces retrieval",
+			setup: func(repo *MockSpaceRepo) {
+				expectedSpaces := []model.Space{
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+					},
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+					},
+				}
+				repo.On("List", ctx, projectID).Return(expectedSpaces, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "empty spaces list",
+			setup: func(repo *MockSpaceRepo) {
+				repo.On("List", ctx, projectID).Return([]model.Space{}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "list failure",
+			setup: func(repo *MockSpaceRepo) {
+				repo.On("List", ctx, projectID).Return(nil, errors.New("database error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockSpaceRepo{}
+			tt.setup(repo)
+
+			service := NewSpaceService(repo)
+			result, err := service.List(ctx, projectID)
 
 			if tt.wantErr {
 				assert.Error(t, err)

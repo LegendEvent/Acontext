@@ -108,6 +108,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 		{
 			space.GET("/status")
 
+			space.GET("", d.SpaceHandler.GetSpaces)
 			space.POST("", d.SpaceHandler.CreateSpace)
 			space.DELETE("/:space_id", d.SpaceHandler.DeleteSpace)
 
@@ -147,6 +148,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 		session := v1.Group("/session")
 		{
+			session.GET("", d.SessionHandler.GetSessions)
 			session.POST("", d.SessionHandler.CreateSession)
 			session.DELETE("/:session_id", d.SessionHandler.DeleteSession)
 

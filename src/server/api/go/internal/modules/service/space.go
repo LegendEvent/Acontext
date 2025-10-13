@@ -14,6 +14,7 @@ type SpaceService interface {
 	Delete(ctx context.Context, projectID uuid.UUID, spaceID uuid.UUID) error
 	UpdateByID(ctx context.Context, m *model.Space) error
 	GetByID(ctx context.Context, m *model.Space) (*model.Space, error)
+	List(ctx context.Context, projectID uuid.UUID) ([]model.Space, error)
 }
 
 type spaceService struct{ r repo.SpaceRepo }
@@ -45,4 +46,8 @@ func (s *spaceService) GetByID(ctx context.Context, m *model.Space) (*model.Spac
 		return nil, errors.New("space id is empty")
 	}
 	return s.r.Get(ctx, m)
+}
+
+func (s *spaceService) List(ctx context.Context, projectID uuid.UUID) ([]model.Space, error) {
+	return s.r.List(ctx, projectID)
 }

@@ -24,6 +24,7 @@ type SessionService interface {
 	Delete(ctx context.Context, projectID uuid.UUID, sessionID uuid.UUID) error
 	UpdateByID(ctx context.Context, ss *model.Session) error
 	GetByID(ctx context.Context, ss *model.Session) (*model.Session, error)
+	List(ctx context.Context, projectID uuid.UUID) ([]model.Session, error)
 	SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error)
 	GetMessages(ctx context.Context, in GetMessagesInput) (*GetMessagesOutput, error)
 }
@@ -66,6 +67,10 @@ func (s *sessionService) GetByID(ctx context.Context, ss *model.Session) (*model
 		return nil, errors.New("space id is empty")
 	}
 	return s.r.Get(ctx, ss)
+}
+
+func (s *sessionService) List(ctx context.Context, projectID uuid.UUID) ([]model.Session, error) {
+	return s.r.List(ctx, projectID)
 }
 
 type SendMessageInput struct {

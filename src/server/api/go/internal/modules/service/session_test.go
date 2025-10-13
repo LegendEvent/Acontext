@@ -54,6 +54,14 @@ func (m *MockSessionRepo) ListBySessionWithCursor(ctx context.Context, sessionID
 	return args.Get(0).([]model.Message), args.Error(1)
 }
 
+func (m *MockSessionRepo) List(ctx context.Context, projectID uuid.UUID) ([]model.Session, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Session), args.Error(1)
+}
+
 // MockBlobService is a mock implementation of blob service
 type MockBlobService struct {
 	mock.Mock
@@ -273,6 +281,134 @@ func TestSessionService_GetByID(t *testing.T) {
 			service := NewSessionService(repo, logger, nil, nil, nil)
 
 			result, err := service.GetByID(ctx, tt.session)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestSessionService_UpdateByID(t *testing.T) {
+	ctx := context.Background()
+	sessionID := uuid.New()
+
+	tests := []struct {
+		name    string
+		session *model.Session
+		setup   func(*MockSessionRepo)
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "successful session update",
+			session: &model.Session{
+				ID: sessionID,
+			},
+			setup: func(repo *MockSessionRepo) {
+				repo.On("Update", ctx, mock.MatchedBy(func(s *model.Session) bool {
+					return s.ID == sessionID
+				})).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "update failure",
+			session: &model.Session{
+				ID: sessionID,
+			},
+			setup: func(repo *MockSessionRepo) {
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Session")).Return(errors.New("update failed"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockSessionRepo{}
+			tt.setup(repo)
+
+			logger := zap.NewNop()
+			service := NewSessionService(repo, logger, nil, nil, nil)
+
+			err := service.UpdateByID(ctx, tt.session)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestSessionService_List(t *testing.T) {
+	ctx := context.Background()
+	projectID := uuid.New()
+
+	tests := []struct {
+		name    string
+		setup   func(*MockSessionRepo)
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "successful sessions retrieval",
+			setup: func(repo *MockSessionRepo) {
+				expectedSessions := []model.Session{
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+					},
+					{
+						ID:        uuid.New(),
+						ProjectID: projectID,
+					},
+				}
+				repo.On("List", ctx, projectID).Return(expectedSessions, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "empty sessions list",
+			setup: func(repo *MockSessionRepo) {
+				repo.On("List", ctx, projectID).Return([]model.Session{}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "list failure",
+			setup: func(repo *MockSessionRepo) {
+				repo.On("List", ctx, projectID).Return(nil, errors.New("database error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockSessionRepo{}
+			tt.setup(repo)
+
+			logger := zap.NewNop()
+			service := NewSessionService(repo, logger, nil, nil, nil)
+
+			result, err := service.List(ctx, projectID)
 
 			if tt.wantErr {
 				assert.Error(t, err)

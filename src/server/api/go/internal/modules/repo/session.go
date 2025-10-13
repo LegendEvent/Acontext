@@ -14,6 +14,7 @@ type SessionRepo interface {
 	Delete(ctx context.Context, s *model.Session) error
 	Update(ctx context.Context, s *model.Session) error
 	Get(ctx context.Context, s *model.Session) (*model.Session, error)
+	List(ctx context.Context, projectID uuid.UUID) ([]model.Session, error)
 	CreateMessageWithAssets(ctx context.Context, msg *model.Message) error
 	ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int) ([]model.Message, error)
 }
@@ -38,6 +39,12 @@ func (r *sessionRepo) Update(ctx context.Context, s *model.Session) error {
 
 func (r *sessionRepo) Get(ctx context.Context, s *model.Session) (*model.Session, error) {
 	return s, r.db.WithContext(ctx).Where(&model.Session{ID: s.ID}).First(s).Error
+}
+
+func (r *sessionRepo) List(ctx context.Context, projectID uuid.UUID) ([]model.Session, error) {
+	var sessions []model.Session
+	err := r.db.WithContext(ctx).Where(&model.Session{ProjectID: projectID}).Order("created_at DESC").Find(&sessions).Error
+	return sessions, err
 }
 
 func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Message) error {

@@ -702,6 +702,29 @@ paths:
       tags:
       - file
   /session:
+    get:
+      consumes:
+      - application/json
+      description: Get all sessions under a project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Session'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get sessions
+      tags:
+      - session
     post:
       consumes:
       - application/json
@@ -929,6 +952,29 @@ paths:
       tags:
       - session
   /space:
+    get:
+      consumes:
+      - application/json
+      description: Get all spaces under a project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Space'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get spaces
+      tags:
+      - space
     post:
       consumes:
       - application/json
