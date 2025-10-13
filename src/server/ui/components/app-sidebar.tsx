@@ -20,8 +20,9 @@ import { NavMain } from "@/components/nav-main";
 
 import Image from "next/image";
 import Link from "next/link";
-import { Folder } from "lucide-react";
+import { Folder, Database } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Separator } from "@/components/ui/separator";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -34,6 +35,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: t("artifact"),
         url: "/artifact",
         icon: Folder,
+      },
+      {
+        title: t("space"),
+        url: "/space",
+        icon: Database,
       },
     ] as {
       title: string;
@@ -80,6 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
         <NavMain />
       </SidebarHeader>
+      <Separator className="!w-2/3 mx-auto" />
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
