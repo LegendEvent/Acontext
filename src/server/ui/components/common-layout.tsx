@@ -13,7 +13,7 @@ export default function CommonLayout({
   return (
     <SidebarProvider defaultOpen={false} open={false}>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-[calc(100vh-1rem)] max-h-screen overflow-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b">
           <div className="flex-1 flex items-center gap-2 px-3">
             <div className="flex-1" />
@@ -21,7 +21,9 @@ export default function CommonLayout({
             <LangSwitch />
           </div>
         </header>
-        {children}
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

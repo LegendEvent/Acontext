@@ -754,7 +754,7 @@ export default function ArtifactPage() {
   };
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-screen">
+    <ResizablePanelGroup direction="horizontal">
       {/* Artifact List Panel */}
       <ResizablePanel defaultSize={25} minSize={15} maxSize={35}>
         <div className="h-full bg-background p-4 flex flex-col">
