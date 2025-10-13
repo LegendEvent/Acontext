@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Generic, TypeVar, Type, Optional
+from typing import Generic, TypeVar, Type, Optional, Union
 from .error_code import Code
 from ..env import LOG
 
@@ -36,7 +36,7 @@ class Result(BaseModel, Generic[T]):
         LOG.error(f"[{status}]: {errmsg}")
         return cls(data=None, error=Error.init(status, errmsg))
 
-    def unpack(self) -> tuple[Optional[T], Optional[Error]]:
+    def unpack(self) -> Union[tuple[T, None], tuple[None, Error]]:
         if self.error.status != Code.SUCCESS:
             return None, self.error
         return self.data, None

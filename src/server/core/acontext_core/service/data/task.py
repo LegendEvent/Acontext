@@ -37,6 +37,25 @@ async def fetch_planning_task(
     )
 
 
+async def fetch_task(db_session: AsyncSession, task_id: asUUID) -> Result[TaskSchema]:
+    query = select(Task).where(Task.id == task_id).options(selectinload(Task.messages))
+    result = await db_session.execute(query)
+    task = result.scalars().first()
+    if task is None:
+        return Result.reject(f"Task {task_id} not found")
+    return Result.resolve(
+        TaskSchema(
+            id=task.id,
+            session_id=task.session_id,
+            task_order=task.task_order,
+            task_status=task.task_status,
+            task_description=task.task_data.get("task_description", ""),
+            task_data=task.task_data,
+            raw_message_ids=[msg.id for msg in task.messages],
+        )
+    )
+
+
 async def fetch_current_tasks(
     db_session: AsyncSession, session_id: asUUID, status: str = None
 ) -> Result[List[TaskSchema]]:
@@ -98,6 +117,30 @@ async def update_task(
     await db_session.flush()
     # Changes will be committed when the session context exits
     return Result.resolve(task)
+
+
+async def set_task_space_digested(
+    db_session: AsyncSession,
+    task_id: asUUID,
+) -> Result[bool]:
+    # Fetch the task to check current space_digested status
+    query = select(Task).where(Task.id == task_id)
+    result = await db_session.execute(query)
+    task = result.scalars().first()
+
+    if task is None:
+        return Result.reject(f"Task {task_id} not found")
+
+    # Return True if space_digested is already True (no update needed)
+    if task.space_digested:
+        return Result.resolve(True)
+
+    # Update space_digested to True
+    task.space_digested = True
+    await db_session.flush()
+
+    # Return False to indicate that space_digested was previously False
+    return Result.resolve(False)
 
 
 async def insert_task(

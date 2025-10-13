@@ -15,6 +15,7 @@ type Task struct {
 	TaskData       datatypes.JSONMap `gorm:"type:jsonb;not null" swaggertype:"object" json:"task_data"`
 	TaskStatus     string            `gorm:"type:text;not null;default:'pending';check:task_status IN ('success','failed','running','pending');index:ix_session_session_id_task_status,priority:2" json:"task_status"`
 	IsPlanningTask bool              `gorm:"not null;default:false" json:"is_planning_task"`
+	SpaceDigested  bool              `gorm:"not null;default:false" json:"space_digested"`
 
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`

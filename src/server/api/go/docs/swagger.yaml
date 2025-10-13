@@ -367,6 +367,8 @@ definitions:
         description: Task <-> Session
       session_id:
         type: string
+      space_digested:
+        type: boolean
       task_data:
         type: object
       task_order:

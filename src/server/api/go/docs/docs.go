@@ -2562,6 +2562,9 @@ const docTemplate = `{
                 "session_id": {
                     "type": "string"
                 },
+                "space_digested": {
+                    "type": "boolean"
+                },
                 "task_data": {
                     "type": "object"
                 },
