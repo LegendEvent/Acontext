@@ -2315,6 +2315,17 @@ const docTemplate = `{
                 "session_task_process_status": {
                     "type": "string"
                 },
+                "task": {
+                    "description": "Message \u003c-\u003e Task",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Task"
+                        }
+                    ]
+                },
+                "task_id": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -2392,6 +2403,13 @@ const docTemplate = `{
                 "space_id": {
                     "type": "string"
                 },
+                "tasks": {
+                    "description": "Session \u003c-\u003e Task",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Task"
+                    }
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -2426,6 +2444,50 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.Session"
                     }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Task": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_planning_task": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "description": "Task \u003c-\u003e Message (one-to-many)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Message"
+                    }
+                },
+                "session": {
+                    "description": "Task \u003c-\u003e Session",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Session"
+                        }
+                    ]
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "task_data": {
+                    "type": "object"
+                },
+                "task_order": {
+                    "type": "integer"
+                },
+                "task_status": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"

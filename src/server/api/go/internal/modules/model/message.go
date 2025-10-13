@@ -19,6 +19,8 @@ type Message struct {
 	PartsMeta datatypes.JSONType[Asset] `gorm:"type:jsonb;not null" swaggertype:"-" json:"-"`
 	Parts     []Part                    `gorm:"-" swaggertype:"array,object" json:"parts"`
 
+	TaskID *uuid.UUID `gorm:"type:uuid;index" json:"task_id"`
+
 	SessionTaskProcessStatus string `gorm:"type:text;not null;default:'pending';check:session_task_process_status IN ('success','failed','running','pending')" json:"session_task_process_status"`
 
 	CreatedAt time.Time `gorm:"autoCreateTime;index:idx_session_created,priority:2,sort:desc" json:"created_at"`
@@ -26,6 +28,9 @@ type Message struct {
 
 	// Message <-> Session
 	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"session"`
+
+	// Message <-> Task
+	Task *Task `gorm:"foreignKey:TaskID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"task"`
 }
 
 func (Message) TableName() string { return "messages" }

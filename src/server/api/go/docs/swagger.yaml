@@ -263,6 +263,12 @@ definitions:
         type: string
       session_task_process_status:
         type: string
+      task:
+        allOf:
+        - $ref: '#/definitions/model.Task'
+        description: Message <-> Task
+      task_id:
+        type: string
       updated_at:
         type: string
     type: object
@@ -312,6 +318,11 @@ definitions:
         description: Session <-> Space
       space_id:
         type: string
+      tasks:
+        description: Session <-> Task
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
       updated_at:
         type: string
     type: object
@@ -334,6 +345,34 @@ definitions:
         items:
           $ref: '#/definitions/model.Session'
         type: array
+      updated_at:
+        type: string
+    type: object
+  model.Task:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_planning_task:
+        type: boolean
+      messages:
+        description: Task <-> Message (one-to-many)
+        items:
+          $ref: '#/definitions/model.Message'
+        type: array
+      session:
+        allOf:
+        - $ref: '#/definitions/model.Session'
+        description: Task <-> Session
+      session_id:
+        type: string
+      task_data:
+        type: object
+      task_order:
+        type: integer
+      task_status:
+        type: string
       updated_at:
         type: string
     type: object
