@@ -119,7 +119,15 @@
     "createMessageTitle": "创建新消息",
     "createMessageDescription": "向此会话发送新消息",
     "messageContentPlaceholder": "输入消息内容...",
+    "attachFiles": "附加文件",
+    "selectFiles": "选择文件",
     "send": "发送",
-    "sending": "发送中..."
+    "sending": "发送中...",
+    "viewDetail": "查看详情",
+    "messageDetail": "消息详情",
+    "close": "关闭",
+    "mimeType": "文件类型",
+    "size": "大小",
+    "preview": "预览"
   }
 }

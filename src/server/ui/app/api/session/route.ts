@@ -1,19 +1,34 @@
 import { createApiResponse, createApiError } from "@/lib/api-response";
 import { Session } from "@/types";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const spaceId = searchParams.get("space_id");
+  const notConnected = searchParams.get("not_connected");
+
   const getSessions = new Promise<Session[]>(async (resolve, reject) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer sk-ac-${process.env.ROOT_API_BEARER_TOKEN}`,
-          },
-        }
-      );
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (spaceId) {
+        params.append("space_id", spaceId);
+      }
+      if (notConnected) {
+        params.append("not_connected", notConnected);
+      }
+
+      const queryString = params.toString();
+      const url = `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer sk-ac-${process.env.ROOT_API_BEARER_TOKEN}`,
+        },
+      });
       if (response.status !== 200) {
         reject(new Error("Internal Server Error"));
       }

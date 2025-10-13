@@ -834,7 +834,7 @@ export default function ArtifactPage() {
                       )}
                       onClick={() => handleArtifactSelect(artifact)}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p
                             className="text-sm font-medium truncate"
@@ -1138,7 +1138,9 @@ export default function ArtifactPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>
+              {t("cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteArtifact}
               disabled={isDeleting}

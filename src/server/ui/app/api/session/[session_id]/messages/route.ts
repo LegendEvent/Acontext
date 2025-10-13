@@ -70,21 +70,46 @@ export async function POST(
 
   const sendMessage = new Promise<null>(async (resolve, reject) => {
     try {
-      const body = await request.json();
+      const contentType = request.headers.get("content-type") || "";
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session/${session_id}/messages`,
-        {
+      let fetchOptions: RequestInit;
+
+      // 判断是否是 multipart/form-data
+      if (contentType.includes("multipart/form-data")) {
+        // 处理文件上传
+        const formData = await request.formData();
+
+        // 直接转发 FormData 给后端
+        fetchOptions = {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer sk-ac-${process.env.ROOT_API_BEARER_TOKEN}`,
+            // 不设置 Content-Type，让浏览器自动设置 multipart/form-data boundary
+          },
+          body: formData,
+        };
+      } else {
+        // 处理 JSON 数据
+        const body = await request.json();
+
+        fetchOptions = {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer sk-ac-${process.env.ROOT_API_BEARER_TOKEN}`,
           },
           body: JSON.stringify(body),
-        }
+        };
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session/${session_id}/messages`,
+        fetchOptions
       );
 
-      if (response.status !== 200) {
+      if (response.status !== 201) {
+        console.log(response.status);
+        console.log(await response.json());
         reject(new Error("Internal Server Error"));
       }
 
@@ -93,7 +118,8 @@ export async function POST(
         reject(new Error(result.message));
       }
       resolve(null);
-    } catch {
+    } catch (error) {
+      console.error("Send message error:", error);
       reject(new Error("Internal Server Error"));
     }
   });

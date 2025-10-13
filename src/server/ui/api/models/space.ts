@@ -28,8 +28,21 @@ export const updateSpaceConfigs = async (
 };
 
 // Session APIs
-export const getSessions = async (): Promise<Res<Session[]>> => {
-  return await service.get("/api/session");
+export const getSessions = async (
+  spaceId?: string,
+  notConnected?: boolean
+): Promise<Res<Session[]>> => {
+  const params = new URLSearchParams();
+  if (spaceId) {
+    params.append("space_id", spaceId);
+  }
+  if (notConnected !== undefined) {
+    params.append("not_connected", notConnected.toString());
+  }
+  const queryString = params.toString();
+  return await service.get(
+    `/api/session${queryString ? `?${queryString}` : ""}`
+  );
 };
 
 export const createSession = async (
@@ -97,11 +110,32 @@ export interface MessagePartIn {
 export const sendMessage = async (
   session_id: string,
   role: "user" | "assistant" | "system" | "tool" | "function",
-  parts: MessagePartIn[]
+  parts: MessagePartIn[],
+  files?: Record<string, File>
 ): Promise<Res<null>> => {
-  return await service.post(`/api/session/${session_id}/messages`, {
-    role,
-    parts,
-  });
+  // 判断是否有文件需要上传
+  const hasFiles = files && Object.keys(files).length > 0;
+
+  if (hasFiles) {
+    // 使用 multipart/form-data
+    const formData = new FormData();
+
+    // 添加 payload 字段（JSON 字符串）
+    formData.append("payload", JSON.stringify({ role, parts }));
+
+    // 添加文件
+    for (const [fieldName, file] of Object.entries(files!)) {
+      formData.append(fieldName, file);
+    }
+
+    // FormData 会自动设置 Content-Type 为 multipart/form-data
+    return await service.post(`/api/session/${session_id}/messages`, formData);
+  } else {
+    // 使用 JSON 方式
+    return await service.post(`/api/session/${session_id}/messages`, {
+      role,
+      parts,
+    });
+  }
 };
 

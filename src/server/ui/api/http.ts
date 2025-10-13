@@ -17,7 +17,7 @@ const request = async <T = any>(
   url: string,
   data: {
     params?: Record<string, any>;
-    body?: Record<string, any>;
+    body?: Record<string, any> | FormData;
     headers?: HeadersInit;
   }
 ): Promise<T> => {
@@ -41,7 +41,7 @@ const service = {
     return await request("GET", url, { params: data, headers });
   },
 
-  async post<T = any>(url: string, data?: Record<string, any>): Promise<T> {
+  async post<T = any>(url: string, data?: Record<string, any> | FormData): Promise<T> {
     return await request("POST", url, { body: data });
   },
 

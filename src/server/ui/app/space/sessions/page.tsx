@@ -85,21 +85,23 @@ export default function SessionsPage() {
     const matchesId = session.id
       .toLowerCase()
       .includes(sessionFilterText.toLowerCase());
-
-    let matchesSpaceId = true;
-    if (sessionSpaceFilter === "not-connected") {
-      matchesSpaceId = !session.space_id;
-    } else if (sessionSpaceFilter !== "all") {
-      matchesSpaceId = session.space_id === sessionSpaceFilter;
-    }
-
-    return matchesId && matchesSpaceId;
+    return matchesId;
   });
 
   const loadSessions = async () => {
     try {
       setIsLoadingSessions(true);
-      const res = await getSessions();
+      // Pass filter parameters to backend
+      let spaceId: string | undefined;
+      let notConnected: boolean | undefined;
+
+      if (sessionSpaceFilter === "not-connected") {
+        notConnected = true;
+      } else if (sessionSpaceFilter !== "all") {
+        spaceId = sessionSpaceFilter;
+      }
+
+      const res = await getSessions(spaceId, notConnected);
       if (res.code !== 0) {
         console.error(res.message);
         return;
@@ -128,7 +130,7 @@ export default function SessionsPage() {
   useEffect(() => {
     loadSessions();
     loadSpaces();
-  }, []);
+  }, [sessionSpaceFilter]);
 
   const handleOpenCreateDialog = () => {
     setCreateConfigValue("{}");

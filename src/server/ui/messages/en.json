@@ -119,7 +119,15 @@
     "createMessageTitle": "Create New Message",
     "createMessageDescription": "Send a new message to this session",
     "messageContentPlaceholder": "Enter message content...",
+    "attachFiles": "Attach Files",
+    "selectFiles": "Select Files",
     "send": "Send",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "viewDetail": "View Detail",
+    "messageDetail": "Message Detail",
+    "close": "Close",
+    "mimeType": "MIME Type",
+    "size": "Size",
+    "preview": "Preview"
   }
 }
