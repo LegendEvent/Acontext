@@ -3,17 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Tree, NodeRendererProps, TreeApi, NodeApi } from "react-arborist";
+import { useTranslations } from "next-intl";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +27,6 @@ import {
   Folder,
   FolderOpen,
   Loader2,
-  ChevronDown,
   Download,
   Plus,
   Trash2,
@@ -66,6 +60,7 @@ interface NodeProps extends NodeRendererProps<TreeNode> {
   loadingNodes: Set<string>;
   onUploadClick: (path: string) => void;
   isUploading: boolean;
+  t: (key: string) => string;
 }
 
 function truncateMiddle(str: string, maxLength: number = 30): string {
@@ -83,7 +78,15 @@ function truncateMiddle(str: string, maxLength: number = 30): string {
   );
 }
 
-function Node({ node, style, dragHandle, loadingNodes, onUploadClick, isUploading }: NodeProps) {
+function Node({
+  node,
+  style,
+  dragHandle,
+  loadingNodes,
+  onUploadClick,
+  isUploading,
+  t,
+}: NodeProps) {
   const indent = node.level * 12;
   const isFolder = node.data.type === "folder";
   const isLoading = loadingNodes.has(node.id);
@@ -201,7 +204,7 @@ function Node({ node, style, dragHandle, loadingNodes, onUploadClick, isUploadin
             onUploadClick(node.data.path);
           }}
           disabled={isUploading}
-          title="Upload file to this folder"
+          title={t("uploadToFolderTooltip")}
         >
           {isUploading ? (
             <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -215,6 +218,8 @@ function Node({ node, style, dragHandle, loadingNodes, onUploadClick, isUploadin
 }
 
 export default function ArtifactPage() {
+  const t = useTranslations("artifact");
+
   const treeRef = useRef<TreeApi<TreeNode>>(null);
   const [selectedFile, setSelectedFile] = useState<TreeNode | null>(null);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
@@ -253,14 +258,26 @@ export default function ArtifactPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadPath, setUploadPath] = useState<string>("/");
   const [initialUploadPath, setInitialUploadPath] = useState<string>("/"); // Track the initial path clicked
-  const [uploadMetaFields, setUploadMetaFields] = useState<{key: string, value: string}[]>([]);
-  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+  const [uploadMetaFields, setUploadMetaFields] = useState<
+    { key: string; value: string }[]
+  >([]);
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(
+    null
+  );
 
   // Create artifact states
   const [isCreating, setIsCreating] = useState(false);
 
   // Refresh states
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Filter state
+  const [filterText, setFilterText] = useState("");
+
+  // Filtered artifacts based on search text
+  const filteredArtifacts = artifacts.filter((artifact) =>
+    artifact.id.toLowerCase().includes(filterText.toLowerCase())
+  );
 
   // Load artifacts function (extracted for reuse)
   const loadArtifacts = async () => {
@@ -512,7 +529,11 @@ export default function ArtifactPage() {
   };
 
   // Handle meta field change
-  const handleMetaFieldChange = (index: number, field: "key" | "value", value: string) => {
+  const handleMetaFieldChange = (
+    index: number,
+    field: "key" | "value",
+    value: string
+  ) => {
     const newFields = [...uploadMetaFields];
     newFields[index][field] = value;
     setUploadMetaFields(newFields);
@@ -528,7 +549,7 @@ export default function ArtifactPage() {
 
       // Build meta object from fields
       const meta: Record<string, string> = {};
-      uploadMetaFields.forEach(field => {
+      uploadMetaFields.forEach((field) => {
         if (field.key.trim()) {
           meta[field.key.trim()] = field.value;
         }
@@ -611,7 +632,9 @@ export default function ArtifactPage() {
       };
 
       // Recursive function to reload directory and check if empty
-      const reloadDirectoryRecursively = async (currentPath: string): Promise<void> => {
+      const reloadDirectoryRecursively = async (
+        currentPath: string
+      ): Promise<void> => {
         const filesRes = await getListFiles(selectedArtifact.id, currentPath);
 
         if (filesRes.code !== 0 || !filesRes.data) {
@@ -732,125 +755,136 @@ export default function ArtifactPage() {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-screen">
-      <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
-        <div className="h-full bg-background p-4">
+      {/* Artifact List Panel */}
+      <ResizablePanel defaultSize={25} minSize={15} maxSize={35}>
+        <div className="h-full bg-background p-4 flex flex-col">
           <div className="mb-4 space-y-3">
-            <h2 className="text-lg font-semibold">File Explorer</h2>
-
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-
-            {/* Artifact selector with create button */}
-            <div className="flex gap-2">
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="min-w-0 flex-1 justify-between"
-                    disabled={isLoadingArtifacts}
-                  >
-                    {isLoadingArtifacts ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="ml-2">Loading...</span>
-                      </>
-                    ) : selectedArtifact ? (
-                      <>
-                        <span
-                          className="mr-2 min-w-0 truncate"
-                          title={selectedArtifact.id}
-                        >
-                          {selectedArtifact.id}
-                        </span>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-muted-foreground">
-                          Select an artifact
-                        </span>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]"
-                  align="start"
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{t("title")}</h2>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCreateArtifact}
+                  disabled={isCreating || isLoadingArtifacts}
+                  title={t("createTooltip")}
                 >
-                  {artifacts.map((artifact) => {
-                    const isSelected = selectedArtifact?.id === artifact.id;
-                    return (
-                      <DropdownMenuItem
-                        key={artifact.id}
-                        title={artifact.id}
-                        className="flex items-center justify-between group"
-                        disabled={isSelected}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <span
-                          className={cn(
-                            "truncate flex-1 cursor-pointer",
-                            isSelected && "cursor-not-allowed opacity-50"
-                          )}
-                          onClick={() => !isSelected && handleArtifactSelect(artifact)}
-                        >
-                          {artifact.id}
-                        </span>
+                  {isCreating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleRefreshArtifacts}
+                  disabled={isRefreshing || isLoadingArtifacts}
+                  title={t("refreshTooltip")}
+                >
+                  {isRefreshing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Filter input */}
+            <Input
+              type="text"
+              placeholder={t("filterPlaceholder")}
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Artifact list */}
+          <div className="flex-1 overflow-auto">
+            {isLoadingArtifacts ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {t("loadingArtifacts")}
+                  </p>
+                </div>
+              </div>
+            ) : filteredArtifacts.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  {artifacts.length === 0
+                    ? t("noArtifacts")
+                    : t("noMatchingArtifacts")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredArtifacts.map((artifact) => {
+                  const isSelected = selectedArtifact?.id === artifact.id;
+                  return (
+                    <div
+                      key={artifact.id}
+                      className={cn(
+                        "group relative rounded-md border p-3 cursor-pointer transition-colors hover:bg-accent",
+                        isSelected && "bg-accent border-primary"
+                      )}
+                      onClick={() => handleArtifactSelect(artifact)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-sm font-medium truncate"
+                            title={artifact.id}
+                          >
+                            {artifact.id}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(artifact.created_at).toLocaleString()}
+                          </p>
+                        </div>
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0"
+                          size="icon"
+                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                           onClick={(e) => handleDeleteClick(artifact, e)}
                         >
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </ResizablePanel>
+      <ResizableHandle withHandle />
 
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCreateArtifact}
-                disabled={isCreating || isLoadingArtifacts}
-                title="Create new artifact"
-              >
-                {isCreating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleRefreshArtifacts}
-                disabled={isRefreshing || isLoadingArtifacts}
-                title="Refresh artifacts"
-              >
-                {isRefreshing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
+      {/* File Tree Panel */}
+      <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
+        <div className="h-full bg-background p-4">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">{t("filesTitle")}</h2>
           </div>
 
-          <div className="h-[calc(100vh-11rem)]">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+
+          <div className="h-[calc(100vh-8rem)]">
             {!selectedArtifact ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-sm text-muted-foreground">
-                  Select an artifact to view files
+                  {t("selectArtifactPrompt")}
                 </p>
               </div>
             ) : isInitialLoading ? (
@@ -858,7 +892,7 @@ export default function ArtifactPage() {
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Loading files...
+                    {t("loadingFiles")}
                   </p>
                 </div>
               </div>
@@ -874,7 +908,7 @@ export default function ArtifactPage() {
                     className="shrink-0 p-1 rounded-md bg-primary/10 hover:bg-primary/20 opacity-0 group-hover:opacity-100 transition-all"
                     onClick={() => handleUploadClick("/")}
                     disabled={isUploading}
-                    title="Upload file to root directory"
+                    title={t("uploadToRootTooltip")}
                   >
                     {isUploading ? (
                       <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -903,6 +937,7 @@ export default function ArtifactPage() {
                         loadingNodes={loadingNodes}
                         onUploadClick={handleUploadClick}
                         isUploading={isUploading}
+                        t={t}
                       />
                     )}
                   </Tree>
@@ -915,7 +950,7 @@ export default function ArtifactPage() {
       <ResizableHandle withHandle />
       <ResizablePanel>
         <div className="h-full bg-background p-4 overflow-auto">
-          <h2 className="mb-4 text-lg font-semibold">Content</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t("contentTitle")}</h2>
           <div className="rounded-md border bg-card p-6">
             {selectedFile && selectedFile.fileInfo ? (
               <div className="space-y-6">
@@ -933,7 +968,7 @@ export default function ArtifactPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">
-                      MIME Type
+                      {t("mimeType")}
                     </p>
                     <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
                       {selectedFile.fileInfo.meta.__file_info__.mime}
@@ -942,7 +977,7 @@ export default function ArtifactPage() {
 
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">
-                      Size
+                      {t("size")}
                     </p>
                     <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
                       {selectedFile.fileInfo.meta.__file_info__.size}{" "}
@@ -951,7 +986,7 @@ export default function ArtifactPage() {
 
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">
-                      Created At
+                      {t("createdAt")}
                     </p>
                     <p className="text-sm bg-muted px-2 py-1 rounded">
                       {new Date(
@@ -962,7 +997,7 @@ export default function ArtifactPage() {
 
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">
-                      Updated At
+                      {t("updatedAt")}
                     </p>
                     <p className="text-sm bg-muted px-2 py-1 rounded">
                       {new Date(
@@ -975,13 +1010,14 @@ export default function ArtifactPage() {
                 {/* Additional meta information (excluding __file_info__) */}
                 {(() => {
                   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                  const { __file_info__, ...additionalMeta } = selectedFile.fileInfo.meta || {};
+                  const { __file_info__, ...additionalMeta } =
+                    selectedFile.fileInfo.meta || {};
 
                   if (Object.keys(additionalMeta).length > 0) {
                     return (
                       <div className="border-t pt-4">
                         <p className="text-sm font-medium text-muted-foreground mb-3">
-                          Additional Metadata
+                          {t("additionalMetadata")}
                         </p>
                         <pre className="text-sm font-mono bg-muted px-3 py-2 rounded overflow-x-auto">
                           {JSON.stringify(additionalMeta, null, 2)}
@@ -1004,12 +1040,12 @@ export default function ArtifactPage() {
                       {isLoadingDownload ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Downloading...
+                          {t("downloading")}
                         </>
                       ) : (
                         <>
                           <Download className="h-4 w-4 mr-2" />
-                          Download
+                          {t("download")}
                         </>
                       )}
                     </Button>
@@ -1022,12 +1058,12 @@ export default function ArtifactPage() {
                       {isDeletingFile ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Deleting...
+                          {t("deleting")}
                         </>
                       ) : (
                         <>
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
+                          {t("delete")}
                         </>
                       )}
                     </Button>
@@ -1040,14 +1076,14 @@ export default function ArtifactPage() {
                 ) && (
                   <div className="border-t pt-6">
                     <p className="text-sm font-medium text-muted-foreground mb-3">
-                      Preview
+                      {t("preview")}
                     </p>
                     {isLoadingPreview ? (
                       <div className="flex items-center justify-center h-64 bg-muted rounded-md">
                         <div className="flex flex-col items-center gap-2">
                           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                           <p className="text-sm text-muted-foreground">
-                            Loading image...
+                            {t("loadingImage")}
                           </p>
                         </div>
                       </div>
@@ -1072,7 +1108,7 @@ export default function ArtifactPage() {
                           onClick={handlePreviewClick}
                           disabled={isLoadingPreview}
                         >
-                          Load Preview
+                          {t("loadPreview")}
                         </Button>
                       </div>
                     )}
@@ -1081,7 +1117,7 @@ export default function ArtifactPage() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Select a file from the tree to view its content
+                {t("selectFilePrompt")}
               </p>
             )}
           </div>
@@ -1092,18 +1128,17 @@ export default function ArtifactPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Artifact</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteArtifactTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete artifact{" "}
+              {t("deleteArtifactDescription")}{" "}
               <span className="font-mono font-semibold">
                 {artifactToDelete?.id}
               </span>
-              ? This action cannot be undone and will delete all files
-              associated with this artifact.
+              {t("deleteArtifactWarning")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteArtifact}
               disabled={isDeleting}
@@ -1112,10 +1147,10 @@ export default function ArtifactPage() {
               {isDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Deleting...
+                  {t("deleting")}
                 </>
               ) : (
-                "Delete"
+                t("delete")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1123,20 +1158,25 @@ export default function ArtifactPage() {
       </AlertDialog>
 
       {/* Delete file confirmation dialog */}
-      <AlertDialog open={deleteFileDialogOpen} onOpenChange={setDeleteFileDialogOpen}>
+      <AlertDialog
+        open={deleteFileDialogOpen}
+        onOpenChange={setDeleteFileDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete File</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteFileTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete file{" "}
+              {t("deleteFileDescription")}{" "}
               <span className="font-mono font-semibold">
                 {fileToDelete?.fileInfo?.filename}
               </span>
-              ? This action cannot be undone.
+              {t("deleteFileWarning")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingFile}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingFile}>
+              {t("cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteFile}
               disabled={isDeletingFile}
@@ -1145,10 +1185,10 @@ export default function ArtifactPage() {
               {isDeletingFile ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Deleting...
+                  {t("deleting")}
                 </>
               ) : (
-                "Delete"
+                t("delete")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1159,9 +1199,9 @@ export default function ArtifactPage() {
       <AlertDialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Upload File</AlertDialogTitle>
+            <AlertDialogTitle>{t("uploadFileTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Configure the upload settings for your file
+              {t("uploadFileDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -1169,30 +1209,30 @@ export default function ArtifactPage() {
             {/* File info */}
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Selected File
+                {t("selectedFile")}
               </label>
               <div className="text-sm bg-muted px-3 py-2 rounded-md font-mono">
-                {selectedUploadFile?.name || "No file selected"}
+                {selectedUploadFile?.name || t("noFileSelected")}
               </div>
             </div>
 
             {/* Path input */}
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Upload Path
+                {t("uploadPath")}
               </label>
               <Input
                 type="text"
                 value={uploadPath}
                 onChange={(e) => setUploadPath(e.target.value)}
-                placeholder="/path/to/directory/"
+                placeholder={t("uploadPathPlaceholder")}
                 className="font-mono"
                 disabled={initialUploadPath !== "/"}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {initialUploadPath === "/"
-                  ? "The directory path where the file will be uploaded (e.g., /folder/)"
-                  : "Path is set to the selected folder. Only root directory uploads allow path customization."}
+                  ? t("uploadPathHelp")
+                  : t("uploadPathHelpLocked")}
               </p>
             </div>
 
@@ -1200,7 +1240,7 @@ export default function ArtifactPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium">
-                  Meta Information (Optional)
+                  {t("metaInformation")}
                 </label>
                 <Button
                   type="button"
@@ -1209,13 +1249,13 @@ export default function ArtifactPage() {
                   onClick={handleAddMetaField}
                 >
                   <Plus className="h-3 w-3 mr-1" />
-                  Add Field
+                  {t("addField")}
                 </Button>
               </div>
 
               {uploadMetaFields.length === 0 ? (
                 <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                  No meta fields added. Click &quot;Add Field&quot; to add custom metadata.
+                  {t("noMetaFields")}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1224,15 +1264,19 @@ export default function ArtifactPage() {
                       <Input
                         type="text"
                         value={field.key}
-                        onChange={(e) => handleMetaFieldChange(index, "key", e.target.value)}
-                        placeholder="Key"
+                        onChange={(e) =>
+                          handleMetaFieldChange(index, "key", e.target.value)
+                        }
+                        placeholder={t("key")}
                         className="flex-1 font-mono"
                       />
                       <Input
                         type="text"
                         value={field.value}
-                        onChange={(e) => handleMetaFieldChange(index, "value", e.target.value)}
-                        placeholder="Value"
+                        onChange={(e) =>
+                          handleMetaFieldChange(index, "value", e.target.value)
+                        }
+                        placeholder={t("value")}
                         className="flex-1 font-mono"
                       />
                       <Button
@@ -1252,8 +1296,11 @@ export default function ArtifactPage() {
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleUploadCancel} disabled={isUploading}>
-              Cancel
+            <AlertDialogCancel
+              onClick={handleUploadCancel}
+              disabled={isUploading}
+            >
+              {t("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleUploadConfirm}
@@ -1262,12 +1309,12 @@ export default function ArtifactPage() {
               {isUploading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Uploading...
+                  {t("uploading")}
                 </>
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload
+                  {t("upload")}
                 </>
               )}
             </AlertDialogAction>
