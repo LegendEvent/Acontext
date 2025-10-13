@@ -374,7 +374,7 @@ export default function ArtifactPage() {
             if (n.children) {
               return {
                 ...n,
-                children: updateNode(files),
+                children: updateNode(n.children),
               };
             }
             return n;
