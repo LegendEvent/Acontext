@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, RefreshCw, Upload, X, Eye } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Upload, X } from "lucide-react";
 import Image from "next/image";
 import {
   getSessions,
@@ -444,14 +444,13 @@ export default function MessagesPage() {
                               </TableCell>
                               <TableCell>
                                 <Button
-                                  variant="ghost"
-                                  size="icon"
+                                  variant="secondary"
+                                  size="sm"
                                   onClick={() =>
                                     handleOpenDetailDialog(message)
                                   }
-                                  title={t("viewDetail")}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  {t("view")}
                                 </Button>
                               </TableCell>
                             </TableRow>
