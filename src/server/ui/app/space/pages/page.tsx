@@ -12,9 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   ChevronRight,
-  File,
-  Folder,
-  FolderOpen,
+  FileText,
+  Book,
+  BookOpen,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -80,15 +80,15 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
               />
             )}
             {node.isOpen ? (
-              <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
             ) : (
-              <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <Book className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
           </>
         ) : (
           <>
             <span className="w-4" />
-            <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
           </>
         )}
         <span className="min-w-0 truncate" title={node.data.name}>
