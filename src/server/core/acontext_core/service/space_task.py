@@ -22,15 +22,14 @@ from .controller import space_task as STC
     mq_client=MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.space_task,
-        routing_key=RK.space_task_complete,
-        queue_name=RK.space_task_complete,
+        routing_key=RK.space_task_new_complete,
+        queue_name=RK.space_task_new_complete,
     ),
 )
-async def complete_new_task(body: NewTaskComplete, message: Message):
-    async with DB_CLIENT.session() as db_session:
+async def space_complete_new_task(body: NewTaskComplete, message: Message):
+    async with DB_CLIENT.get_session_context() as db_session:
         r = await SD.fetch_session(db_session, body.session_id)
         if not r.ok():
-            LOG.error(f"Session {body.session_id} not found, error: {r.error}")
             return
         session_data, _ = r.unpack()
         if session_data.space_id is None:
@@ -39,14 +38,10 @@ async def complete_new_task(body: NewTaskComplete, message: Message):
         SPACE_ID = session_data.space_id
         r = await TD.fetch_task(db_session, body.task_id)
         if not r.ok():
-            LOG.error(f"Task {body.task_id} not found, error: {r.error}")
             return
         TASK_DATA, _ = r.unpack()
         r = await TD.set_task_space_digested(db_session, body.task_id)
         if not r.ok():
-            LOG.error(
-                f"Failed to update task {body.task_id} space digested, error: {r.error}"
-            )
             return
         already_digested, _ = r.unpack()
         if already_digested:
@@ -58,4 +53,4 @@ async def complete_new_task(body: NewTaskComplete, message: Message):
         if eil:
             return
 
-    await STC.process_space_pending_task(project_config, SPACE_ID, TASK_DATA.id)
+    await STC.process_space_task(project_config, SPACE_ID, TASK_DATA)

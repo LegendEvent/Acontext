@@ -18,6 +18,7 @@ class TaskSchema(BaseModel):
     task_description: str
     task_status: TaskStatus
     task_data: dict
+    space_digested: bool
     raw_message_ids: list[asUUID]
 
     def to_string(self) -> str:

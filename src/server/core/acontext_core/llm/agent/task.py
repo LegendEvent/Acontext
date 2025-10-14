@@ -58,7 +58,10 @@ def pack_current_message_with_ids(messages: list[MessageBlob]) -> str:
 
 
 async def build_task_ctx(
-    db_session: AsyncSession, session_id: asUUID, messages: list[MessageBlob]
+    db_session: AsyncSession,
+    project_id: asUUID,
+    session_id: asUUID,
+    messages: list[MessageBlob],
 ) -> TaskCtx:
     LOG.debug(f"Building task context for session {session_id}")
     r = await TD.fetch_current_tasks(db_session, session_id)
@@ -67,6 +70,7 @@ async def build_task_ctx(
         return r
     use_ctx = TaskCtx(
         db_session=db_session,
+        project_id=project_id,
         session_id=session_id,
         task_ids_index=[t.id for t in current_tasks],
         message_ids_index=[m.message_id for m in messages],
@@ -76,6 +80,7 @@ async def build_task_ctx(
 
 @track_process
 async def task_agent_curd(
+    project_id: asUUID,
     session_id: asUUID,
     previous_messages: List[MessageBlob],
     messages: List[MessageBlob],
@@ -130,7 +135,7 @@ async def task_agent_curd(
         use_tools = llm_return.tool_calls
         just_finish = False
         async with DB_CLIENT.get_session_context() as db_session:
-            USE_CTX = await build_task_ctx(db_session, session_id, messages)
+            USE_CTX = await build_task_ctx(db_session, project_id, session_id, messages)
             tool_response = []
             for tool_call in use_tools:
                 try:
@@ -155,7 +160,9 @@ async def task_agent_curd(
                     )
                     if tool_name not in NEED_UPDATE_CTX:
                         continue
-                    USE_CTX = await build_task_ctx(db_session, session_id, messages)
+                    USE_CTX = await build_task_ctx(
+                        db_session, project_id, session_id, messages
+                    )
                 except KeyError as e:
                     return Result.reject(f"Tool {tool_name} not found: {str(e)}")
                 except Exception as e:

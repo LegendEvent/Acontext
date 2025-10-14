@@ -127,7 +127,9 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
                 routing_key=RK.session_message_insert_retry,
                 body=body.model_dump_json(),
             )
-        await MC.process_session_pending_message(project_config, body.session_id)
+        await MC.process_session_pending_message(
+            project_config, body.project_id, body.session_id
+        )
     finally:
         await release_session_message_lock(str(body.session_id))
 
@@ -185,6 +187,8 @@ async def buffer_new_message(body: InsertNewMessage, message: Message):
         )
         return
     try:
-        await MC.process_session_pending_message(project_config, body.session_id)
+        await MC.process_session_pending_message(
+            project_config, body.project_id, body.session_id
+        )
     finally:
         await release_session_message_lock(str(body.session_id))

@@ -1,13 +1,25 @@
+import asyncio
 from typing import Any
-from ....infra.db import AsyncSession
+from ....infra.async_mq import MQ_CLIENT
 from ..base import Tool, ToolPool
 from ....schema.llm import ToolSchema
 from ....schema.utils import asUUID
 from ....schema.result import Result
 from ....schema.orm import Task
+from ....schema.mq.space import NewTaskComplete
+from ....schema.session.task import TaskStatus
 from ....service.data import task as TD
 from ....env import LOG
+from ....service.constants import EX, RK
 from .ctx import TaskCtx
+
+
+async def send_complete_new_task(body: NewTaskComplete):
+    await MQ_CLIENT.publish(
+        exchange_name=EX.space_task,
+        routing_key=RK.space_task_new_complete,
+        body=body.model_dump_json(),
+    )
 
 
 async def update_task_handler(
@@ -24,23 +36,33 @@ async def update_task_handler(
             f"Task order {task_order} is out of range, updating failed."
         )
     actually_task_id = ctx.task_ids_index[task_order - 1]
-    status = llm_arguments.get("task_status", None)
-    description = llm_arguments.get("task_description", None)
+    task_status = llm_arguments.get("task_status", None)
+    task_description = llm_arguments.get("task_description", None)
     r = await TD.update_task(
         ctx.db_session,
         actually_task_id,
-        status=status,
+        status=task_status,
         patch_data=(
             {
-                "task_description": description,
+                "task_description": task_description,
             }
-            if description
+            if task_description
             else None
         ),
     )
     t, eil = r.unpack()
     if eil:
         return r
+    if task_status is not None and task_status == TaskStatus.SUCCESS.value:
+        asyncio.create_task(
+            send_complete_new_task(
+                NewTaskComplete(
+                    project_id=ctx.project_id,
+                    session_id=ctx.session_id,
+                    task_id=actually_task_id,
+                )
+            )
+        )
     return Result.resolve(f"Task {t.task_order} updated")
 
 

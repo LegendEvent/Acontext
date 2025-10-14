@@ -10,7 +10,7 @@ from ...schema.config import ProjectConfig
 
 
 async def process_session_pending_message(
-    project_config: ProjectConfig, session_id: asUUID
+    project_config: ProjectConfig, project_id: asUUID, session_id: asUUID
 ):
     pending_message_ids = None
     try:
@@ -60,7 +60,9 @@ async def process_session_pending_message(
                 for m in previous_messages
             ]
 
-        r = await AT.task_agent_curd(session_id, previous_messages_data, messages_data)
+        r = await AT.task_agent_curd(
+            project_id, session_id, previous_messages_data, messages_data
+        )
 
         after_status = TaskStatus.SUCCESS
         if not r.ok():

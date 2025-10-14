@@ -32,6 +32,7 @@ async def fetch_planning_task(
             task_status=planning.task_status,
             task_description="",
             task_data=planning.task_data,
+            space_digested=planning.space_digested,
             raw_message_ids=[msg.id for msg in planning.messages],
         )
     )
@@ -51,6 +52,7 @@ async def fetch_task(db_session: AsyncSession, task_id: asUUID) -> Result[TaskSc
             task_status=task.task_status,
             task_description=task.task_data.get("task_description", ""),
             task_data=task.task_data,
+            space_digested=task.space_digested,
             raw_message_ids=[msg.id for msg in task.messages],
         )
     )
@@ -78,6 +80,7 @@ async def fetch_current_tasks(
             task_status=t.task_status,
             task_description=t.task_data.get("task_description", ""),
             task_data=t.task_data,
+            space_digested=t.space_digested,
             raw_message_ids=[msg.id for msg in t.messages],
         )
         for t in tasks

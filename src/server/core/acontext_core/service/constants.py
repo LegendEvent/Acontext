@@ -4,7 +4,7 @@ class EX:
 
 
 class RK:
-    space_task_complete = "space.task.complete"
+    space_task_new_complete = "space.task.new.complete"
 
     session_message_insert = "session.message.insert"
     session_message_insert_retry = "session.message.insert.retry"
