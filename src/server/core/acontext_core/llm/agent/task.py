@@ -73,6 +73,7 @@ async def build_task_ctx(
         project_id=project_id,
         session_id=session_id,
         task_ids_index=[t.id for t in current_tasks],
+        task_index=current_tasks,
         message_ids_index=[m.message_id for m in messages],
     )
     return use_ctx

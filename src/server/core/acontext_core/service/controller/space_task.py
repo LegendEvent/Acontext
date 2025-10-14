@@ -13,6 +13,7 @@ from ...schema.session.task import TaskSchema
 async def process_space_task(
     project_config: ProjectConfig, space_id: asUUID, task: TaskSchema
 ):
+    print("SPACE!!!!", space_id, task)
     if task.task_status != TaskStatus.SUCCESS:
         LOG.info(f"Task {task.id} is not success, skipping")
         return
@@ -28,7 +29,7 @@ async def process_space_task(
             MessageBlob(message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id)
             for m in messages
         ]
-    print(messages_data)
+    print("\n".join([m.to_string() for m in messages_data]))
     # 2. call agent to digest raw messages to SOP
     ...
 

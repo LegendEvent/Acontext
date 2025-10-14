@@ -1,3 +1,4 @@
+import json
 from pydantic import BaseModel
 from typing import List, Optional
 from ..orm import Part, ToolCallMeta
@@ -21,7 +22,13 @@ def pack_part_line(role: str, part: Part) -> str:
         return f"<{role}> {part.text}"
     elif part.type == "tool-call":
         tool_call_meta = ToolCallMeta(**part.meta)
-        return f"<{role}> USE TOOL {tool_call_meta.tool_name}, WITH PARAMS {tool_call_meta.arguments}"
+        tool_data = json.dumps(
+            {
+                "tool_name": tool_call_meta.tool_name,
+                "arguments": tool_call_meta.arguments,
+            }
+        )
+        return f"<{role}> {tool_data}"
     else:
         raise TypeError(f"Unknown message part type: {part.type}")
 

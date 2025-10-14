@@ -33,7 +33,9 @@ async def fetch_planning_task(
             task_description="",
             task_data=planning.task_data,
             space_digested=planning.space_digested,
-            raw_message_ids=[msg.id for msg in planning.messages],
+            raw_message_ids=[
+                msg.id for msg in sorted(planning.messages, key=lambda m: m.created_at)
+            ],
         )
     )
 
@@ -53,7 +55,9 @@ async def fetch_task(db_session: AsyncSession, task_id: asUUID) -> Result[TaskSc
             task_description=task.task_data.get("task_description", ""),
             task_data=task.task_data,
             space_digested=task.space_digested,
-            raw_message_ids=[msg.id for msg in task.messages],
+            raw_message_ids=[
+                msg.id for msg in sorted(task.messages, key=lambda m: m.created_at)
+            ],
         )
     )
 
@@ -81,11 +85,13 @@ async def fetch_current_tasks(
             task_description=t.task_data.get("task_description", ""),
             task_data=t.task_data,
             space_digested=t.space_digested,
-            raw_message_ids=[msg.id for msg in t.messages],
+            raw_message_ids=[
+                msg.id for msg in sorted(t.messages, key=lambda m: m.created_at)
+            ],
         )
         for t in tasks
     ]
-    return Result.resolve(tasks_d)  # Fixed: return tasks_d instead of tasks
+    return Result.resolve(tasks_d)
 
 
 async def update_task(

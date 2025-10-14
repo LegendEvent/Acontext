@@ -65,14 +65,13 @@ class TaskPrompt(BasePrompt):
 
 ## Report your Thinking
 Use extremely brief wordings to report:
-1. Any new user requirement or planning? What are the tasks/steps?
-2. For each task, is it a task modification or creation situation?
-3. How existing tasks are related to current conversation? Do the existing tasks need to be updated?
+1. Any user requirement or planning?
+2. How existing tasks are related to current conversation? 
+3. Any new task is created?
 4. Messages are contributed to which task?
-5. Do New/Existing tasks' status need to be updated?
-6. Describe your actions.
-7. Confirm your will call every necessary tools in this response.
-8. Confirm your will call `finish` tool once every tools are called
+5. Which task's status/description need to be updated?
+6. Describe your tool-call actions to correctly manage the tasks.
+7. Confirm your will call `finish` tool after every tools are called
 """
 
     @classmethod

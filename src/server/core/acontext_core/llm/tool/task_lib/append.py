@@ -6,7 +6,7 @@ from ....schema.utils import asUUID
 from ....schema.result import Result
 from ....schema.orm import Task
 from ....service.data import task as TD
-from ....env import LOG
+from ....schema.session.task import TaskStatus
 from .ctx import TaskCtx
 
 
@@ -14,7 +14,7 @@ async def _append_messages_to_task_handler(
     ctx: TaskCtx,
     llm_arguments: dict,
 ) -> Result[str]:
-    task_order = llm_arguments.get("task_order", None)
+    task_order: int = llm_arguments.get("task_order", None)
     message_order_indexes = llm_arguments.get("message_ids", [])
     if not task_order:
         return Result.resolve(
@@ -25,6 +25,7 @@ async def _append_messages_to_task_handler(
             f"Task order {task_order} is out of range, appending failed."
         )
     actually_task_id = ctx.task_ids_index[task_order - 1]
+    actually_task = ctx.task_index[task_order - 1]
     actually_message_ids = [
         ctx.message_ids_index[i]
         for i in message_order_indexes
@@ -33,6 +34,10 @@ async def _append_messages_to_task_handler(
     if not actually_message_ids:
         return Result.resolve(
             f"No message ids to append, skip: {message_order_indexes}"
+        )
+    if actually_task.task_status in (TaskStatus.SUCCESS, TaskStatus.FAILED):
+        return Result.resolve(
+            f"Task {task_order} is already {actually_task.task_status}, appending failed."
         )
     r = await TD.append_messages_to_task(
         ctx.db_session,
@@ -56,6 +61,7 @@ _append_messages_to_task_tool = (
                 "name": "append_messages_to_task",
                 "description": """Link current message ids to a task for tracking progress and context.
 Use this to associate conversation messages with relevant tasks.
+Make sure you append messages first(if any), then update the task status.
 If the task is marked as 'success' or 'failed', don't append messages to it.""",
                 "parameters": {
                     "type": "object",
