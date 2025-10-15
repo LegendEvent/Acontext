@@ -732,7 +732,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get messages from session.",
+                "description": "Get messages from session. Optionally convert to specific format (openai, langchain).",
                 "consumes": [
                     "application/json"
                 ],
@@ -768,6 +768,16 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Whether to return asset public url, default is true",
                         "name": "with_asset_public_url",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "openai",
+                            "langchain"
+                        ],
+                        "type": "string",
+                        "description": "Format to convert messages to: openai, langchain. If not provided, returns original format.",
+                        "name": "format",
                         "in": "query"
                     }
                 ],

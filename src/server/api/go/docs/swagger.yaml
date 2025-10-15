@@ -882,7 +882,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get messages from session.
+      description: Get messages from session. Optionally convert to specific format
+        (openai, langchain).
       parameters:
       - description: Session ID
         format: uuid
@@ -902,6 +903,14 @@ paths:
       - description: Whether to return asset public url, default is true
         in: query
         name: with_asset_public_url
+        type: string
+      - description: 'Format to convert messages to: openai, langchain. If not provided,
+          returns original format.'
+        enum:
+        - openai
+        - langchain
+        in: query
+        name: format
         type: string
       produces:
       - application/json

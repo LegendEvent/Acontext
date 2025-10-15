@@ -15,6 +15,7 @@ import (
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
+	"github.com/memodb-io/Acontext/internal/pkg/utils/converter"
 	"gorm.io/datatypes"
 )
 
@@ -361,19 +362,21 @@ type GetMessagesReq struct {
 	Limit              int    `form:"limit,default=20" json:"limit" binding:"required,min=1,max=200" example:"20"`
 	Cursor             string `form:"cursor" json:"cursor" example:"cHJvdGVjdGVkIHZlcnNpb24gdG8gYmUgZXhjbHVkZWQgaW4gcGFyc2luZyB0aGUgY3Vyc29y"`
 	WithAssetPublicURL bool   `form:"with_asset_public_url,default=true" json:"with_asset_public_url" example:"true"`
+	Format             string `form:"format" json:"format" binding:"omitempty,oneof=openai langchain" example:"openai" enums:"openai,langchain"`
 }
 
 // GetMessages godoc
 //
 //	@Summary		Get messages from session
-//	@Description	Get messages from session.
+//	@Description	Get messages from session. Optionally convert to specific format (openai, langchain).
 //	@Tags			session
 //	@Accept			json
 //	@Produce		json
 //	@Param			session_id				path	string	true	"Session ID"	format(uuid)
 //	@Param			limit					query	integer	false	"Limit of messages to return, default 20. Max 200."
 //	@Param			cursor					query	string	false	"Cursor for pagination. Use the cursor from the previous response to get the next page."
-//	@Param			with_asset_public_url	query	string	false	"Whether to return asset public url, default is true"	example:"true"
+//	@Param			with_asset_public_url	query	string	false	"Whether to return asset public url, default is true"											example:"true"
+//	@Param			format					query	string	false	"Format to convert messages to: openai, langchain. If not provided, returns original format."	enums(openai,langchain)
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=service.GetMessagesOutput}
 //	@Router			/session/{session_id}/messages [get]
@@ -398,6 +401,30 @@ func (h *SessionHandler) GetMessages(c *gin.Context) {
 	})
 	if err != nil {
 		c.JSON(http.StatusBadRequest, serializer.DBErr("", err))
+		return
+	}
+
+	// Convert messages if format is specified
+	if req.Format != "" {
+		format, err := converter.ValidateFormat(req.Format)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("invalid format", err))
+			return
+		}
+
+		convertedOut, err := converter.GetConvertedMessagesOutput(
+			out.Items,
+			format,
+			out.PublicURLs,
+			out.NextCursor,
+			out.HasMore,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, serializer.DBErr("failed to convert messages", err))
+			return
+		}
+
+		c.JSON(http.StatusOK, serializer.Response{Data: convertedOut})
 		return
 	}
 
