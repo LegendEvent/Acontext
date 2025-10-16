@@ -17,9 +17,9 @@ type BlockTypeConfig struct {
 
 // For backward compatibility, keep the constant definitions
 const (
-	BlockTypePage    = "page"
-	BlockTypeText    = "text"
-	BlockTypeSnippet = "snippet"
+	BlockTypePage = "page"
+	BlockTypeText = "text"
+	BlockTypeSOP  = "sop"
 )
 
 // BlockType Define all supported block types
@@ -34,8 +34,8 @@ var BlockTypes = map[string]BlockTypeConfig{
 		AllowChildren: true,
 		RequireParent: true,
 	},
-	BlockTypeSnippet: {
-		Name:          BlockTypeSnippet,
+	BlockTypeSOP: {
+		Name:          BlockTypeSOP,
 		AllowChildren: true,
 		RequireParent: true,
 	},

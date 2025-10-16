@@ -28,8 +28,6 @@ async def process_space_task(
             MessageBlob(message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id)
             for m in messages
         ]
-    print("SPACE!!!!", space_id, task)
-    print("\n".join([m.to_string() for m in messages_data]))
     # 2. call agent to digest raw messages to SOP
     ...
 

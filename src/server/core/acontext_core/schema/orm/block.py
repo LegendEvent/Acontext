@@ -1,6 +1,14 @@
 import uuid
 from dataclasses import dataclass, field
-from sqlalchemy import String, ForeignKey, Index, CheckConstraint, Column, Boolean, BigInteger
+from sqlalchemy import (
+    String,
+    ForeignKey,
+    Index,
+    CheckConstraint,
+    Column,
+    Boolean,
+    BigInteger,
+)
 from sqlalchemy.orm import relationship, foreign, remote
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
@@ -19,12 +27,12 @@ BLOCK_TYPES = {
         "require_parent": False,
     },
     "text": {
-        "name": "text", 
+        "name": "text",
         "allow_children": True,
         "require_parent": True,
     },
-    "snippet": {
-        "name": "snippet",
+    "sop": {
+        "name": "sop",
         "allow_children": True,
         "require_parent": True,
     },
@@ -33,7 +41,7 @@ BLOCK_TYPES = {
 # Block type constants matching Go version
 BLOCK_TYPE_PAGE = "page"
 BLOCK_TYPE_TEXT = "text"
-BLOCK_TYPE_SNIPPET = "snippet"
+BLOCK_TYPE_SOP = "sop"
 
 
 def is_valid_block_type(block_type: str) -> bool:
@@ -64,10 +72,12 @@ class Block(CommonMixin):
         Index("idx_blocks_space_type", "space_id", "type"),
         Index("idx_blocks_space_type_archived", "space_id", "type", "is_archived"),
         # Unique constraint for space, parent, sort combination
-        Index("ux_blocks_space_parent_sort", "space_id", "parent_id", "sort", unique=True),
+        Index(
+            "ux_blocks_space_parent_sort", "space_id", "parent_id", "sort", unique=True
+        ),
         # Check constraints matching Go version
         CheckConstraint(
-            "type IN ('page', 'text', 'snippet')",
+            "type IN ('page', 'text', 'sop')",
             name="ck_block_type",
         ),
     )
@@ -151,7 +161,7 @@ class Block(CommonMixin):
         init=False,
         metadata={
             "db": relationship(
-                "Space", 
+                "Space",
                 back_populates="blocks",
             )
         },
@@ -195,7 +205,11 @@ class Block(CommonMixin):
         if config["require_parent"] and self.parent_id is None:
             raise ValueError(f"block type '{self.type}' requires a parent")
 
-        if not config["require_parent"] and self.type != BLOCK_TYPE_PAGE and self.parent_id is None:
+        if (
+            not config["require_parent"]
+            and self.type != BLOCK_TYPE_PAGE
+            and self.parent_id is None
+        ):
             raise ValueError("only page type blocks can exist without a parent")
 
     def validate_for_creation(self) -> None:

@@ -25,8 +25,8 @@ func TestIsValidBlockType(t *testing.T) {
 			expected:  true,
 		},
 		{
-			name:      "valid code snippet type",
-			blockType: BlockTypeSnippet,
+			name:      "valid code sop type",
+			blockType: BlockTypeSOP,
 			expected:  true,
 		},
 		{
@@ -77,11 +77,11 @@ func TestGetBlockTypeConfig(t *testing.T) {
 			},
 		},
 		{
-			name:      "get code snippet type config",
-			blockType: BlockTypeSnippet,
+			name:      "get code sop type config",
+			blockType: BlockTypeSOP,
 			wantErr:   false,
 			expected: BlockTypeConfig{
-				Name:          BlockTypeSnippet,
+				Name:          BlockTypeSOP,
 				AllowChildren: true,
 				RequireParent: true,
 			},
@@ -116,7 +116,7 @@ func TestGetAllBlockTypes(t *testing.T) {
 		// Verify contains expected types
 		assert.Contains(t, allTypes, BlockTypePage)
 		assert.Contains(t, allTypes, BlockTypeText)
-		assert.Contains(t, allTypes, BlockTypeSnippet)
+		assert.Contains(t, allTypes, BlockTypeSOP)
 
 		// Verify configuration for each type
 		pageConfig := allTypes[BlockTypePage]
@@ -161,12 +161,12 @@ func TestBlock_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "valid code snippet block (with parent)",
+			name: "valid code sop block (with parent)",
 			block: Block{
 				SpaceID:  spaceID,
-				Type:     BlockTypeSnippet,
+				Type:     BlockTypeSOP,
 				ParentID: &parentID,
-				Title:    "test code snippet",
+				Title:    "test code sop",
 			},
 			wantErr: false,
 		},
@@ -191,11 +191,11 @@ func TestBlock_Validate(t *testing.T) {
 			errMsg:  "requires a parent",
 		},
 		{
-			name: "code snippet block missing parent",
+			name: "code sop block missing parent",
 			block: Block{
 				SpaceID: spaceID,
-				Type:    BlockTypeSnippet,
-				Title:   "test code snippet",
+				Type:    BlockTypeSOP,
+				Title:   "test code sop",
 			},
 			wantErr: true,
 			errMsg:  "requires a parent",
@@ -318,9 +318,9 @@ func TestBlock_CanHaveChildren(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "code snippet block can have children",
+			name: "code sop block can have children",
 			block: Block{
-				Type: BlockTypeSnippet,
+				Type: BlockTypeSOP,
 			},
 			expected: true,
 		},
@@ -360,7 +360,7 @@ func TestBlockTypeConstants(t *testing.T) {
 	t.Run("verify block type constants", func(t *testing.T) {
 		assert.Equal(t, "page", BlockTypePage)
 		assert.Equal(t, "text", BlockTypeText)
-		assert.Equal(t, "snippet", BlockTypeSnippet)
+		assert.Equal(t, "sop", BlockTypeSOP)
 	})
 }
 
@@ -380,11 +380,11 @@ func TestBlockTypes_Configuration(t *testing.T) {
 		assert.True(t, textConfig.AllowChildren)
 		assert.True(t, textConfig.RequireParent)
 
-		// Verify code snippet type configuration
-		snippetConfig, exists := BlockTypes[BlockTypeSnippet]
+		// Verify code sop type configuration
+		sopConfig, exists := BlockTypes[BlockTypeSOP]
 		assert.True(t, exists)
-		assert.Equal(t, BlockTypeSnippet, snippetConfig.Name)
-		assert.True(t, snippetConfig.AllowChildren)
-		assert.True(t, snippetConfig.RequireParent)
+		assert.Equal(t, BlockTypeSOP, sopConfig.Name)
+		assert.True(t, sopConfig.AllowChildren)
+		assert.True(t, sopConfig.RequireParent)
 	})
 }
