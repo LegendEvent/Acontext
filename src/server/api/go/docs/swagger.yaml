@@ -108,6 +108,14 @@ definitions:
     type: object
   handler.SendMessageReq:
     properties:
+      format:
+        enum:
+        - acontext
+        - openai
+        - langchain
+        - anthropic
+        example: openai
+        type: string
       parts:
         items:
           $ref: '#/definitions/service.PartIn'
@@ -936,7 +944,8 @@ paths:
       - application/json
       - multipart/form-data
       description: 'Supports JSON and multipart/form-data. In multipart mode: the
-        payload is a JSON string placed in a form field.'
+        payload is a JSON string placed in a form field. The format parameter indicates
+        the format of the input message (default: openai, same as GET).'
       parameters:
       - description: Session ID
         format: uuid

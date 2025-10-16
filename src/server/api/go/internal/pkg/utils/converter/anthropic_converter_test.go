@@ -286,3 +286,276 @@ func TestAnthropicConverter_MediaFiles(t *testing.T) {
 		t.Fatalf("unexpected content type: %T", content)
 	}
 }
+
+func TestAnthropicConverter_MergeAdjacentSameRole(t *testing.T) {
+	converter := &AnthropicConverter{}
+
+	tests := []struct {
+		name           string
+		messages       []model.Message
+		expectedLength int
+		description    string
+	}{
+		{
+			name: "merge two adjacent user messages",
+			messages: []model.Message{
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "First user message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "Second user message"},
+					},
+				},
+			},
+			expectedLength: 1,
+			description:    "Two adjacent user messages should be merged into one",
+		},
+		{
+			name: "merge three adjacent assistant messages",
+			messages: []model.Message{
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "assistant",
+					Parts: []model.Part{
+						{Type: "text", Text: "First assistant message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "assistant",
+					Parts: []model.Part{
+						{Type: "text", Text: "Second assistant message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "assistant",
+					Parts: []model.Part{
+						{Type: "text", Text: "Third assistant message"},
+					},
+				},
+			},
+			expectedLength: 1,
+			description:    "Three adjacent assistant messages should be merged into one",
+		},
+		{
+			name: "no merge needed for alternating roles",
+			messages: []model.Message{
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "User message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "assistant",
+					Parts: []model.Part{
+						{Type: "text", Text: "Assistant message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "Another user message"},
+					},
+				},
+			},
+			expectedLength: 3,
+			description:    "Alternating roles should not be merged",
+		},
+		{
+			name: "merge adjacent user messages but not assistant",
+			messages: []model.Message{
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "First user message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "Second user message"},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "assistant",
+					Parts: []model.Part{
+						{Type: "text", Text: "Assistant message"},
+					},
+				},
+			},
+			expectedLength: 2,
+			description:    "Adjacent user messages should merge, assistant separate",
+		},
+		{
+			name: "merge with tool calls and results",
+			messages: []model.Message{
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "assistant",
+					Parts: []model.Part{
+						{
+							Type: "tool-call",
+							Meta: map[string]interface{}{
+								"id":        "call_1",
+								"tool_name": "get_weather",
+								"arguments": map[string]interface{}{"city": "SF"},
+							},
+						},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{
+							Type: "tool-result",
+							Meta: map[string]interface{}{
+								"tool_call_id": "call_1",
+								"result":       "Sunny",
+							},
+						},
+					},
+				},
+				{
+					ID:        uuid.New(),
+					SessionID: uuid.New(),
+					Role:      "user",
+					Parts: []model.Part{
+						{Type: "text", Text: "Thanks!"},
+					},
+				},
+			},
+			expectedLength: 2,
+			description:    "Adjacent user messages (tool result + text) should merge",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := converter.Convert(tt.messages, nil)
+			require.NoError(t, err)
+
+			anthropicMsgs, ok := result.([]AnthropicMessage)
+			require.True(t, ok)
+			assert.Len(t, anthropicMsgs, tt.expectedLength, tt.description)
+
+			// Verify that merged messages contain all content blocks
+			if tt.expectedLength < len(tt.messages) {
+				// At least one merge happened, check that content is preserved
+				for _, msg := range anthropicMsgs {
+					assert.NotNil(t, msg.Content, "Merged message should have content")
+				}
+			}
+		})
+	}
+}
+
+func TestAnthropicConverter_MergeContent(t *testing.T) {
+	converter := &AnthropicConverter{}
+
+	tests := []struct {
+		name     string
+		content1 interface{}
+		content2 interface{}
+		expected int // expected number of content blocks
+	}{
+		{
+			name:     "merge two strings",
+			content1: "First message",
+			content2: "Second message",
+			expected: 2,
+		},
+		{
+			name:     "merge string and content blocks",
+			content1: "Text message",
+			content2: []AnthropicContentBlock{
+				{Type: "text", Text: "Block message"},
+			},
+			expected: 2,
+		},
+		{
+			name: "merge two content block arrays",
+			content1: []AnthropicContentBlock{
+				{Type: "text", Text: "First block"},
+			},
+			content2: []AnthropicContentBlock{
+				{Type: "text", Text: "Second block"},
+			},
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			merged := converter.mergeContent(tt.content1, tt.content2)
+
+			blocks, ok := merged.([]AnthropicContentBlock)
+			require.True(t, ok, "Merged content should be content blocks")
+			assert.Len(t, blocks, tt.expected)
+		})
+	}
+}
+
+func TestAnthropicConverter_ToContentBlocks(t *testing.T) {
+	converter := &AnthropicConverter{}
+
+	tests := []struct {
+		name     string
+		content  interface{}
+		expected int
+	}{
+		{
+			name:     "nil content",
+			content:  nil,
+			expected: 0,
+		},
+		{
+			name:     "string content",
+			content:  "Hello, world!",
+			expected: 1,
+		},
+		{
+			name: "content blocks",
+			content: []AnthropicContentBlock{
+				{Type: "text", Text: "First"},
+				{Type: "text", Text: "Second"},
+			},
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			blocks := converter.toContentBlocks(tt.content)
+			assert.Len(t, blocks, tt.expected)
+		})
+	}
+}

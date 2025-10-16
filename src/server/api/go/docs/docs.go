@@ -810,7 +810,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field.",
+                "description": "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field. The format parameter indicates the format of the input message (default: openai, same as GET).",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -2185,6 +2185,16 @@ const docTemplate = `{
                 "role"
             ],
             "properties": {
+                "format": {
+                    "type": "string",
+                    "enum": [
+                        "acontext",
+                        "openai",
+                        "langchain",
+                        "anthropic"
+                    ],
+                    "example": "openai"
+                },
                 "parts": {
                     "type": "array",
                     "items": {

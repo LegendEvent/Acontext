@@ -266,14 +266,15 @@ func (h *SessionHandler) ConnectToSpace(c *gin.Context) {
 }
 
 type SendMessageReq struct {
-	Role  string           `form:"role" json:"role" binding:"required" validate:"oneof=user assistant system tool function" example:"user"`
-	Parts []service.PartIn `form:"parts" json:"parts" binding:"required"`
+	Role   string           `form:"role" json:"role" binding:"required" validate:"oneof=user assistant system tool function" example:"user"`
+	Parts  []service.PartIn `form:"parts" json:"parts" binding:"required"`
+	Format string           `form:"format" json:"format" binding:"omitempty,oneof=acontext openai langchain anthropic" example:"openai" enums:"acontext,openai,langchain,anthropic"`
 }
 
 // SendMessage godoc
 //
 //	@Summary		Send message to session
-//	@Description	Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field.
+//	@Description	Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field. The format parameter indicates the format of the input message (default: openai, same as GET).
 //	@Tags			session
 //	@Accept			json
 //	@Accept			multipart/form-data
@@ -332,6 +333,30 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 		}
 	}
 
+	// Normalize input format to internal format
+	formatStr := req.Format
+	if formatStr == "" {
+		formatStr = string(converter.FormatOpenAI) // Default to OpenAI format, same as GET
+	}
+
+	format, err := converter.ValidateFormat(formatStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("invalid format", err))
+		return
+	}
+
+	normalizer, err := converter.GetNormalizer(format)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.ParamErr("failed to get normalizer", err))
+		return
+	}
+
+	normalizedRole, normalizedParts, err := normalizer.Normalize(req.Role, req.Parts)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("failed to normalize message", err))
+		return
+	}
+
 	project, ok := c.MustGet("project").(*model.Project)
 	if !ok {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
@@ -346,8 +371,8 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 	out, err := h.svc.SendMessage(c.Request.Context(), service.SendMessageInput{
 		ProjectID: project.ID,
 		SessionID: sessionID,
-		Role:      req.Role,
-		Parts:     req.Parts,
+		Role:      normalizedRole,
+		Parts:     normalizedParts,
 		Files:     fileMap,
 	})
 	if err != nil {

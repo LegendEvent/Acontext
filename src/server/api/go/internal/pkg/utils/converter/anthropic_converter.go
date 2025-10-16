@@ -72,6 +72,9 @@ func (c *AnthropicConverter) Convert(messages []model.Message, publicURLs map[st
 		result = append(result, anthropicMsg)
 	}
 
+	// Anthropic API requires alternating user/assistant messages and no adjacent same roles
+	result = c.mergeAdjacentSameRole(result)
+
 	return result, nil
 }
 
@@ -308,4 +311,77 @@ func (c *AnthropicConverter) fetchAndEncodeImage(imageURL, mediaType string) str
 
 	// Encode to base64
 	return base64.StdEncoding.EncodeToString(data)
+}
+
+// mergeAdjacentSameRole merges adjacent messages with the same role
+// This is required by Anthropic API which doesn't allow consecutive messages with the same role
+func (c *AnthropicConverter) mergeAdjacentSameRole(messages []AnthropicMessage) []AnthropicMessage {
+	if len(messages) <= 1 {
+		return messages
+	}
+
+	result := make([]AnthropicMessage, 0, len(messages))
+	current := messages[0]
+
+	for i := 1; i < len(messages); i++ {
+		next := messages[i]
+
+		// If roles are the same, merge the content
+		if current.Role == next.Role {
+			current.Content = c.mergeContent(current.Content, next.Content)
+		} else {
+			// Different role, save current and start new
+			result = append(result, current)
+			current = next
+		}
+	}
+
+	// Append the last message
+	result = append(result, current)
+
+	return result
+}
+
+// mergeContent merges two content objects (string or []AnthropicContentBlock)
+func (c *AnthropicConverter) mergeContent(content1, content2 interface{}) interface{} {
+	// Convert both contents to content blocks array
+	blocks1 := c.toContentBlocks(content1)
+	blocks2 := c.toContentBlocks(content2)
+
+	merged := append(blocks1, blocks2...)
+
+	// If all blocks are text, we could return as string, but keeping as array is safer
+	return merged
+}
+
+// toContentBlocks converts content (string or []AnthropicContentBlock) to []AnthropicContentBlock
+func (c *AnthropicConverter) toContentBlocks(content interface{}) []AnthropicContentBlock {
+	if content == nil {
+		return []AnthropicContentBlock{}
+	}
+
+	// If it's already a slice of content blocks
+	if blocks, ok := content.([]AnthropicContentBlock); ok {
+		return blocks
+	}
+
+	// If it's a string, convert to text block
+	if str, ok := content.(string); ok {
+		return []AnthropicContentBlock{
+			{
+				Type: "text",
+				Text: str,
+			},
+		}
+	}
+
+	// Try to unmarshal if it's a different type
+	if jsonBytes, err := sonic.Marshal(content); err == nil {
+		var blocks []AnthropicContentBlock
+		if err := sonic.Unmarshal(jsonBytes, &blocks); err == nil {
+			return blocks
+		}
+	}
+
+	return []AnthropicContentBlock{}
 }
