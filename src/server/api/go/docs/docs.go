@@ -732,7 +732,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get messages from session. Optionally convert to specific format (openai, langchain).",
+                "description": "Get messages from session. Default format is openai. Can convert to acontext (original), langchain, or anthropic format.",
                 "consumes": [
                     "application/json"
                 ],
@@ -772,11 +772,13 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
+                            "acontext",
                             "openai",
-                            "langchain"
+                            "langchain",
+                            "anthropic"
                         ],
                         "type": "string",
-                        "description": "Format to convert messages to: openai, langchain. If not provided, returns original format.",
+                        "description": "Format to convert messages to: acontext (original), openai (default), langchain, anthropic.",
                         "name": "format",
                         "in": "query"
                     }
