@@ -9,7 +9,6 @@ import (
 	"github.com/memodb-io/Acontext/internal/modules/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tmc/langchaingo/llms"
 )
 
 // Helper functions shared across all tests
@@ -87,19 +86,13 @@ func TestValidateFormat(t *testing.T) {
 			name:      "acontext format",
 			format:    "acontext",
 			wantErr:   false,
-			wantValue: FormatNone,
+			wantValue: FormatAcontext,
 		},
 		{
 			name:      "openai format",
 			format:    "openai",
 			wantErr:   false,
 			wantValue: FormatOpenAI,
-		},
-		{
-			name:      "langchain format",
-			format:    "langchain",
-			wantErr:   false,
-			wantValue: FormatLangChain,
 		},
 		{
 			name:      "anthropic format",
@@ -142,15 +135,11 @@ func TestConvertMessages(t *testing.T) {
 	}{
 		{
 			name:   "no conversion",
-			format: FormatNone,
+			format: FormatAcontext,
 		},
 		{
 			name:   "openai conversion",
 			format: FormatOpenAI,
-		},
-		{
-			name:   "langchain conversion",
-			format: FormatLangChain,
 		},
 		{
 			name:   "anthropic conversion",
@@ -169,14 +158,11 @@ func TestConvertMessages(t *testing.T) {
 			assert.NotNil(t, result)
 
 			switch tt.format {
-			case FormatNone:
+			case FormatAcontext:
 				_, ok := result.([]model.Message)
 				assert.True(t, ok)
 			case FormatOpenAI:
 				_, ok := result.([]OpenAIMessage)
-				assert.True(t, ok)
-			case FormatLangChain:
-				_, ok := result.([]llms.ChatMessage)
 				assert.True(t, ok)
 			case FormatAnthropic:
 				_, ok := result.([]AnthropicMessage)
@@ -227,7 +213,7 @@ func TestGetConvertedMessagesOutput_NoneFormat(t *testing.T) {
 
 	result, err := GetConvertedMessagesOutput(
 		messages,
-		FormatNone,
+		FormatAcontext,
 		publicURLs,
 		"",
 		false,

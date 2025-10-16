@@ -112,7 +112,6 @@ definitions:
         enum:
         - acontext
         - openai
-        - langchain
         - anthropic
         example: openai
         type: string
@@ -125,8 +124,6 @@ definitions:
         - user
         - assistant
         - system
-        - tool
-        - function
         example: user
         type: string
     required:
@@ -433,6 +430,7 @@ definitions:
         - video
         - file
         - tool-call
+        - tool-use
         - tool-result
         - data
         type: string
@@ -891,7 +889,7 @@ paths:
       consumes:
       - application/json
       description: Get messages from session. Default format is openai. Can convert
-        to acontext (original), langchain, or anthropic format.
+        to acontext (original) or anthropic format.
       parameters:
       - description: Session ID
         format: uuid
@@ -913,11 +911,10 @@ paths:
         name: with_asset_public_url
         type: string
       - description: 'Format to convert messages to: acontext (original), openai (default),
-          langchain, anthropic.'
+          anthropic.'
         enum:
         - acontext
         - openai
-        - langchain
         - anthropic
         in: query
         name: format

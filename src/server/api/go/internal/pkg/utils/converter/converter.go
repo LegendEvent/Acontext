@@ -11,9 +11,8 @@ import (
 type MessageFormat string
 
 const (
-	FormatNone      MessageFormat = "acontext"
+	FormatAcontext  MessageFormat = "acontext"
 	FormatOpenAI    MessageFormat = "openai"
-	FormatLangChain MessageFormat = "langchain"
 	FormatAnthropic MessageFormat = "anthropic"
 )
 
@@ -31,7 +30,7 @@ type MessageConverter interface {
 
 // ConvertMessages converts messages to the specified format
 func ConvertMessages(input ConvertMessagesInput) (interface{}, error) {
-	if input.Format == FormatNone || input.Format == "" {
+	if input.Format == FormatAcontext || input.Format == "" {
 		return input.Messages, nil
 	}
 
@@ -39,8 +38,6 @@ func ConvertMessages(input ConvertMessagesInput) (interface{}, error) {
 	switch input.Format {
 	case FormatOpenAI:
 		converter = &OpenAIConverter{}
-	case FormatLangChain:
-		converter = &LangChainConverter{}
 	case FormatAnthropic:
 		converter = &AnthropicConverter{}
 	default:
@@ -54,10 +51,10 @@ func ConvertMessages(input ConvertMessagesInput) (interface{}, error) {
 func ValidateFormat(format string) (MessageFormat, error) {
 	mf := MessageFormat(format)
 	switch mf {
-	case FormatNone, FormatOpenAI, FormatLangChain, FormatAnthropic:
+	case FormatAcontext, FormatOpenAI, FormatAnthropic:
 		return mf, nil
 	default:
-		return "", fmt.Errorf("invalid format: %s, supported formats: acontext, openai, langchain, anthropic", format)
+		return "", fmt.Errorf("invalid format: %s, supported formats: acontext, openai, anthropic", format)
 	}
 }
 
@@ -88,7 +85,7 @@ func GetConvertedMessagesOutput(
 	}
 
 	// Include public_urls only if format is None (original format)
-	if format == FormatNone && len(publicURLs) > 0 {
+	if format == FormatAcontext && len(publicURLs) > 0 {
 		result["public_urls"] = publicURLs
 	}
 

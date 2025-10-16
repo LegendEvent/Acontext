@@ -15,7 +15,7 @@ func TestGetNormalizer(t *testing.T) {
 	}{
 		{
 			name:    "None format returns NoOpNormalizer",
-			format:  FormatNone,
+			format:  FormatAcontext,
 			wantErr: false,
 		},
 		{
@@ -26,11 +26,6 @@ func TestGetNormalizer(t *testing.T) {
 		{
 			name:    "Anthropic format returns AnthropicNormalizer",
 			format:  FormatAnthropic,
-			wantErr: false,
-		},
-		{
-			name:    "LangChain format returns LangChainNormalizer",
-			format:  FormatLangChain,
 			wantErr: false,
 		},
 		{
@@ -116,6 +111,45 @@ func TestOpenAINormalizer_Normalize(t *testing.T) {
 			checkPartsMeta: true,
 		},
 		{
+			name: "tool role converts to user",
+			role: "tool",
+			parts: []service.PartIn{
+				{
+					Type: "tool-result",
+					Meta: map[string]interface{}{
+						"tool_call_id": "call_123",
+						"result":       "Sunny, 72°F",
+					},
+				},
+			},
+			wantRole: "user",
+			wantErr:  false,
+		},
+		{
+			name: "function role converts to user",
+			role: "function",
+			parts: []service.PartIn{
+				{
+					Type: "tool-result",
+					Meta: map[string]interface{}{
+						"tool_call_id": "call_456",
+						"result":       "Function result",
+					},
+				},
+			},
+			wantRole: "user",
+			wantErr:  false,
+		},
+		{
+			name: "system role stays as system",
+			role: "system",
+			parts: []service.PartIn{
+				{Type: "text", Text: "You are a helpful assistant"},
+			},
+			wantRole: "system",
+			wantErr:  false,
+		},
+		{
 			name: "invalid role",
 			role: "invalid_role",
 			parts: []service.PartIn{
@@ -177,7 +211,7 @@ func TestAnthropicNormalizer_Normalize(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "tool_use with name and input fields gets normalized",
+			name: "tool-call with name and input fields gets normalized",
 			role: "assistant",
 			parts: []service.PartIn{
 				{
@@ -186,6 +220,23 @@ func TestAnthropicNormalizer_Normalize(t *testing.T) {
 						"id":    "toolu_123",
 						"name":  "get_weather",
 						"input": map[string]interface{}{"city": "SF"},
+					},
+				},
+			},
+			wantRole:       "assistant",
+			wantErr:        false,
+			checkPartsMeta: true,
+		},
+		{
+			name: "tool-use type converts to tool-call",
+			role: "assistant",
+			parts: []service.PartIn{
+				{
+					Type: "tool-use",
+					Meta: map[string]interface{}{
+						"id":    "toolu_456",
+						"name":  "search",
+						"input": map[string]interface{}{"query": "golang"},
 					},
 				},
 			},
@@ -244,82 +295,16 @@ func TestAnthropicNormalizer_Normalize(t *testing.T) {
 						// and 'input' was converted to 'arguments'
 						assert.Contains(t, normalizedParts[0].Meta, "tool_name")
 						assert.Contains(t, normalizedParts[0].Meta, "arguments")
+
+						// If original part was tool-use, verify type conversion
+						if tt.parts[0].Type == "tool-use" {
+							assert.Equal(t, "tool-call", normalizedParts[0].Type)
+						}
 					case "tool-result":
 						// Check that 'tool_use_id' was converted to 'tool_call_id'
 						assert.Contains(t, normalizedParts[0].Meta, "tool_call_id")
 					}
 				}
-			}
-		})
-	}
-}
-
-func TestLangChainNormalizer_Normalize(t *testing.T) {
-	normalizer := &LangChainNormalizer{}
-
-	tests := []struct {
-		name     string
-		role     string
-		parts    []service.PartIn
-		wantRole string
-		wantErr  bool
-	}{
-		{
-			name: "human role converts to user",
-			role: "human",
-			parts: []service.PartIn{
-				{Type: "text", Text: "Hello"},
-			},
-			wantRole: "user",
-			wantErr:  false,
-		},
-		{
-			name: "ai role converts to assistant",
-			role: "ai",
-			parts: []service.PartIn{
-				{Type: "text", Text: "Hi there"},
-			},
-			wantRole: "assistant",
-			wantErr:  false,
-		},
-		{
-			name: "user role stays as user",
-			role: "user",
-			parts: []service.PartIn{
-				{Type: "text", Text: "Hello"},
-			},
-			wantRole: "user",
-			wantErr:  false,
-		},
-		{
-			name: "system role stays as system",
-			role: "system",
-			parts: []service.PartIn{
-				{Type: "text", Text: "You are helpful"},
-			},
-			wantRole: "system",
-			wantErr:  false,
-		},
-		{
-			name: "invalid role",
-			role: "invalid_role",
-			parts: []service.PartIn{
-				{Type: "text", Text: "Hello"},
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			normalizedRole, normalizedParts, err := normalizer.Normalize(tt.role, tt.parts)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.wantRole, normalizedRole)
-				assert.Equal(t, tt.parts, normalizedParts)
 			}
 		})
 	}

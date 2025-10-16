@@ -56,16 +56,25 @@ func (c *OpenAIConverter) Convert(messages []model.Message, publicURLs map[strin
 	result := make([]OpenAIMessage, 0, len(messages))
 
 	for _, msg := range messages {
-		openaiMsg := OpenAIMessage{
-			Role: c.convertRole(msg.Role),
-		}
+		openaiMsg := OpenAIMessage{}
 
-		// Convert parts to content
-		if len(msg.Parts) > 0 {
-			content, toolCalls := c.convertParts(msg.Parts, publicURLs)
-			openaiMsg.Content = content
-			if len(toolCalls) > 0 {
-				openaiMsg.ToolCalls = toolCalls
+		// Special handling: if user role contains only tool-result parts,
+		// convert to OpenAI's tool role
+		if msg.Role == "user" && c.isToolResultOnly(msg.Parts) {
+			openaiMsg.Role = "tool"
+			openaiMsg.ToolCallID = c.extractToolCallID(msg.Parts)
+			openaiMsg.Content = c.extractToolResultContent(msg.Parts)
+		} else {
+			// Normal message conversion
+			openaiMsg.Role = c.convertRole(msg.Role)
+
+			// Convert parts to content
+			if len(msg.Parts) > 0 {
+				content, toolCalls := c.convertParts(msg.Parts, publicURLs)
+				openaiMsg.Content = content
+				if len(toolCalls) > 0 {
+					openaiMsg.ToolCalls = toolCalls
+				}
 			}
 		}
 
@@ -201,6 +210,56 @@ func (c *OpenAIConverter) getAssetURL(asset *model.Asset, publicURLs map[string]
 	}
 	if pubURL, ok := publicURLs[asset.SHA256]; ok {
 		return pubURL.URL
+	}
+	return ""
+}
+
+// isToolResultOnly checks if the message contains only tool-result parts
+func (c *OpenAIConverter) isToolResultOnly(parts []model.Part) bool {
+	if len(parts) == 0 {
+		return false
+	}
+	for _, part := range parts {
+		if part.Type != "tool-result" {
+			return false
+		}
+	}
+	return true
+}
+
+// extractToolCallID extracts the tool_call_id from tool-result parts
+func (c *OpenAIConverter) extractToolCallID(parts []model.Part) string {
+	for _, part := range parts {
+		if part.Type == "tool-result" && part.Meta != nil {
+			if id, ok := part.Meta["tool_call_id"].(string); ok {
+				return id
+			}
+		}
+	}
+	return ""
+}
+
+// extractToolResultContent extracts the content from tool-result parts
+func (c *OpenAIConverter) extractToolResultContent(parts []model.Part) string {
+	for _, part := range parts {
+		if part.Type == "tool-result" {
+			// First try to get text
+			if part.Text != "" {
+				return part.Text
+			}
+			// Then try to get result from meta
+			if part.Meta != nil {
+				if result, ok := part.Meta["result"]; ok {
+					if str, ok := result.(string); ok {
+						return str
+					}
+					// If not a string, serialize to JSON
+					if jsonBytes, err := sonic.Marshal(result); err == nil {
+						return string(jsonBytes)
+					}
+				}
+			}
+		}
 	}
 	return ""
 }

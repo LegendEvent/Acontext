@@ -732,7 +732,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get messages from session. Default format is openai. Can convert to acontext (original), langchain, or anthropic format.",
+                "description": "Get messages from session. Default format is openai. Can convert to acontext (original) or anthropic format.",
                 "consumes": [
                     "application/json"
                 ],
@@ -774,11 +774,10 @@ const docTemplate = `{
                         "enum": [
                             "acontext",
                             "openai",
-                            "langchain",
                             "anthropic"
                         ],
                         "type": "string",
-                        "description": "Format to convert messages to: acontext (original), openai (default), langchain, anthropic.",
+                        "description": "Format to convert messages to: acontext (original), openai (default), anthropic.",
                         "name": "format",
                         "in": "query"
                     }
@@ -2190,7 +2189,6 @@ const docTemplate = `{
                     "enum": [
                         "acontext",
                         "openai",
-                        "langchain",
                         "anthropic"
                     ],
                     "example": "openai"
@@ -2206,9 +2204,7 @@ const docTemplate = `{
                     "enum": [
                         "user",
                         "assistant",
-                        "system",
-                        "tool",
-                        "function"
+                        "system"
                     ],
                     "example": "user"
                 }
@@ -2680,6 +2676,7 @@ const docTemplate = `{
                         "video",
                         "file",
                         "tool-call",
+                        "tool-use",
                         "tool-result",
                         "data"
                     ]
