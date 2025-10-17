@@ -13,14 +13,15 @@ import { Input } from "@/components/ui/input";
 import {
   ChevronRight,
   FileText,
-  Book,
-  BookOpen,
+  Folder,
+  FolderOpen,
   Loader2,
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getSpaces,
+  getFolders,
   getPages,
   getBlocks,
 } from "@/api/models/space";
@@ -30,7 +31,7 @@ import { BlockNoteEditor } from "@/components/blocknote-editor";
 interface TreeNode {
   id: string;
   name: string;
-  type: "page" | "block";
+  type: "folder" | "page" | "block";
   blockType?: string;
   children?: TreeNode[];
   isLoaded?: boolean;
@@ -43,8 +44,17 @@ interface NodeProps extends NodeRendererProps<TreeNode> {
 
 function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
   const indent = node.level * 12;
-  const isFolder = node.data.type === "page";
+  const isFolder = node.data.type === "folder";
+  const isPage = node.data.type === "page";
   const isLoading = loadingNodes.has(node.id);
+
+  const handleClick = () => {
+    if (isFolder) {
+      node.toggle();
+    } else if (isPage) {
+      node.select();
+    }
+  };
 
   return (
     <div
@@ -55,13 +65,7 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
         "hover:bg-accent hover:text-accent-foreground",
         node.isSelected && "bg-accent text-accent-foreground"
       )}
-      onClick={() => {
-        if (isFolder) {
-          node.toggle();
-        } else {
-          node.select();
-        }
-      }}
+      onClick={handleClick}
     >
       <div
         style={{ marginLeft: `${indent}px` }}
@@ -80,10 +84,15 @@ function Node({ node, style, dragHandle, loadingNodes }: NodeProps) {
               />
             )}
             {node.isOpen ? (
-              <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <FolderOpen className="h-4 w-4 shrink-0 text-blue-500" />
             ) : (
-              <Book className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <Folder className="h-4 w-4 shrink-0 text-blue-500" />
             )}
+          </>
+        ) : isPage ? (
+          <>
+            <span className="w-4" />
+            <FileText className="h-4 w-4 shrink-0 text-green-500" />
           </>
         ) : (
           <>
@@ -151,24 +160,43 @@ export default function PagesPage() {
 
     try {
       setIsInitialLoading(true);
-      const res = await getPages(space.id);
-      if (res.code !== 0) {
-        console.error(res.message);
+
+      // Load root-level folders
+      const foldersRes = await getFolders(space.id);
+      if (foldersRes.code !== 0) {
+        console.error(foldersRes.message);
         return;
       }
 
-      const pages: TreeNode[] = (res.data || []).map((block) => ({
+      // Load root-level pages (pages without parent)
+      const pagesRes = await getPages(space.id);
+      if (pagesRes.code !== 0) {
+        console.error(pagesRes.message);
+        return;
+      }
+
+      const folders: TreeNode[] = (foldersRes.data || []).map((block) => ({
         id: block.id,
-        name: block.title || "Untitled",
+        name: block.title || "Untitled Folder",
+        type: "folder" as const,
+        blockType: block.type,
+        isLoaded: false,
+        blockData: block,
+      }));
+
+      const pages: TreeNode[] = (pagesRes.data || []).map((block) => ({
+        id: block.id,
+        name: block.title || "Untitled Page",
         type: "page" as const,
         blockType: block.type,
         isLoaded: false,
         blockData: block,
       }));
 
-      setTreeData(pages);
+      // Folders first, then pages
+      setTreeData([...folders, ...pages]);
     } catch (error) {
-      console.error("Failed to load pages:", error);
+      console.error("Failed to load folders and pages:", error);
     } finally {
       setIsInitialLoading(false);
     }
@@ -176,28 +204,47 @@ export default function PagesPage() {
 
   const handleToggle = async (nodeId: string) => {
     const node = treeRef.current?.get(nodeId);
-    if (!node || node.data.type !== "page" || !selectedSpace) return;
+    if (!node || node.data.type !== "folder" || !selectedSpace) return;
 
     if (node.data.isLoaded) return;
 
     setLoadingNodes((prev) => new Set(prev).add(nodeId));
 
     try {
-      // Load children pages using parent_id parameter
-      const childrenRes = await getPages(selectedSpace.id, node.data.id);
-      if (childrenRes.code !== 0) {
-        console.error(childrenRes.message);
+      // Load child folders
+      const foldersRes = await getFolders(selectedSpace.id, node.data.id);
+      if (foldersRes.code !== 0) {
+        console.error(foldersRes.message);
         return;
       }
 
-      const children: TreeNode[] = (childrenRes.data || []).map((block: Block) => ({
+      // Load child pages
+      const pagesRes = await getPages(selectedSpace.id, node.data.id);
+      if (pagesRes.code !== 0) {
+        console.error(pagesRes.message);
+        return;
+      }
+
+      const childFolders: TreeNode[] = (foldersRes.data || []).map((block: Block) => ({
         id: block.id,
-        name: block.title || "Untitled",
-        type: block.type === "page" ? "page" : "block",
+        name: block.title || "Untitled Folder",
+        type: "folder" as const,
         blockType: block.type,
         isLoaded: false,
         blockData: block,
       }));
+
+      const childPages: TreeNode[] = (pagesRes.data || []).map((block: Block) => ({
+        id: block.id,
+        name: block.title || "Untitled Page",
+        type: "page" as const,
+        blockType: block.type,
+        isLoaded: false,
+        blockData: block,
+      }));
+
+      // Folders first, then pages
+      const children = [...childFolders, ...childPages];
 
       setTreeData((prevData) => {
         const updateNode = (nodes: TreeNode[]): TreeNode[] => {
@@ -346,6 +393,9 @@ export default function PagesPage() {
           <div className="h-full flex flex-col px-4">
             <div className="mb-4">
               <h2 className="text-lg font-semibold">{t("pagesTitle")}</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Folders & Pages
+              </p>
             </div>
 
             <div className="flex-1 overflow-auto">
