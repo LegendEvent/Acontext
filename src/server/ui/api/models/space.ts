@@ -141,6 +141,78 @@ export const sendMessage = async (
 
 // Page & Block APIs
 
+// Folder APIs
+export const getFolders = async (
+  spaceId: string,
+  parentId?: string
+): Promise<Res<Block[]>> => {
+  const params = parentId
+    ? new URLSearchParams({ parent_id: parentId })
+    : undefined;
+  const queryString = params ? `?${params.toString()}` : "";
+  return await service.get(`/api/space/${spaceId}/folder${queryString}`);
+};
+
+export const createFolder = async (
+  spaceId: string,
+  data: {
+    parent_id?: string;
+    title?: string;
+    props?: Record<string, unknown>;
+  }
+): Promise<Res<Block>> => {
+  return await service.post(`/api/space/${spaceId}/folder`, data);
+};
+
+export const deleteFolder = async (
+  spaceId: string,
+  folderId: string
+): Promise<Res<null>> => {
+  return await service.delete(`/api/space/${spaceId}/folder/${folderId}`);
+};
+
+export const getFolderProperties = async (
+  spaceId: string,
+  folderId: string
+): Promise<Res<Block>> => {
+  return await service.get(`/api/space/${spaceId}/folder/${folderId}/properties`);
+};
+
+export const updateFolderProperties = async (
+  spaceId: string,
+  folderId: string,
+  data: {
+    title?: string;
+    props?: Record<string, unknown>;
+  }
+): Promise<Res<null>> => {
+  return await service.put(
+    `/api/space/${spaceId}/folder/${folderId}/properties`,
+    data
+  );
+};
+
+export const moveFolder = async (
+  spaceId: string,
+  folderId: string,
+  data: {
+    parent_id?: string | null;
+    sort?: number;
+  }
+): Promise<Res<null>> => {
+  return await service.put(`/api/space/${spaceId}/folder/${folderId}/move`, data);
+};
+
+export const updateFolderSort = async (
+  spaceId: string,
+  folderId: string,
+  sort: number
+): Promise<Res<null>> => {
+  return await service.put(`/api/space/${spaceId}/folder/${folderId}/sort`, {
+    sort,
+  });
+};
+
 // Page APIs
 export const getPages = async (
   spaceId: string,

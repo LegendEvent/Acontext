@@ -1487,6 +1487,390 @@ const docTemplate = `{
                 }
             }
         },
+        "/space/{space_id}/folder": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "List folders in a space, optionally filtered by parent_id (use parent_id query parameter to get children of a specific folder, or omit it to get top-level folders where parent_id is null)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "List folders",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Parent ID",
+                        "name": "parent_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Block"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new folder in the space",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "Create folder",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "CreateFolder payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.CreateFolderReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Block"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/space/{space_id}/folder/{folder_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a folder by its ID in the space",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "Delete folder",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Folder ID",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/space/{space_id}/folder/{folder_id}/move": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Move folder by updating its parent_id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "Move folder (change parent_id)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Folder ID",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MoveFolder payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.MoveFolderReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/space/{space_id}/folder/{folder_id}/properties": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get folder properties by folder ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "Get folder properties",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Folder ID",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Block"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update folder title and properties",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "Update folder properties",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Folder ID",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "UpdateFolderProperties payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateFolderPropertiesReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/space/{space_id}/folder/{folder_id}/sort": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update folder sort value",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "folder"
+                ],
+                "summary": "Update folder sort",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Space ID",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Folder ID",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "UpdateFolderSort payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateFolderSortReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/space/{space_id}/page": {
             "get": {
                 "security": [
@@ -2053,6 +2437,21 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.CreateFolderReq": {
+            "type": "object",
+            "properties": {
+                "parent_id": {
+                    "type": "string"
+                },
+                "props": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "handler.CreatePageReq": {
             "type": "object",
             "properties": {
@@ -2166,6 +2565,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.MoveFolderReq": {
+            "type": "object",
+            "properties": {
+                "parent_id": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                }
+            }
+        },
         "handler.MovePageReq": {
             "type": "object",
             "properties": {
@@ -2235,6 +2645,26 @@ const docTemplate = `{
             "properties": {
                 "file": {
                     "$ref": "#/definitions/model.File"
+                }
+            }
+        },
+        "handler.UpdateFolderPropertiesReq": {
+            "type": "object",
+            "properties": {
+                "props": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.UpdateFolderSortReq": {
+            "type": "object",
+            "properties": {
+                "sort": {
+                    "type": "integer"
                 }
             }
         },
