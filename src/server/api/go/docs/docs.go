@@ -809,7 +809,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field. The format parameter indicates the format of the input message (default: openai, same as GET).",
+                "description": "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field. The format parameter indicates the format of the input message (default: openai, same as GET). The parts field structure varies based on the format: for openai, use OpenAI message content format; for anthropic, use Anthropic content blocks format; for acontext (internal), use the internal Part format.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -2603,19 +2603,9 @@ const docTemplate = `{
                     ],
                     "example": "openai"
                 },
-                "parts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/service.PartIn"
-                    }
-                },
+                "parts": {},
                 "role": {
                     "type": "string",
-                    "enum": [
-                        "user",
-                        "assistant",
-                        "system"
-                    ],
                     "example": "user"
                 }
             }
@@ -3074,42 +3064,6 @@ const docTemplate = `{
                     "additionalProperties": {
                         "$ref": "#/definitions/service.PublicURL"
                     }
-                }
-            }
-        },
-        "service.PartIn": {
-            "type": "object",
-            "required": [
-                "type"
-            ],
-            "properties": {
-                "file_field": {
-                    "description": "File field name in the form",
-                    "type": "string"
-                },
-                "meta": {
-                    "description": "[Optional] metadata",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "text": {
-                    "description": "Text sharding",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "\"text\" | \"image\" | ...",
-                    "type": "string",
-                    "enum": [
-                        "text",
-                        "image",
-                        "audio",
-                        "video",
-                        "file",
-                        "tool-call",
-                        "tool-use",
-                        "tool-result",
-                        "data"
-                    ]
                 }
             }
         },

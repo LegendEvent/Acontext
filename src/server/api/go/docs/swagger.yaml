@@ -132,15 +132,8 @@ definitions:
         - anthropic
         example: openai
         type: string
-      parts:
-        items:
-          $ref: '#/definitions/service.PartIn'
-        type: array
+      parts: {}
       role:
-        enum:
-        - user
-        - assistant
-        - system
         example: user
         type: string
     required:
@@ -438,34 +431,6 @@ definitions:
           $ref: '#/definitions/service.PublicURL'
         description: file_name -> url
         type: object
-    type: object
-  service.PartIn:
-    properties:
-      file_field:
-        description: File field name in the form
-        type: string
-      meta:
-        additionalProperties: true
-        description: '[Optional] metadata'
-        type: object
-      text:
-        description: Text sharding
-        type: string
-      type:
-        description: '"text" | "image" | ...'
-        enum:
-        - text
-        - image
-        - audio
-        - video
-        - file
-        - tool-call
-        - tool-use
-        - tool-result
-        - data
-        type: string
-    required:
-    - type
     type: object
   service.PublicURL:
     properties:
@@ -972,7 +937,10 @@ paths:
       - multipart/form-data
       description: 'Supports JSON and multipart/form-data. In multipart mode: the
         payload is a JSON string placed in a form field. The format parameter indicates
-        the format of the input message (default: openai, same as GET).'
+        the format of the input message (default: openai, same as GET). The parts
+        field structure varies based on the format: for openai, use OpenAI message
+        content format; for anthropic, use Anthropic content blocks format; for acontext
+        (internal), use the internal Part format.'
       parameters:
       - description: Session ID
         format: uuid

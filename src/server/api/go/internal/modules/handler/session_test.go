@@ -550,19 +550,21 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 	tests := []struct {
 		name           string
 		sessionIDParam string
-		requestBody    SendMessageReq
+		requestBody    map[string]interface{} // Use map to support different part formats
 		setup          func(*MockSessionService)
 		expectedStatus int
 	}{
+		// Acontext format tests
 		{
-			name:           "successful text message sending",
+			name:           "acontext format - successful text message",
 			sessionIDParam: sessionID.String(),
-			requestBody: SendMessageReq{
-				Role: "user",
-				Parts: []service.PartIn{
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "acontext",
+				"parts": []map[string]interface{}{
 					{
-						Type: "text",
-						Text: "Hello, world!",
+						"type": "text",
+						"text": "Hello, world!",
 					},
 				},
 			},
@@ -579,24 +581,429 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 		},
 		{
-			name:           "invalid session ID",
-			sessionIDParam: "invalid-uuid",
-			requestBody: SendMessageReq{
-				Role: "user",
-				Parts: []service.PartIn{
-					{Type: "text", Text: "Hello"},
+			name:           "acontext format - assistant with tool-call",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "acontext",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool-call",
+						"meta": map[string]interface{}{
+							"id":        "call_123",
+							"tool_name": "get_weather",
+							"arguments": map[string]interface{}{"city": "SF"},
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "assistant",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "assistant"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "acontext format - invalid role",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "invalid_role",
+				"format": "acontext",
+				"parts": []map[string]interface{}{
+					{"type": "text", "text": "Hello"},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+
+		// OpenAI format tests
+		{
+			name:           "openai format - successful text message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": "Hello from OpenAI format!",
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "openai format - image_url message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type": "image_url",
+						"image_url": map[string]interface{}{
+							"url":    "https://example.com/image.jpg",
+							"detail": "high",
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "openai format - tool_call message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool_call",
+						"id":   "call_abc123",
+						"function": map[string]interface{}{
+							"name":      "get_weather",
+							"arguments": `{"city":"San Francisco"}`,
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "assistant",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "assistant"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "openai format - tool_result message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "tool",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type":         "tool_result",
+						"tool_call_id": "call_abc123",
+						"output":       "Sunny, 72°F",
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user", // tool role converts to user
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "openai format - empty text should fail",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": "",
+					},
 				},
 			},
 			setup:          func(svc *MockSessionService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "invalid role",
+			name:           "openai format - tool_call without ID should fail",
 			sessionIDParam: sessionID.String(),
-			requestBody: SendMessageReq{
-				Role: "invalid_role",
-				Parts: []service.PartIn{
-					{Type: "text", Text: "Hello"},
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool_call",
+						"function": map[string]interface{}{
+							"name":      "get_weather",
+							"arguments": `{"city":"SF"}`,
+						},
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+
+		// Anthropic format tests
+		{
+			name:           "anthropic format - successful text message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": "Hello from Anthropic format!",
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "anthropic format - image message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "image",
+						"source": map[string]interface{}{
+							"type":       "base64",
+							"media_type": "image/jpeg",
+							"data":       "base64data...",
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "anthropic format - tool_use message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool_use",
+						"id":   "toolu_abc123",
+						"name": "get_weather",
+						"input": map[string]interface{}{
+							"city": "San Francisco",
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "assistant",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "assistant"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "anthropic format - tool_result message",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type":        "tool_result",
+						"tool_use_id": "toolu_abc123",
+						"content":     "Sunny, 72°F",
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "anthropic format - tool_result with error flag",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type":        "tool_result",
+						"tool_use_id": "toolu_abc123",
+						"content":     "Error: Invalid input",
+						"is_error":    true,
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "anthropic format - system role should fail",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "system",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": "You are a helpful assistant",
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "anthropic format - empty text should fail",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": "",
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "anthropic format - tool_use without ID should fail",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool_use",
+						"name": "get_weather",
+						"input": map[string]interface{}{
+							"city": "SF",
+						},
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+
+		// Default format (OpenAI) tests
+		{
+			name:           "default format (openai) - text message without format specified",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role": "user",
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": "Hello, default format!",
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+
+		// Error cases
+		{
+			name:           "invalid session ID",
+			sessionIDParam: "invalid-uuid",
+			requestBody: map[string]interface{}{
+				"role": "user",
+				"parts": []map[string]interface{}{
+					{"type": "text", "text": "Hello"},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid format",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "invalid_format",
+				"parts": []map[string]interface{}{
+					{"type": "text", "text": "Hello"},
 				},
 			},
 			setup:          func(svc *MockSessionService) {},
@@ -605,10 +1012,10 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 		{
 			name:           "service layer error",
 			sessionIDParam: sessionID.String(),
-			requestBody: SendMessageReq{
-				Role: "user",
-				Parts: []service.PartIn{
-					{Type: "text", Text: "Hello"},
+			requestBody: map[string]interface{}{
+				"role": "user",
+				"parts": []map[string]interface{}{
+					{"type": "text", "text": "Hello"},
 				},
 			},
 			setup: func(svc *MockSessionService) {
