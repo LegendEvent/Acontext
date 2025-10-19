@@ -20,7 +20,7 @@ import { NavMain } from "@/components/nav-main";
 
 import Image from "next/image";
 import Link from "next/link";
-import { Folder, Database } from "lucide-react";
+import { Folder, Database, MessageSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
 
@@ -40,6 +40,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: t("space"),
         url: "/space",
         icon: Database,
+      },
+      {
+        title: t("session"),
+        url: "/session",
+        icon: MessageSquare,
       },
     ] as {
       title: string;

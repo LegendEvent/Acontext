@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Tree, NodeRendererProps, TreeApi } from "react-arborist";
 import { useTranslations } from "next-intl";
 import {
@@ -31,10 +32,10 @@ import {
   Trash2,
   FilePlus,
   FolderPlus,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getSpaces,
   getFolders,
   getPages,
   getBlocks,
@@ -46,8 +47,9 @@ import {
   deleteBlock,
   updateBlockProperties,
   updateBlockSort,
+  getSpaceConfigs,
 } from "@/api/models/space";
-import { Space, Block } from "@/types";
+import { Block } from "@/types";
 import { BlockNoteEditor } from "@/components/blocknote-editor";
 
 interface TreeNode {
@@ -184,19 +186,16 @@ function Node({
 
 export default function PagesPage() {
   const t = useTranslations("pages");
+  const params = useParams();
+  const router = useRouter();
+  const spaceId = params.spaceId as string;
 
   const treeRef = useRef<TreeApi<TreeNode>>(null);
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
-
-  // Space related states
-  const [spaces, setSpaces] = useState<Space[]>([]);
-  const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
-  const [isLoadingSpaces, setIsLoadingSpaces] = useState(true);
-  const [isRefreshingSpaces, setIsRefreshingSpaces] = useState(false);
-  const [spaceFilterText, setSpaceFilterText] = useState("");
+  const [spaceInfo, setSpaceInfo] = useState<string>("");
 
   // Blocks for BlockNote editor
   const [contentBlocks, setContentBlocks] = useState<Block[]>([]);
@@ -214,48 +213,33 @@ export default function PagesPage() {
   const [createTitle, setCreateTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const filteredSpaces = spaces.filter((space) =>
-    space.id.toLowerCase().includes(spaceFilterText.toLowerCase())
-  );
-
-  const loadSpaces = async () => {
+  const loadSpaceInfo = async () => {
     try {
-      setIsLoadingSpaces(true);
-      const res = await getSpaces();
-      if (res.code !== 0) {
-        console.error(res.message);
-        return;
+      const res = await getSpaceConfigs(spaceId);
+      if (res.code === 0 && res.data) {
+        setSpaceInfo(spaceId);
+      } else {
+        setSpaceInfo(spaceId);
       }
-      setSpaces(res.data || []);
     } catch (error) {
-      console.error("Failed to load spaces:", error);
-    } finally {
-      setIsLoadingSpaces(false);
+      console.error("Failed to load space info:", error);
+      setSpaceInfo(spaceId);
     }
   };
 
-  useEffect(() => {
-    loadSpaces();
-  }, []);
-
-  const handleSpaceSelect = async (space: Space) => {
-    setSelectedSpace(space);
-    setTreeData([]);
-    setSelectedNode(null);
-    setContentBlocks([]);
-
+  const loadTreeData = async () => {
     try {
       setIsInitialLoading(true);
 
       // Load root-level folders
-      const foldersRes = await getFolders(space.id);
+      const foldersRes = await getFolders(spaceId);
       if (foldersRes.code !== 0) {
         console.error(foldersRes.message);
         return;
       }
 
       // Load root-level pages (pages without parent)
-      const pagesRes = await getPages(space.id);
+      const pagesRes = await getPages(spaceId);
       if (pagesRes.code !== 0) {
         console.error(pagesRes.message);
         return;
@@ -288,9 +272,16 @@ export default function PagesPage() {
     }
   };
 
+  useEffect(() => {
+    if (spaceId) {
+      loadSpaceInfo();
+      loadTreeData();
+    }
+  }, [spaceId]);
+
   const handleToggle = async (nodeId: string) => {
     const node = treeRef.current?.get(nodeId);
-    if (!node || node.data.type !== "folder" || !selectedSpace) return;
+    if (!node || node.data.type !== "folder") return;
 
     if (node.data.isLoaded) return;
 
@@ -298,14 +289,14 @@ export default function PagesPage() {
 
     try {
       // Load child folders
-      const foldersRes = await getFolders(selectedSpace.id, node.data.id);
+      const foldersRes = await getFolders(spaceId, node.data.id);
       if (foldersRes.code !== 0) {
         console.error(foldersRes.message);
         return;
       }
 
       // Load child pages
-      const pagesRes = await getPages(selectedSpace.id, node.data.id);
+      const pagesRes = await getPages(spaceId, node.data.id);
       if (pagesRes.code !== 0) {
         console.error(pagesRes.message);
         return;
@@ -375,10 +366,10 @@ export default function PagesPage() {
     setSelectedNode(node.data);
 
     // If it's a page, load its non-page blocks for display
-    if (node.data.type === "page" && selectedSpace) {
+    if (node.data.type === "page") {
       try {
         setIsLoadingContent(true);
-        const blocksRes = await getBlocks(selectedSpace.id, node.data.id);
+        const blocksRes = await getBlocks(spaceId, node.data.id);
         if (blocksRes.code !== 0) {
           console.error(blocksRes.message);
           return;
@@ -397,19 +388,11 @@ export default function PagesPage() {
     }
   };
 
-  const handleRefreshSpaces = async () => {
-    setIsRefreshingSpaces(true);
-    await loadSpaces();
-    setIsRefreshingSpaces(false);
-  };
-
   // Reload tree data
   const reloadTreeData = async () => {
-    if (!selectedSpace) return;
-
     try {
-      const foldersRes = await getFolders(selectedSpace.id);
-      const pagesRes = await getPages(selectedSpace.id);
+      const foldersRes = await getFolders(spaceId);
+      const pagesRes = await getPages(spaceId);
 
       if (foldersRes.code !== 0 || pagesRes.code !== 0) {
         console.error(foldersRes.message || pagesRes.message);
@@ -449,14 +432,14 @@ export default function PagesPage() {
 
   // Handle delete
   const handleDelete = async () => {
-    if (!itemToDelete || !selectedSpace) return;
+    if (!itemToDelete) return;
 
     try {
       setIsDeleting(true);
 
       const deleteFunc =
         itemToDelete.type === "folder" ? deleteFolder : deletePage;
-      const res = await deleteFunc(selectedSpace.id, itemToDelete.id);
+      const res = await deleteFunc(spaceId, itemToDelete.id);
 
       if (res.code !== 0) {
         console.error(res.message);
@@ -493,7 +476,7 @@ export default function PagesPage() {
 
   // Handle create
   const handleCreate = async () => {
-    if (!selectedSpace || !createTitle.trim()) return;
+    if (!createTitle.trim()) return;
 
     try {
       setIsCreating(true);
@@ -505,7 +488,7 @@ export default function PagesPage() {
       };
 
       const createFunc = createType === "folder" ? createFolder : createPage;
-      const res = await createFunc(selectedSpace.id, data);
+      const res = await createFunc(spaceId, data);
 
       if (res.code !== 0) {
         console.error(res.message);
@@ -563,7 +546,7 @@ export default function PagesPage() {
 
   // Handle blocks change from editor
   const handleBlocksChange = async (updatedBlocks: Block[]) => {
-    if (!selectedSpace || !selectedNode) return;
+    if (!selectedNode) return;
 
     try {
       const originalBlockIds = new Set(contentBlocks.map((b) => b.id));
@@ -572,7 +555,7 @@ export default function PagesPage() {
       // Detect deleted blocks
       for (const originalBlock of contentBlocks) {
         if (!updatedBlockIds.has(originalBlock.id)) {
-          await deleteBlock(selectedSpace.id, originalBlock.id);
+          await deleteBlock(spaceId, originalBlock.id);
         }
       }
 
@@ -584,7 +567,7 @@ export default function PagesPage() {
 
         if (isNewBlock) {
           // Create new block
-          const res = await createBlock(selectedSpace.id, {
+          const res = await createBlock(spaceId, {
             parent_id: selectedNode.id,
             type: block.type,
             title: block.title,
@@ -607,7 +590,7 @@ export default function PagesPage() {
                 JSON.stringify(originalBlock.props);
 
             if (contentChanged) {
-              await updateBlockProperties(selectedSpace.id, block.id, {
+              await updateBlockProperties(spaceId, block.id, {
                 title: block.title,
                 props: block.props,
               });
@@ -615,7 +598,7 @@ export default function PagesPage() {
 
             // Check if sort order changed
             if (block.sort !== originalBlock.sort) {
-              await updateBlockSort(selectedSpace.id, block.id, block.sort);
+              await updateBlockSort(spaceId, block.id, block.sort);
             }
           }
           // Use the updated block
@@ -630,99 +613,45 @@ export default function PagesPage() {
     }
   };
 
+  const handleGoBack = () => {
+    router.push("/space");
+  };
+
   return (
     <div className="h-full bg-background p-6">
+      <div className="mb-4 flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleGoBack}
+          className="rounded-l-md rounded-r-none"
+          title={t("backToSpaces") || "Back to Spaces"}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">{t("pagesTitle") || "Pages"}</h1>
+          <p className="text-sm text-muted-foreground">
+            Space: <span className="font-mono">{spaceInfo}</span>
+          </p>
+        </div>
+      </div>
+
       <ResizablePanelGroup direction="horizontal">
-        {/* Left: Space List */}
-        <ResizablePanel defaultSize={25} minSize={15} maxSize={35}>
-          <div className="h-full flex flex-col space-y-4 pr-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{t("spaces")}</h2>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleRefreshSpaces}
-                disabled={isRefreshingSpaces || isLoadingSpaces}
-                title={t("refresh")}
-              >
-                {isRefreshingSpaces ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <Input
-              type="text"
-              placeholder={t("filterById")}
-              value={spaceFilterText}
-              onChange={(e) => setSpaceFilterText(e.target.value)}
-            />
-
-            <div className="flex-1 overflow-auto">
-              {isLoadingSpaces ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredSpaces.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-muted-foreground">
-                    {spaces.length === 0 ? t("noData") : t("noMatching")}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredSpaces.map((space) => {
-                    const isSelected = selectedSpace?.id === space.id;
-                    return (
-                      <div
-                        key={space.id}
-                        className={cn(
-                          "group relative rounded-md border p-3 cursor-pointer transition-colors hover:bg-accent",
-                          isSelected && "bg-accent border-primary"
-                        )}
-                        onClick={() => handleSpaceSelect(space)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="text-sm font-medium truncate font-mono"
-                            title={space.id}
-                          >
-                            {space.id}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(space.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-
-        {/* Center: Page Tree */}
-        <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
-          <div className="h-full flex flex-col px-4">
+        {/* Left: Page Tree */}
+        <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+          <div className="h-full flex flex-col pr-4">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold">{t("pagesTitle")}</h2>
+              <h2 className="text-lg font-semibold">
+                {t("pagesTitle") || "Folders & Pages"}
+              </h2>
               <p className="text-xs text-muted-foreground mt-1">
                 Folders & Pages
               </p>
             </div>
 
             <div className="flex-1 overflow-auto">
-              {!selectedSpace ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-muted-foreground">
-                    {t("selectSpacePrompt")}
-                  </p>
-                </div>
-              ) : isInitialLoading ? (
+              {isInitialLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -920,3 +849,4 @@ export default function PagesPage() {
     </div>
   );
 }
+

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,6 +52,7 @@ import { Session, Space } from "@/types";
 
 export default function SessionsPage() {
   const t = useTranslations("space");
+  const router = useRouter();
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [spaces, setSpaces] = useState<Space[]>([]);
@@ -250,35 +252,20 @@ export default function SessionsPage() {
     }
   };
 
+  const handleGoToMessages = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/session/${sessionId}/messages`);
+  };
+
   return (
     <div className="h-full bg-background p-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <Select
-              value={sessionSpaceFilter}
-              onValueChange={setSessionSpaceFilter}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allSpaces")}</SelectItem>
-                <SelectItem value="not-connected">{t("notConnected")}</SelectItem>
-                {spaces.map((space) => (
-                  <SelectItem key={space.id} value={space.id}>
-                    {space.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="text"
-              placeholder={t("filterById")}
-              value={sessionFilterText}
-              onChange={(e) => setSessionFilterText(e.target.value)}
-              className="max-w-sm"
-            />
+          <div>
+            <h1 className="text-2xl font-bold">{t("sessionList")}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t("sessionListDescription") || "管理所有 Session"}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -306,6 +293,33 @@ export default function SessionsPage() {
               )}
             </Button>
           </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Select
+            value={sessionSpaceFilter}
+            onValueChange={setSessionSpaceFilter}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("allSpaces")}</SelectItem>
+              <SelectItem value="not-connected">{t("notConnected")}</SelectItem>
+              {spaces.map((space) => (
+                <SelectItem key={space.id} value={space.id}>
+                  {space.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="text"
+            placeholder={t("filterById")}
+            value={sessionFilterText}
+            onChange={(e) => setSessionFilterText(e.target.value)}
+            className="max-w-sm"
+          />
         </div>
 
         <div className="rounded-md border">
@@ -355,6 +369,13 @@ export default function SessionsPage() {
                         <Button
                           variant="secondary"
                           size="sm"
+                          onClick={(e) => handleGoToMessages(session.id, e)}
+                        >
+                          {t("messages") || "Messages"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleOpenConnectDialog(session);
@@ -370,7 +391,7 @@ export default function SessionsPage() {
                             handleViewConfig(session);
                           }}
                         >
-                          {t("view")}
+                          {t("config")}
                         </Button>
                         <Button
                           variant="secondary"
@@ -577,3 +598,4 @@ export default function SessionsPage() {
     </div>
   );
 }
+

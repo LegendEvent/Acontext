@@ -6,6 +6,7 @@
   "sidebar": {
     "artifact": "文件",
     "space": "空间",
+    "session": "会话",
     "spaceList": "空间",
     "sessionList": "会话",
     "messageList": "消息",
@@ -66,6 +67,11 @@
     "spaces": "空间",
     "sessions": "会话",
     "messages": "消息",
+    "pages": "页面",
+    "spaceList": "空间列表",
+    "sessionList": "会话列表",
+    "spaceListDescription": "管理所有 Space",
+    "sessionListDescription": "管理所有 Session",
     "createSpace": "创建",
     "createSession": "创建",
     "refresh": "刷新",
@@ -89,6 +95,7 @@
     "creating": "创建中...",
     "edit": "编辑",
     "view": "查看",
+    "config": "配置",
     "cancel": "取消",
     "save": "保存",
     "saving": "保存中...",
@@ -105,6 +112,7 @@
     "allSpaces": "所有空间",
     "createSessionTitle": "创建新会话",
     "createSessionDescription": "配置新会话的设置",
+    "selectSpace": "选择空间",
     "connectToSpace": "连接到空间",
     "connectToSpaceTitle": "连接会话到空间",
     "connectToSpaceDescription": "选择一个空间来连接此会话",
@@ -129,7 +137,9 @@
     "close": "关闭",
     "mimeType": "文件类型",
     "size": "大小",
-    "preview": "预览"
+    "preview": "预览",
+    "backToSpaces": "返回空间列表",
+    "backToSessions": "返回会话列表"
   },
   "pages": {
     "spaces": "空间",
@@ -162,6 +172,7 @@
     "createPageDescription": "为新页面输入标题",
     "titlePlaceholder": "输入标题...",
     "create": "创建",
-    "creating": "创建中..."
+    "creating": "创建中...",
+    "backToSpaces": "返回空间列表"
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -35,28 +35,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, RefreshCw, Upload, X } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Upload, X, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import {
-  getSessions,
   getMessages,
   sendMessage,
   MessagePartIn,
+  getSessionConfigs,
 } from "@/api/models/space";
-import { Session, Message } from "@/types";
-import { cn } from "@/lib/utils";
+import { Message } from "@/types";
 
 const PAGE_SIZE = 10;
 
 export default function MessagesPage() {
   const t = useTranslations("space");
+  const params = useParams();
+  const router = useRouter();
+  const sessionId = params.sessionId as string;
 
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-  const [isRefreshingSessions, setIsRefreshingSessions] = useState(false);
-  const [sessionFilterText, setSessionFilterText] = useState("");
-
+  const [sessionInfo, setSessionInfo] = useState<string>("");
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isRefreshingMessages, setIsRefreshingMessages] = useState(false);
@@ -90,33 +87,27 @@ export default function MessagesPage() {
     Record<string, { url: string; expire_at: string }>
   >({});
 
-  const filteredSessions = sessions.filter((session) =>
-    session.id.toLowerCase().includes(sessionFilterText.toLowerCase())
-  );
-
   const totalPages = Math.ceil(allMessages.length / PAGE_SIZE);
   const paginatedMessages = allMessages.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
-  const loadSessions = async () => {
+  const loadSessionInfo = async () => {
     try {
-      setIsLoadingSessions(true);
-      const res = await getSessions();
-      if (res.code !== 0) {
-        console.error(res.message);
-        return;
+      const res = await getSessionConfigs(sessionId);
+      if (res.code === 0 && res.data) {
+        setSessionInfo(sessionId);
+      } else {
+        setSessionInfo(sessionId);
       }
-      setSessions(res.data || []);
     } catch (error) {
-      console.error("Failed to load sessions:", error);
-    } finally {
-      setIsLoadingSessions(false);
+      console.error("Failed to load session info:", error);
+      setSessionInfo(sessionId);
     }
   };
 
-  const loadAllMessages = async (sessionId: string) => {
+  const loadAllMessages = async () => {
     try {
       setIsLoadingMessages(true);
       const allMsgs: Message[] = [];
@@ -150,27 +141,18 @@ export default function MessagesPage() {
     }
   };
 
-  const handleRefreshSessions = async () => {
-    setIsRefreshingSessions(true);
-    await loadSessions();
-    setIsRefreshingSessions(false);
-  };
-
   const handleRefreshMessages = async () => {
-    if (!selectedSession) return;
     setIsRefreshingMessages(true);
-    await loadAllMessages(selectedSession.id);
+    await loadAllMessages();
     setIsRefreshingMessages(false);
   };
 
   useEffect(() => {
-    loadSessions();
-  }, []);
-
-  const handleSessionSelect = (session: Session) => {
-    setSelectedSession(session);
-    loadAllMessages(session.id);
-  };
+    if (sessionId) {
+      loadSessionInfo();
+      loadAllMessages();
+    }
+  }, [sessionId]);
 
   const handleOpenCreateDialog = () => {
     setNewMessageRole("user");
@@ -230,11 +212,7 @@ export default function MessagesPage() {
   };
 
   const handleSendMessage = async () => {
-    if (
-      !selectedSession ||
-      (!newMessageText.trim() && uploadedFiles.length === 0)
-    )
-      return;
+    if (!newMessageText.trim() && uploadedFiles.length === 0) return;
 
     try {
       setIsSendingMessage(true);
@@ -260,7 +238,7 @@ export default function MessagesPage() {
 
       // Send message
       const res = await sendMessage(
-        selectedSession.id,
+        sessionId,
         newMessageRole,
         parts,
         Object.keys(files).length > 0 ? files : undefined
@@ -271,7 +249,7 @@ export default function MessagesPage() {
         return;
       }
 
-      await loadAllMessages(selectedSession.id);
+      await loadAllMessages();
       setCreateDialogOpen(false);
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -280,256 +258,193 @@ export default function MessagesPage() {
     }
   };
 
+  const handleGoBack = () => {
+    router.push("/session");
+  };
+
   return (
     <div className="h-full bg-background p-6">
-      <div className="flex gap-4 h-full">
-        {/* Left: Session List */}
-        <div className="w-80 flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t("sessions")}</h2>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleRefreshSessions}
-              disabled={isRefreshingSessions || isLoadingSessions}
-              title={t("refresh")}
-            >
-              {isRefreshingSessions ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-
-          <Input
-            type="text"
-            placeholder={t("filterById")}
-            value={sessionFilterText}
-            onChange={(e) => setSessionFilterText(e.target.value)}
-          />
-
-          <div className="flex-1 overflow-auto">
-            {isLoadingSessions ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredSessions.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-sm text-muted-foreground">
-                  {sessions.length === 0 ? t("noData") : t("noMatching")}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredSessions.map((session) => {
-                  const isSelected = selectedSession?.id === session.id;
-                  return (
-                    <div
-                      key={session.id}
-                      className={cn(
-                        "group relative rounded-md border p-3 cursor-pointer transition-colors hover:bg-accent",
-                        isSelected && "bg-accent border-primary"
-                      )}
-                      onClick={() => handleSessionSelect(session)}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-sm font-medium truncate font-mono"
-                          title={session.id}
-                        >
-                          {session.id}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(session.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleGoBack}
+            className="rounded-l-md rounded-r-none"
+            title={t("backToSessions") || "Back to Sessions"}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{t("messages")}</h1>
+            <p className="text-sm text-muted-foreground">
+              Session: <span className="font-mono">{sessionInfo}</span>
+            </p>
           </div>
         </div>
 
-        {/* Right: Messages */}
-        <div className="flex-1 flex flex-col space-y-4">
-          {selectedSession ? (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-baseline gap-2">
-                  <h2 className="text-lg font-semibold">{t("messages")}</h2>
-                  <span className="text-sm text-muted-foreground">/</span>
-                  <p className="text-sm text-muted-foreground font-mono truncate">
-                    {selectedSession.id}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleOpenCreateDialog}
-                    disabled={isLoadingMessages}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t("createMessage")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleRefreshMessages}
-                    disabled={isRefreshingMessages || isLoadingMessages}
-                    title={t("refresh")}
-                  >
-                    {isRefreshingMessages ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleOpenCreateDialog}
+              disabled={isLoadingMessages}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t("createMessage")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleRefreshMessages}
+              disabled={isRefreshingMessages || isLoadingMessages}
+            >
+              {isRefreshingMessages ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t("loading")}
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {t("refresh")}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
 
-              <div className="flex-1 rounded-md border overflow-hidden flex flex-col">
-                {isLoadingMessages ? (
-                  <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : allMessages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground">
-                      {t("noData")}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1 overflow-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[200px]">
-                              {t("messageId")}
-                            </TableHead>
-                            <TableHead className="w-[100px]">
-                              {t("role")}
-                            </TableHead>
-                            <TableHead className="w-[120px]">
-                              {t("status")}
-                            </TableHead>
-                            <TableHead className="w-[180px]">
-                              {t("createdAt")}
-                            </TableHead>
-                            <TableHead className="w-[100px]">
-                              {t("actions")}
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {paginatedMessages.map((message) => (
-                            <TableRow key={message.id}>
-                              <TableCell className="font-mono text-xs">
-                                {message.id}
-                              </TableCell>
-                              <TableCell>
-                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                                  {message.role}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium">
-                                  {message.session_task_process_status}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-xs">
-                                {new Date(message.created_at).toLocaleString()}
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleOpenDetailDialog(message)
-                                  }
-                                >
-                                  {t("view")}
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    {totalPages > 1 && (
-                      <div className="border-t p-4">
-                        <Pagination>
-                          <PaginationContent>
-                            <PaginationItem>
-                              <PaginationPrevious
-                                onClick={() =>
-                                  setCurrentPage((p) => Math.max(1, p - 1))
-                                }
-                                className={
-                                  currentPage === 1
-                                    ? "pointer-events-none opacity-50"
-                                    : "cursor-pointer"
-                                }
-                              />
-                            </PaginationItem>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1)
-                              .filter(
-                                (page) =>
-                                  page === 1 ||
-                                  page === totalPages ||
-                                  Math.abs(page - currentPage) <= 1
-                              )
-                              .map((page, idx, arr) => {
-                                const showEllipsisBefore =
-                                  idx > 0 && page - arr[idx - 1] > 1;
-                                return (
-                                  <div key={page} className="flex items-center">
-                                    {showEllipsisBefore && (
-                                      <span className="px-2">...</span>
-                                    )}
-                                    <PaginationItem>
-                                      <PaginationLink
-                                        onClick={() => setCurrentPage(page)}
-                                        isActive={currentPage === page}
-                                        className="cursor-pointer"
-                                      >
-                                        {page}
-                                      </PaginationLink>
-                                    </PaginationItem>
-                                  </div>
-                                );
-                              })}
-                            <PaginationItem>
-                              <PaginationNext
-                                onClick={() =>
-                                  setCurrentPage((p) =>
-                                    Math.min(totalPages, p + 1)
-                                  )
-                                }
-                                className={
-                                  currentPage === totalPages
-                                    ? "pointer-events-none opacity-50"
-                                    : "cursor-pointer"
-                                }
-                              />
-                            </PaginationItem>
-                          </PaginationContent>
-                        </Pagination>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center rounded-md border">
+        <div className="rounded-md border overflow-hidden flex flex-col">
+          {isLoadingMessages ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : allMessages.length === 0 ? (
+            <div className="flex items-center justify-center h-64">
               <p className="text-sm text-muted-foreground">
-                {t("selectSession")}
+                {t("noData")}
               </p>
             </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[200px]">
+                        {t("messageId")}
+                      </TableHead>
+                      <TableHead className="w-[100px]">
+                        {t("role")}
+                      </TableHead>
+                      <TableHead className="w-[120px]">
+                        {t("status")}
+                      </TableHead>
+                      <TableHead className="w-[180px]">
+                        {t("createdAt")}
+                      </TableHead>
+                      <TableHead className="w-[100px]">
+                        {t("actions")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedMessages.map((message) => (
+                      <TableRow key={message.id}>
+                        <TableCell className="font-mono text-xs">
+                          {message.id}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                            {message.role}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium">
+                            {message.session_task_process_status}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {new Date(message.created_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              handleOpenDetailDialog(message)
+                            }
+                          >
+                            {t("view")}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="border-t p-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() =>
+                            setCurrentPage((p) => Math.max(1, p - 1))
+                          }
+                          className={
+                            currentPage === 1
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
+                          }
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(
+                          (page) =>
+                            page === 1 ||
+                            page === totalPages ||
+                            Math.abs(page - currentPage) <= 1
+                        )
+                        .map((page, idx, arr) => {
+                          const showEllipsisBefore =
+                            idx > 0 && page - arr[idx - 1] > 1;
+                          return (
+                            <div key={page} className="flex items-center">
+                              {showEllipsisBefore && (
+                                <span className="px-2">...</span>
+                              )}
+                              <PaginationItem>
+                                <PaginationLink
+                                  onClick={() => setCurrentPage(page)}
+                                  isActive={currentPage === page}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            </div>
+                          );
+                        })}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() =>
+                            setCurrentPage((p) =>
+                              Math.min(totalPages, p + 1)
+                            )
+                          }
+                          className={
+                            currentPage === totalPages
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -840,3 +755,4 @@ export default function MessagesPage() {
     </div>
   );
 }
+

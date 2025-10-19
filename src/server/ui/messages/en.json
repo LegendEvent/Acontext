@@ -6,6 +6,7 @@
   "sidebar": {
     "artifact": "Artifacts",
     "space": "Space",
+    "session": "Session",
     "spaceList": "Spaces",
     "sessionList": "Sessions",
     "messageList": "Messages",
@@ -66,6 +67,11 @@
     "spaces": "Spaces",
     "sessions": "Sessions",
     "messages": "Messages",
+    "pages": "Pages",
+    "spaceList": "Space List",
+    "sessionList": "Session List",
+    "spaceListDescription": "Manage all Spaces",
+    "sessionListDescription": "Manage all Sessions",
     "createSpace": "Create",
     "createSession": "Create",
     "refresh": "Refresh",
@@ -89,6 +95,7 @@
     "creating": "Creating...",
     "edit": "Edit",
     "view": "View",
+    "config": "Config",
     "cancel": "Cancel",
     "save": "Save",
     "saving": "Saving...",
@@ -105,6 +112,7 @@
     "allSpaces": "All Spaces",
     "createSessionTitle": "Create New Session",
     "createSessionDescription": "Configure the new session settings",
+    "selectSpace": "Select Space",
     "connectToSpace": "Connect to Space",
     "connectToSpaceTitle": "Connect Session to Space",
     "connectToSpaceDescription": "Select a space to connect this session to",
@@ -129,7 +137,9 @@
     "close": "Close",
     "mimeType": "MIME Type",
     "size": "Size",
-    "preview": "Preview"
+    "preview": "Preview",
+    "backToSpaces": "Back to Spaces",
+    "backToSessions": "Back to Sessions"
   },
   "pages": {
     "spaces": "Spaces",
@@ -162,6 +172,7 @@
     "createPageDescription": "Enter a title for the new page",
     "titlePlaceholder": "Enter title...",
     "create": "Create",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "backToSpaces": "Back to Spaces"
   }
 }
