@@ -42,6 +42,10 @@ import {
   createPage,
   deleteFolder,
   deletePage,
+  createBlock,
+  deleteBlock,
+  updateBlockProperties,
+  updateBlockSort,
 } from "@/api/models/space";
 import { Space, Block } from "@/types";
 import { BlockNoteEditor } from "@/components/blocknote-editor";
@@ -63,7 +67,15 @@ interface NodeProps extends NodeRendererProps<TreeNode> {
   t: (key: string) => string;
 }
 
-function Node({ node, style, dragHandle, loadingNodes, onDeleteClick, onCreateClick, t }: NodeProps) {
+function Node({
+  node,
+  style,
+  dragHandle,
+  loadingNodes,
+  onDeleteClick,
+  onCreateClick,
+  t,
+}: NodeProps) {
   const indent = node.level * 12;
   const isFolder = node.data.type === "folder";
   const isPage = node.data.type === "page";
@@ -299,23 +311,27 @@ export default function PagesPage() {
         return;
       }
 
-      const childFolders: TreeNode[] = (foldersRes.data || []).map((block: Block) => ({
-        id: block.id,
-        name: block.title || "Untitled Folder",
-        type: "folder" as const,
-        blockType: block.type,
-        isLoaded: false,
-        blockData: block,
-      }));
+      const childFolders: TreeNode[] = (foldersRes.data || []).map(
+        (block: Block) => ({
+          id: block.id,
+          name: block.title || "Untitled Folder",
+          type: "folder" as const,
+          blockType: block.type,
+          isLoaded: false,
+          blockData: block,
+        })
+      );
 
-      const childPages: TreeNode[] = (pagesRes.data || []).map((block: Block) => ({
-        id: block.id,
-        name: block.title || "Untitled Page",
-        type: "page" as const,
-        blockType: block.type,
-        isLoaded: false,
-        blockData: block,
-      }));
+      const childPages: TreeNode[] = (pagesRes.data || []).map(
+        (block: Block) => ({
+          id: block.id,
+          name: block.title || "Untitled Page",
+          type: "page" as const,
+          blockType: block.type,
+          isLoaded: false,
+          blockData: block,
+        })
+      );
 
       // Folders first, then pages
       const children = [...childFolders, ...childPages];
@@ -438,7 +454,8 @@ export default function PagesPage() {
     try {
       setIsDeleting(true);
 
-      const deleteFunc = itemToDelete.type === "folder" ? deleteFolder : deletePage;
+      const deleteFunc =
+        itemToDelete.type === "folder" ? deleteFolder : deletePage;
       const res = await deleteFunc(selectedSpace.id, itemToDelete.id);
 
       if (res.code !== 0) {
@@ -464,7 +481,10 @@ export default function PagesPage() {
   };
 
   // Handle create click
-  const handleCreateClick = (type: "folder" | "page", parentId?: string | null) => {
+  const handleCreateClick = (
+    type: "folder" | "page",
+    parentId?: string | null
+  ) => {
     setCreateType(type);
     setCreateParentId(parentId ?? null);
     setCreateTitle("");
@@ -538,6 +558,75 @@ export default function PagesPage() {
       setCreateTitle("");
       setCreateType("folder");
       setCreateParentId(null);
+    }
+  };
+
+  // Handle blocks change from editor
+  const handleBlocksChange = async (updatedBlocks: Block[]) => {
+    if (!selectedSpace || !selectedNode) return;
+
+    try {
+      const originalBlockIds = new Set(contentBlocks.map((b) => b.id));
+      const updatedBlockIds = new Set(updatedBlocks.map((b) => b.id));
+
+      // Detect deleted blocks
+      for (const originalBlock of contentBlocks) {
+        if (!updatedBlockIds.has(originalBlock.id)) {
+          await deleteBlock(selectedSpace.id, originalBlock.id);
+        }
+      }
+
+      // Detect new and updated blocks
+      const finalBlocks: Block[] = [];
+      for (let i = 0; i < updatedBlocks.length; i++) {
+        const block = updatedBlocks[i];
+        const isNewBlock = !originalBlockIds.has(block.id);
+
+        if (isNewBlock) {
+          // Create new block
+          const res = await createBlock(selectedSpace.id, {
+            parent_id: selectedNode.id,
+            type: block.type,
+            title: block.title,
+            props: block.props,
+          });
+          if (res.code !== 0 || !res.data) {
+            console.error("Failed to create block:", res.message);
+            continue;
+          }
+          // Use the block data from server
+          finalBlocks.push(res.data);
+        } else {
+          // Check if block content or type changed
+          const originalBlock = contentBlocks.find((b) => b.id === block.id);
+          if (originalBlock) {
+            const contentChanged =
+              block.title !== originalBlock.title ||
+              block.type !== originalBlock.type ||
+              JSON.stringify(block.props) !==
+                JSON.stringify(originalBlock.props);
+
+            if (contentChanged) {
+              await updateBlockProperties(selectedSpace.id, block.id, {
+                title: block.title,
+                props: block.props,
+              });
+            }
+
+            // Check if sort order changed
+            if (block.sort !== originalBlock.sort) {
+              await updateBlockSort(selectedSpace.id, block.id, block.sort);
+            }
+          }
+          // Use the updated block
+          finalBlocks.push(block);
+        }
+      }
+
+      // Update state with the final blocks directly, no need to reload from server
+      setContentBlocks(finalBlocks);
+    } catch (error) {
+      console.error("Failed to update blocks:", error);
     }
   };
 
@@ -648,7 +737,9 @@ export default function PagesPage() {
                   <div className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent transition-colors group mb-2">
                     <div className="flex items-center gap-1.5">
                       <FolderOpen className="h-4 w-4 shrink-0 text-blue-500" />
-                      <span className="text-sm font-medium">{t("rootFolder")}</span>
+                      <span className="text-sm font-medium">
+                        {t("rootFolder")}
+                      </span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -711,9 +802,9 @@ export default function PagesPage() {
         <ResizablePanel>
           <div className="h-full overflow-auto pl-4">
             <h2 className="mb-4 text-lg font-semibold">{t("contentTitle")}</h2>
-            <div className="rounded-md border bg-card p-6">
+            <div className="rounded-md border bg-card">
               {!selectedNode ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground m-6">
                   {t("selectPagePrompt")}
                 </p>
               ) : isLoadingContent ? (
@@ -721,11 +812,15 @@ export default function PagesPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : contentBlocks.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground m-6">
                   {t("noBlocks")}
                 </p>
               ) : (
-                <BlockNoteEditor blocks={contentBlocks} editable={false} />
+                <BlockNoteEditor
+                  blocks={contentBlocks}
+                  editable={true}
+                  onChange={handleBlocksChange}
+                />
               )}
             </div>
           </div>
@@ -825,4 +920,3 @@ export default function PagesPage() {
     </div>
   );
 }
-
