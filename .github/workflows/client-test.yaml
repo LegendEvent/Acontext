@@ -1,0 +1,44 @@
+name: python-client-test
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'src/client/acontext-py/**'
+      - '.github/workflows/client-test.yaml'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'src/client/acontext-py/**'
+      - '.github/workflows/client-test.yaml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: src/client/acontext-py
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Run lint
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run pytest tests/
