@@ -159,7 +159,24 @@ func TestBlockService_CreatePage(t *testing.T) {
 				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
 			},
 			wantErr: true,
-			errMsg:  "page can only have folder as parent",
+			errMsg:  "cannot be a child of",
+		},
+		{
+			name: "page with text parent - invalid",
+			block: &model.Block{
+				SpaceID:  spaceID,
+				ParentID: &parentID,
+				Title:    "Child Page",
+			},
+			setup: func(repo *MockBlockRepo) {
+				parentBlock := &model.Block{
+					ID:   parentID,
+					Type: model.BlockTypeText, // text cannot have page children
+				}
+				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
+			},
+			wantErr: true,
+			errMsg:  "cannot be a child of",
 		},
 	}
 
@@ -325,7 +342,49 @@ func TestBlockService_CreateBlock(t *testing.T) {
 				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
 			},
 			wantErr: true,
-			errMsg:  "cannot have folder as parent",
+			errMsg:  "cannot be a child of",
+		},
+		{
+			name: "text block under text block - valid",
+			block: &model.Block{
+				SpaceID:  spaceID,
+				ParentID: &parentID,
+				Type:     "text",
+				Title:    "nested text block",
+			},
+			setup: func(repo *MockBlockRepo) {
+				parentBlock := &model.Block{
+					ID:   parentID,
+					Type: model.BlockTypeText, // text can have text children
+				}
+				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
+				repo.On("NextSort", ctx, spaceID, &parentID).Return(int64(1), nil)
+				repo.On("Create", ctx, mock.MatchedBy(func(b *model.Block) bool {
+					return b.Type == "text" && b.Sort == 1
+				})).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "sop block under text block - valid",
+			block: &model.Block{
+				SpaceID:  spaceID,
+				ParentID: &parentID,
+				Type:     model.BlockTypeSOP,
+				Title:    "sop under text",
+			},
+			setup: func(repo *MockBlockRepo) {
+				parentBlock := &model.Block{
+					ID:   parentID,
+					Type: model.BlockTypeText,
+				}
+				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
+				repo.On("NextSort", ctx, spaceID, &parentID).Return(int64(1), nil)
+				repo.On("Create", ctx, mock.MatchedBy(func(b *model.Block) bool {
+					return b.Type == model.BlockTypeSOP && b.Sort == 1
+				})).Return(nil)
+			},
+			wantErr: false,
 		},
 	}
 
@@ -404,7 +463,29 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			expectedPath: "RootFolder/Subfolder",
 		},
 		{
-			name: "invalid parent type",
+			name: "deep nested folder creation",
+			block: &model.Block{
+				SpaceID:  spaceID,
+				ParentID: &parentID,
+				Title:    "DeepFolder",
+			},
+			setup: func(repo *MockBlockRepo) {
+				parentBlock := &model.Block{
+					ID:   parentID,
+					Type: model.BlockTypeFolder,
+				}
+				parentBlock.SetFolderPath("Folder1/Folder2/Folder3")
+				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
+				repo.On("NextSort", ctx, spaceID, &parentID).Return(int64(1), nil)
+				repo.On("Create", ctx, mock.MatchedBy(func(b *model.Block) bool {
+					return b.Type == model.BlockTypeFolder && b.GetFolderPath() == "Folder1/Folder2/Folder3/DeepFolder"
+				})).Return(nil)
+			},
+			wantErr:      false,
+			expectedPath: "Folder1/Folder2/Folder3/DeepFolder",
+		},
+		{
+			name: "invalid parent type - page",
 			block: &model.Block{
 				SpaceID:  spaceID,
 				ParentID: &parentID,
@@ -418,7 +499,24 @@ func TestBlockService_CreateFolder(t *testing.T) {
 				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
 			},
 			wantErr: true,
-			errMsg:  "folder can only have folder as parent",
+			errMsg:  "cannot be a child of",
+		},
+		{
+			name: "invalid parent type - text",
+			block: &model.Block{
+				SpaceID:  spaceID,
+				ParentID: &parentID,
+				Title:    "Subfolder",
+			},
+			setup: func(repo *MockBlockRepo) {
+				parentBlock := &model.Block{
+					ID:   parentID,
+					Type: model.BlockTypeText, // text cannot be folder parents
+				}
+				repo.On("Get", ctx, parentID).Return(parentBlock, nil)
+			},
+			wantErr: true,
+			errMsg:  "cannot be a child of",
 		},
 	}
 
@@ -577,7 +675,7 @@ func TestBlockService_MoveFolder(t *testing.T) {
 				repo.On("Get", ctx, newParentID).Return(invalidParent, nil)
 			},
 			wantErr: true,
-			errMsg:  "folder can only have folder as parent",
+			errMsg:  "cannot be a child of",
 		},
 	}
 
@@ -652,4 +750,75 @@ func TestBlockService_ListFolders(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+}
+
+// Test comprehensive nesting scenarios
+func TestBlockService_ComprehensiveNesting(t *testing.T) {
+	ctx := context.Background()
+	spaceID := uuid.New()
+
+	t.Run("folder -> folder -> page -> text -> sop", func(t *testing.T) {
+		repo := &MockBlockRepo{}
+
+		// Create root folder
+		rootFolder := &model.Block{
+			SpaceID: spaceID,
+			Type:    model.BlockTypeFolder,
+			Title:   "Root",
+		}
+		repo.On("NextSort", ctx, spaceID, (*uuid.UUID)(nil)).Return(int64(1), nil)
+		repo.On("Create", ctx, mock.MatchedBy(func(b *model.Block) bool {
+			return b.Type == model.BlockTypeFolder && b.GetFolderPath() == "Root"
+		})).Return(nil)
+
+		service := NewBlockService(repo)
+		err := service.CreateFolder(ctx, rootFolder)
+		assert.NoError(t, err)
+		assert.Equal(t, "Root", rootFolder.GetFolderPath())
+
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("invalid: folder -> page -> folder (should fail)", func(t *testing.T) {
+		repo := &MockBlockRepo{}
+		pageID := uuid.New()
+
+		folderUnderPage := &model.Block{
+			SpaceID:  spaceID,
+			ParentID: &pageID,
+			Type:     model.BlockTypeFolder,
+			Title:    "InvalidFolder",
+		}
+
+		pageBlock := &model.Block{
+			ID:   pageID,
+			Type: model.BlockTypePage,
+		}
+		repo.On("Get", ctx, pageID).Return(pageBlock, nil)
+
+		service := NewBlockService(repo)
+		err := service.CreateFolder(ctx, folderUnderPage)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot be a child of")
+
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("invalid: text at root level (should fail)", func(t *testing.T) {
+		repo := &MockBlockRepo{}
+
+		textAtRoot := &model.Block{
+			SpaceID: spaceID,
+			Type:    model.BlockTypeText,
+			Title:   "InvalidText",
+		}
+
+		service := NewBlockService(repo)
+		err := service.CreateBlock(ctx, textAtRoot)
+		assert.Error(t, err)
+		// The error comes from Validate() which checks RequireParent first
+		assert.Contains(t, err.Error(), "requires a parent")
+
+		repo.AssertExpectations(t)
+	})
 }

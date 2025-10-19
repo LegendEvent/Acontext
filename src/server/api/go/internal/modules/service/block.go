@@ -41,37 +41,87 @@ type blockService struct{ r repo.BlockRepo }
 
 func NewBlockService(r repo.BlockRepo) BlockService { return &blockService{r: r} }
 
-func (s *blockService) CreatePage(ctx context.Context, b *model.Block) error {
-	if b.Type == "" {
-		b.Type = model.BlockTypePage
-	}
-
+// validateAndPrepareCreate validates a block for creation and prepares its parent
+func (s *blockService) validateAndPrepareCreate(ctx context.Context, b *model.Block) (*model.Block, error) {
 	if err := b.ValidateForCreation(); err != nil {
-		return err
+		return nil, err
 	}
 
-	// Validate parent type: when parent_id is provided, it must be a folder
 	var parent *model.Block
 	if b.ParentID != nil {
 		var err error
 		parent, err = s.r.Get(ctx, *b.ParentID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !parent.CanHaveChildren() {
-			return errors.New("parent cannot have children")
+			return nil, errors.New("parent cannot have children")
 		}
 	}
 
 	if err := b.ValidateParentType(parent); err != nil {
-		return err
+		return nil, err
 	}
 
+	return parent, nil
+}
+
+// prepareBlockForCreation sets the sort order for a new block
+func (s *blockService) prepareBlockForCreation(ctx context.Context, b *model.Block) error {
 	next, err := s.r.NextSort(ctx, b.SpaceID, b.ParentID)
 	if err != nil {
 		return err
 	}
 	b.Sort = next
+	return nil
+}
+
+// validateAndPrepareMove validates a block move and prepares the new parent
+func (s *blockService) validateAndPrepareMove(ctx context.Context, blockID uuid.UUID, newParentID *uuid.UUID) (*model.Block, *model.Block, error) {
+	if len(blockID) == 0 {
+		return nil, nil, errors.New("block id is empty")
+	}
+
+	block, err := s.r.Get(ctx, blockID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var parent *model.Block
+	if newParentID != nil {
+		if *newParentID == blockID {
+			return nil, nil, errors.New("new parent cannot be the same as the block")
+		}
+
+		parent, err = s.r.Get(ctx, *newParentID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !parent.CanHaveChildren() {
+			return nil, nil, errors.New("new parent cannot have children")
+		}
+	}
+
+	if err := block.ValidateParentType(parent); err != nil {
+		return nil, nil, err
+	}
+
+	return block, parent, nil
+}
+
+func (s *blockService) CreatePage(ctx context.Context, b *model.Block) error {
+	if b.Type == "" {
+		b.Type = model.BlockTypePage
+	}
+
+	if _, err := s.validateAndPrepareCreate(ctx, b); err != nil {
+		return err
+	}
+
+	if err := s.prepareBlockForCreation(ctx, b); err != nil {
+		return err
+	}
+
 	return s.r.Create(ctx, b)
 }
 
@@ -111,32 +161,7 @@ func (s *blockService) ListPages(ctx context.Context, spaceID uuid.UUID, parentI
 }
 
 func (s *blockService) MovePage(ctx context.Context, pageID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
-	if len(pageID) == 0 {
-		return errors.New("page id is empty")
-	}
-	if newParentID != nil && *newParentID == pageID {
-		return errors.New("new parent cannot be the same as the page")
-	}
-
-	// Get the page being moved
-	page, err := s.r.Get(ctx, pageID)
-	if err != nil {
-		return err
-	}
-
-	// Validate parent type for moving: when newParentID is provided, it must be a folder
-	var parent *model.Block
-	if newParentID != nil {
-		parent, err = s.r.Get(ctx, *newParentID)
-		if err != nil {
-			return err
-		}
-		if !parent.CanHaveChildren() {
-			return errors.New("new parent cannot have children")
-		}
-	}
-
-	if err := page.ValidateParentType(parent); err != nil {
+	if _, _, err := s.validateAndPrepareMove(ctx, pageID, newParentID); err != nil {
 		return err
 	}
 
@@ -158,32 +183,14 @@ func (s *blockService) CreateBlock(ctx context.Context, b *model.Block) error {
 		return errors.New("block type is empty")
 	}
 
-	if err := b.ValidateForCreation(); err != nil {
+	if _, err := s.validateAndPrepareCreate(ctx, b); err != nil {
 		return err
 	}
 
-	// Validate if the parent block can have children and parent type
-	var parent *model.Block
-	if b.ParentID != nil {
-		var err error
-		parent, err = s.r.Get(ctx, *b.ParentID)
-		if err != nil {
-			return err
-		}
-		if !parent.CanHaveChildren() {
-			return errors.New("parent cannot have children")
-		}
-	}
-
-	if err := b.ValidateParentType(parent); err != nil {
+	if err := s.prepareBlockForCreation(ctx, b); err != nil {
 		return err
 	}
 
-	next, err := s.r.NextSort(ctx, b.SpaceID, b.ParentID)
-	if err != nil {
-		return err
-	}
-	b.Sort = next
 	return s.r.Create(ctx, b)
 }
 
@@ -226,19 +233,10 @@ func (s *blockService) ListBlocks(ctx context.Context, spaceID uuid.UUID, parent
 }
 
 func (s *blockService) MoveBlock(ctx context.Context, blockID uuid.UUID, newParentID uuid.UUID, targetSort *int64) error {
-	if len(blockID) == 0 {
-		return errors.New("block id is empty")
-	}
-	if newParentID == blockID {
-		return errors.New("new parent cannot be the same as the block")
-	}
-	parent, err := s.r.Get(ctx, newParentID)
-	if err != nil {
+	if _, _, err := s.validateAndPrepareMove(ctx, blockID, &newParentID); err != nil {
 		return err
 	}
-	if !parent.CanHaveChildren() {
-		return errors.New("new parent cannot have children")
-	}
+
 	if targetSort == nil {
 		return s.r.MoveToParentAppend(ctx, blockID, &newParentID)
 	}
@@ -259,24 +257,8 @@ func (s *blockService) CreateFolder(ctx context.Context, b *model.Block) error {
 		b.Type = model.BlockTypeFolder
 	}
 
-	if err := b.ValidateForCreation(); err != nil {
-		return err
-	}
-
-	// Validate parent type: when parent_id is provided, it must be a folder
-	var parent *model.Block
-	if b.ParentID != nil {
-		var err error
-		parent, err = s.r.Get(ctx, *b.ParentID)
-		if err != nil {
-			return err
-		}
-		if !parent.CanHaveChildren() {
-			return errors.New("parent cannot have children")
-		}
-	}
-
-	if err := b.ValidateParentType(parent); err != nil {
+	parent, err := s.validateAndPrepareCreate(ctx, b)
+	if err != nil {
 		return err
 	}
 
@@ -290,11 +272,10 @@ func (s *blockService) CreateFolder(ctx context.Context, b *model.Block) error {
 	}
 	b.SetFolderPath(path)
 
-	next, err := s.r.NextSort(ctx, b.SpaceID, b.ParentID)
-	if err != nil {
+	if err := s.prepareBlockForCreation(ctx, b); err != nil {
 		return err
 	}
-	b.Sort = next
+
 	return s.r.Create(ctx, b)
 }
 
@@ -327,32 +308,8 @@ func (s *blockService) ListFolders(ctx context.Context, spaceID uuid.UUID, paren
 }
 
 func (s *blockService) MoveFolder(ctx context.Context, folderID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
-	if len(folderID) == 0 {
-		return errors.New("folder id is empty")
-	}
-	if newParentID != nil && *newParentID == folderID {
-		return errors.New("new parent cannot be the same as the folder")
-	}
-
-	// Get the folder being moved
-	folder, err := s.r.Get(ctx, folderID)
+	folder, parent, err := s.validateAndPrepareMove(ctx, folderID, newParentID)
 	if err != nil {
-		return err
-	}
-
-	// Validate parent type for moving: when newParentID is provided, it must be a folder
-	var parent *model.Block
-	if newParentID != nil {
-		parent, err = s.r.Get(ctx, *newParentID)
-		if err != nil {
-			return err
-		}
-		if !parent.CanHaveChildren() {
-			return errors.New("new parent cannot have children")
-		}
-	}
-
-	if err := folder.ValidateParentType(parent); err != nil {
 		return err
 	}
 

@@ -132,37 +132,40 @@ func (b *Block) CanHaveChildren() bool {
 	return config.AllowChildren
 }
 
+// CanBeChildOf Check if this block can be a child of the given parent
+// This is a more specific check than ValidateParentType
+func (b *Block) CanBeChildOf(parent *Block) bool {
+	// No parent means root level - only folder and page allowed
+	if parent == nil {
+		return b.Type == BlockTypeFolder || b.Type == BlockTypePage
+	}
+
+	// Check what can be under each parent type
+	switch parent.Type {
+	case BlockTypeFolder:
+		// Folder can only contain folder and page
+		return b.Type == BlockTypeFolder || b.Type == BlockTypePage
+	case BlockTypePage:
+		// Page can only contain other blocks (not folder or page)
+		return b.Type != BlockTypeFolder && b.Type != BlockTypePage
+	default:
+		// Other blocks (text, sop, etc.) can contain other blocks (not folder or page)
+		return b.Type != BlockTypeFolder && b.Type != BlockTypePage
+	}
+}
+
 // ValidateParentType Check if the parent type is valid for this block
 // Rules:
 // - Page can have folder as parent or no parent
 // - Folder can have folder as parent or no parent
-// - Other blocks (text, sop, etc.) must have page as parent (cannot be under folder or have no parent)
+// - Other blocks (text, sop, etc.) must have page (or other non-folder block) as parent
 func (b *Block) ValidateParentType(parent *Block) error {
-	// Pages can have folder or no parent
-	if b.Type == BlockTypePage {
-		if parent != nil && parent.Type != BlockTypeFolder {
-			return fmt.Errorf("page can only have folder as parent")
+	if !b.CanBeChildOf(parent) {
+		if parent == nil {
+			return fmt.Errorf("block type '%s' cannot exist at root level", b.Type)
 		}
-		return nil
+		return fmt.Errorf("block type '%s' cannot be a child of '%s'", b.Type, parent.Type)
 	}
-
-	// Folders can have folder or no parent
-	if b.Type == BlockTypeFolder {
-		if parent != nil && parent.Type != BlockTypeFolder {
-			return fmt.Errorf("folder can only have folder as parent")
-		}
-		return nil
-	}
-
-	// Other blocks (text, sop, etc.) must have a parent and it must be a page
-	if parent == nil {
-		return fmt.Errorf("block type '%s' must have a parent", b.Type)
-	}
-
-	if parent.Type != BlockTypePage {
-		return fmt.Errorf("block type '%s' can only have page as parent, not '%s'", b.Type, parent.Type)
-	}
-
 	return nil
 }
 

@@ -67,7 +67,7 @@ func TestGetBlockTypeConfig(t *testing.T) {
 			wantErr:   false,
 			expected: BlockTypeConfig{
 				Name:          BlockTypePage,
-				AllowChildren: false,
+				AllowChildren: true, // Page can have text/sop blocks
 				RequireParent: false,
 			},
 		},
@@ -137,7 +137,7 @@ func TestGetAllBlockTypes(t *testing.T) {
 		// Verify configuration for each type
 		pageConfig := allTypes[BlockTypePage]
 		assert.Equal(t, BlockTypePage, pageConfig.Name)
-		assert.False(t, pageConfig.AllowChildren)
+		assert.True(t, pageConfig.AllowChildren) // Page can have text/sop blocks
 		assert.False(t, pageConfig.RequireParent)
 
 		folderConfig := allTypes[BlockTypeFolder]
@@ -344,11 +344,11 @@ func TestBlock_CanHaveChildren(t *testing.T) {
 		expected bool
 	}{
 		{
-			name: "page block cannot have children",
+			name: "page block can have children",
 			block: Block{
 				Type: BlockTypePage,
 			},
-			expected: false,
+			expected: true, // Page can have text/sop blocks
 		},
 		{
 			name: "folder block can have children",
@@ -418,7 +418,7 @@ func TestBlockTypes_Configuration(t *testing.T) {
 		pageConfig, exists := BlockTypes[BlockTypePage]
 		assert.True(t, exists)
 		assert.Equal(t, BlockTypePage, pageConfig.Name)
-		assert.False(t, pageConfig.AllowChildren)
+		assert.True(t, pageConfig.AllowChildren) // Page can have text/sop blocks
 		assert.False(t, pageConfig.RequireParent)
 
 		// Verify folder type configuration
@@ -442,6 +442,95 @@ func TestBlockTypes_Configuration(t *testing.T) {
 		assert.True(t, sopConfig.AllowChildren)
 		assert.True(t, sopConfig.RequireParent)
 	})
+}
+
+func TestBlock_CanBeChildOf(t *testing.T) {
+	tests := []struct {
+		name     string
+		child    Block
+		parent   *Block
+		expected bool
+	}{
+		{
+			name:     "folder at root level - valid",
+			child:    Block{Type: BlockTypeFolder},
+			parent:   nil,
+			expected: true,
+		},
+		{
+			name:     "page at root level - valid",
+			child:    Block{Type: BlockTypePage},
+			parent:   nil,
+			expected: true,
+		},
+		{
+			name:     "text at root level - invalid",
+			child:    Block{Type: BlockTypeText},
+			parent:   nil,
+			expected: false,
+		},
+		{
+			name:     "folder under folder - valid",
+			child:    Block{Type: BlockTypeFolder},
+			parent:   &Block{Type: BlockTypeFolder},
+			expected: true,
+		},
+		{
+			name:     "page under folder - valid",
+			child:    Block{Type: BlockTypePage},
+			parent:   &Block{Type: BlockTypeFolder},
+			expected: true,
+		},
+		{
+			name:     "text under folder - invalid",
+			child:    Block{Type: BlockTypeText},
+			parent:   &Block{Type: BlockTypeFolder},
+			expected: false,
+		},
+		{
+			name:     "folder under page - invalid",
+			child:    Block{Type: BlockTypeFolder},
+			parent:   &Block{Type: BlockTypePage},
+			expected: false,
+		},
+		{
+			name:     "page under page - invalid",
+			child:    Block{Type: BlockTypePage},
+			parent:   &Block{Type: BlockTypePage},
+			expected: false,
+		},
+		{
+			name:     "text under page - valid",
+			child:    Block{Type: BlockTypeText},
+			parent:   &Block{Type: BlockTypePage},
+			expected: true,
+		},
+		{
+			name:     "sop under page - valid",
+			child:    Block{Type: BlockTypeSOP},
+			parent:   &Block{Type: BlockTypePage},
+			expected: true,
+		},
+		{
+			name:     "sop under text - valid",
+			child:    Block{Type: BlockTypeSOP},
+			parent:   &Block{Type: BlockTypeText},
+			expected: true,
+		},
+		{
+			name:     "folder under text - invalid",
+			child:    Block{Type: BlockTypeFolder},
+			parent:   &Block{Type: BlockTypeText},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.child.CanBeChildOf(tt.parent)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
 
 func TestBlock_ValidateParentType(t *testing.T) {
@@ -471,7 +560,7 @@ func TestBlock_ValidateParentType(t *testing.T) {
 				Type: BlockTypePage,
 			},
 			wantErr: true,
-			errMsg:  "page can only have folder as parent",
+			errMsg:  "cannot be a child of",
 		},
 		{
 			name: "page without parent - valid",
@@ -500,7 +589,7 @@ func TestBlock_ValidateParentType(t *testing.T) {
 				Type: BlockTypePage,
 			},
 			wantErr: true,
-			errMsg:  "folder can only have folder as parent",
+			errMsg:  "cannot be a child of",
 		},
 		{
 			name: "folder without parent - valid",
@@ -529,7 +618,7 @@ func TestBlock_ValidateParentType(t *testing.T) {
 				Type: BlockTypeFolder,
 			},
 			wantErr: true,
-			errMsg:  "can only have page as parent",
+			errMsg:  "cannot be a child of",
 		},
 		{
 			name: "text without parent - invalid",
@@ -538,7 +627,7 @@ func TestBlock_ValidateParentType(t *testing.T) {
 			},
 			parent:  nil,
 			wantErr: true,
-			errMsg:  "must have a parent",
+			errMsg:  "cannot exist at root level",
 		},
 		{
 			name: "sop with page parent - valid",
@@ -551,15 +640,14 @@ func TestBlock_ValidateParentType(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "sop with text parent - invalid",
+			name: "sop with text parent - valid",
 			block: Block{
 				Type: BlockTypeSOP,
 			},
 			parent: &Block{
 				Type: BlockTypeText,
 			},
-			wantErr: true,
-			errMsg:  "can only have page as parent",
+			wantErr: false,
 		},
 		{
 			name: "sop with folder parent - invalid",
@@ -570,7 +658,7 @@ func TestBlock_ValidateParentType(t *testing.T) {
 				Type: BlockTypeFolder,
 			},
 			wantErr: true,
-			errMsg:  "can only have page as parent",
+			errMsg:  "cannot be a child of",
 		},
 		{
 			name: "sop without parent - invalid",
@@ -579,7 +667,7 @@ func TestBlock_ValidateParentType(t *testing.T) {
 			},
 			parent:  nil,
 			wantErr: true,
-			errMsg:  "must have a parent",
+			errMsg:  "cannot exist at root level",
 		},
 	}
 
