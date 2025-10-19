@@ -897,7 +897,7 @@ export default function ArtifactPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col p-2">
+              <div className="h-full flex flex-col">
                 {/* Fake root directory with upload button */}
                 <div className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors group">
                   <div className="flex items-center gap-1.5">
