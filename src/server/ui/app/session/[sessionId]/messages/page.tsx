@@ -265,12 +265,11 @@ export default function MessagesPage() {
   return (
     <div className="h-full bg-background p-6">
       <div className="space-y-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-stretch gap-2">
           <Button
             variant="outline"
-            size="icon"
             onClick={handleGoBack}
-            className="rounded-l-md rounded-r-none"
+            className="rounded-l-md rounded-r-none h-auto px-3"
             title={t("backToSessions") || "Back to Sessions"}
           >
             <ArrowLeft className="h-4 w-4" />

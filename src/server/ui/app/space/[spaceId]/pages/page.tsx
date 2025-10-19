@@ -359,6 +359,27 @@ export default function PagesPage() {
     }
   };
 
+  const loadPageContent = async (pageId: string) => {
+    try {
+      setIsLoadingContent(true);
+      const blocksRes = await getBlocks(spaceId, pageId);
+      if (blocksRes.code !== 0) {
+        console.error(blocksRes.message);
+        return;
+      }
+
+      // Filter to only non-page blocks
+      const nonPageBlocks = (blocksRes.data || []).filter(
+        (block) => block.type !== "page"
+      );
+      setContentBlocks(nonPageBlocks);
+    } catch (error) {
+      console.error("Failed to load blocks:", error);
+    } finally {
+      setIsLoadingContent(false);
+    }
+  };
+
   const handleSelect = async (nodes: { data: TreeNode }[]) => {
     const node = nodes[0];
     if (!node) return;
@@ -367,25 +388,13 @@ export default function PagesPage() {
 
     // If it's a page, load its non-page blocks for display
     if (node.data.type === "page") {
-      try {
-        setIsLoadingContent(true);
-        const blocksRes = await getBlocks(spaceId, node.data.id);
-        if (blocksRes.code !== 0) {
-          console.error(blocksRes.message);
-          return;
-        }
-
-        // Filter to only non-page blocks
-        const nonPageBlocks = (blocksRes.data || []).filter(
-          (block) => block.type !== "page"
-        );
-        setContentBlocks(nonPageBlocks);
-      } catch (error) {
-        console.error("Failed to load blocks:", error);
-      } finally {
-        setIsLoadingContent(false);
-      }
+      await loadPageContent(node.data.id);
     }
+  };
+
+  const handleRefreshContent = async () => {
+    if (!selectedNode || selectedNode.type !== "page") return;
+    await loadPageContent(selectedNode.id);
   };
 
   // Reload tree data
@@ -619,12 +628,11 @@ export default function PagesPage() {
 
   return (
     <div className="h-full bg-background p-6">
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex items-stretch gap-2">
         <Button
           variant="outline"
-          size="icon"
           onClick={handleGoBack}
-          className="rounded-l-md rounded-r-none"
+          className="rounded-l-md rounded-r-none h-auto px-3"
           title={t("backToSpaces") || "Back to Spaces"}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -641,13 +649,19 @@ export default function PagesPage() {
         {/* Left: Page Tree */}
         <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
           <div className="h-full flex flex-col pr-4">
-            <div className="mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                {t("pagesTitle") || "Folders & Pages"}
+                {t("pagesTitle") || "Pages"}
               </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Folders & Pages
-              </p>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={reloadTreeData}
+                disabled={isInitialLoading}
+                title={t("refresh")}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="flex-1 overflow-auto">
@@ -661,13 +675,13 @@ export default function PagesPage() {
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex flex-col p-2">
+                <div className="h-full flex flex-col">
                   {/* Root directory with create buttons */}
                   <div className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent transition-colors group mb-2">
                     <div className="flex items-center gap-1.5">
                       <FolderOpen className="h-4 w-4 shrink-0 text-blue-500" />
                       <span className="text-sm font-medium">
-                        {t("rootFolder")}
+                        /
                       </span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -730,7 +744,18 @@ export default function PagesPage() {
         {/* Right: BlockNote Editor */}
         <ResizablePanel>
           <div className="h-full overflow-auto pl-4">
-            <h2 className="mb-4 text-lg font-semibold">{t("contentTitle")}</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{t("contentTitle")}</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefreshContent}
+                disabled={!selectedNode || selectedNode.type !== "page" || isLoadingContent}
+                title={t("refresh")}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="rounded-md border bg-card">
               {!selectedNode ? (
                 <p className="text-sm text-muted-foreground m-6">
