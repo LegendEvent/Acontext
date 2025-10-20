@@ -165,6 +165,16 @@ func NewFileParser() *FileParser {
 	}
 }
 
+// CanParseFile checks if a file can be parsed based on filename and MIME type
+func (fp *FileParser) CanParseFile(filename string, mimeType string) bool {
+	for _, parser := range fp.parsers {
+		if parser.CanParse(filename, mimeType) {
+			return true
+		}
+	}
+	return false
+}
+
 // ParseFile attempts to parse file content based on filename and MIME type
 func (fp *FileParser) ParseFile(filename string, mimeType string, content []byte) (*FileContent, error) {
 	// Try each parser in order

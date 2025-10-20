@@ -206,7 +206,7 @@ func (h *ArtifactHandler) GetArtifact(c *gin.Context) {
 
 	// Generate presigned URL if requested
 	if req.WithPublicURL {
-		url, err := h.svc.GetPresignedURLByPath(c.Request.Context(), diskID, filePath, filename, time.Duration(req.Expire)*time.Second)
+		url, err := h.svc.GetPresignedURL(c.Request.Context(), artifact, time.Duration(req.Expire)*time.Second)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 			return
@@ -216,7 +216,7 @@ func (h *ArtifactHandler) GetArtifact(c *gin.Context) {
 
 	// Parse file content if requested
 	if req.WithContent {
-		content, err := h.svc.GetFileContent(c.Request.Context(), diskID, filePath, filename)
+		content, err := h.svc.GetFileContent(c.Request.Context(), artifact)
 		// Only set content if parsing succeeded
 		// Unsupported file types (images, binaries, etc.) will not have content
 		if err == nil && content != nil {

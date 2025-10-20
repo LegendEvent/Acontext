@@ -236,27 +236,12 @@ func (s *testArtifactService) GetByPath(ctx context.Context, diskID uuid.UUID, p
 	return s.r.GetByPath(ctx, diskID, path, filename)
 }
 
-func (s *testArtifactService) GetPresignedURL(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID, expire time.Duration) (string, error) {
-	file, err := s.GetByID(ctx, diskID, artifactID)
-	if err != nil {
-		return "", err
+func (s *testArtifactService) GetPresignedURL(ctx context.Context, artifact *model.Artifact, expire time.Duration) (string, error) {
+	if artifact == nil {
+		return "", errors.New("artifact is nil")
 	}
 
-	assetData := file.AssetMeta.Data()
-	if assetData.S3Key == "" {
-		return "", errors.New("artifact has no S3 key")
-	}
-
-	return s.s3.PresignGet(ctx, assetData.S3Key, expire)
-}
-
-func (s *testArtifactService) GetPresignedURLByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, expire time.Duration) (string, error) {
-	file, err := s.GetByPath(ctx, diskID, path, filename)
-	if err != nil {
-		return "", err
-	}
-
-	assetData := file.AssetMeta.Data()
+	assetData := artifact.AssetMeta.Data()
 	if assetData.S3Key == "" {
 		return "", errors.New("artifact has no S3 key")
 	}
@@ -404,9 +389,13 @@ func (s *testArtifactService) GetByDiskID(ctx context.Context, diskID uuid.UUID)
 	return s.r.GetByDiskID(ctx, diskID)
 }
 
-func (s *testArtifactService) GetFileContent(ctx context.Context, diskID uuid.UUID, path string, filename string) (*fileparser.FileContent, error) {
+func (s *testArtifactService) GetFileContent(ctx context.Context, artifact *model.Artifact) (*fileparser.FileContent, error) {
 	// This is a test implementation that doesn't actually download from S3
 	// In real tests, you would mock the S3 download and file parsing
+	if artifact == nil {
+		return nil, errors.New("artifact is nil")
+	}
+
 	return &fileparser.FileContent{
 		Type: "text",
 		Raw:  "test content",
