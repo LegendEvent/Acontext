@@ -65,17 +65,16 @@ class TaskPrompt(BasePrompt):
 - Message with ID format: <message id=N> ... </message>, inside the tag is the message content, the id field indicates the message id.
 
 ## Report your Thinking
-Use extremely brief wordings to report:
-1. Any user requirement or planning?
+Use extremely brief wordings to report before calling tools:
+1. Any planning from agent? Any requirement or task modification from user?
 2. Does the user report that any task failed and need to re-run?
 3. How existing tasks are related to current conversation? 
-4. Any new task is created?
+4. Any new task should be created?
 5. Which Messages are contributed to planning? 
 6. Which of them are contributed to which task?
 7. Which task's status/description need to be updated?
 8. Briefly describe your tool-call actions to correctly manage the tasks.
-
-Make sure your will call `finish` tool after every tools are called
+9. Make sure your will call `finish` tool after every tools are called
 """
 
     @classmethod

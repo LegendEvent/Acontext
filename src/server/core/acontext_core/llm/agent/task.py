@@ -72,7 +72,7 @@ async def build_task_ctx(
     current_tasks, eil = r.unpack()
     if eil:
         return r
-    LOG.info(
+    LOG.debug(
         f"Built task context {[(t.order, t.status.value, t.task_description) for t in current_tasks]}"
     )
     use_ctx = TaskCtx(

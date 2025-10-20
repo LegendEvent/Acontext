@@ -53,6 +53,7 @@ async def openai_complete(
         timeout=DEFAULT_CORE_CONFIG.llm_response_timeout,
         max_tokens=max_tokens,
         tools=tools,
+        **DEFAULT_CORE_CONFIG.llm_openai_completion_kwargs,
         **kwargs,
     )
     cached_tokens = getattr(response.usage.prompt_tokens_details, "cached_tokens", None)

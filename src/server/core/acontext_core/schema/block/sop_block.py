@@ -5,7 +5,7 @@ from ..utils import asUUID
 
 class SOPStep(BaseModel):
     tool_name: str
-    tool_arguments_with_placeholder: dict[str, Any]
+    argument_template: dict[str, Any]
     props: Optional[dict] = None
 
 

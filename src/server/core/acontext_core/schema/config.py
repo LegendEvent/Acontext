@@ -18,6 +18,7 @@ class CoreConfig(BaseModel):
     llm_base_url: Optional[str] = None
     llm_openai_default_query: Optional[Mapping[str, Any]] = None
     llm_openai_default_header: Optional[Mapping[str, Any]] = None
+    llm_openai_completion_kwargs: Mapping[str, Any] = {}
     llm_response_timeout: float = 60
     llm_sdk: Literal["openai", "anthropic"] = "openai"
 
