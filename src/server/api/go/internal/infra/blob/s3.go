@@ -271,3 +271,28 @@ func (u *S3Deps) DownloadJSON(ctx context.Context, key string, target interface{
 
 	return nil
 }
+
+// DownloadFile downloads file content from S3 and returns the content as bytes
+func (u *S3Deps) DownloadFile(ctx context.Context, key string) ([]byte, error) {
+	if key == "" {
+		return nil, errors.New("key is empty")
+	}
+
+	result, err := u.Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: &u.Bucket,
+		Key:    &key,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get object from S3: %w", err)
+	}
+	defer result.Body.Close()
+
+	// Read the response body
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(result.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}

@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
+	"github.com/memodb-io/Acontext/internal/pkg/utils/fileparser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/datatypes"
@@ -83,6 +84,14 @@ func (m *MockArtifactService) GetPresignedURLByPath(ctx context.Context, diskID 
 func (m *MockArtifactService) UpdateArtifactByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error) {
 	args := m.Called(ctx, diskID, path, filename, fileHeader, newPath, newFilename)
 	return args.Get(0).(*model.Artifact), args.Error(1)
+}
+
+func (m *MockArtifactService) GetFileContent(ctx context.Context, diskID uuid.UUID, path string, filename string) (*fileparser.FileContent, error) {
+	args := m.Called(ctx, diskID, path, filename)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*fileparser.FileContent), args.Error(1)
 }
 
 func TestArtifactHandler_CreateArtifact(t *testing.T) {
@@ -402,6 +411,164 @@ func TestArtifactHandler_UpdateArtifact(t *testing.T) {
 				err = json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 				assert.NotNil(t, response.Data)
+			}
+
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestArtifactHandler_GetArtifact(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		diskID         string
+		filePath       string
+		withContent    bool
+		withPublicURL  bool
+		mockSetup      func(*MockArtifactService, string, string)
+		expectedStatus int
+	}{
+		{
+			name:          "successful artifact retrieval with content",
+			diskID:        uuid.New().String(),
+			filePath:      "/test/data.csv",
+			withContent:   true,
+			withPublicURL: true,
+			mockSetup: func(m *MockArtifactService, diskIDStr string, filePath string) {
+				diskID := uuid.MustParse(diskIDStr)
+				expectedFile := &model.Artifact{
+					ID:       uuid.New(),
+					DiskID:   diskID,
+					Path:     "/test/",
+					Filename: "data.csv",
+					Meta: map[string]interface{}{
+						model.ArtifactInfoKey: map[string]interface{}{
+							"path":     "/test/",
+							"filename": "data.csv",
+							"mime":     "text/csv",
+							"size":     1024,
+						},
+					},
+					AssetMeta: datatypes.NewJSONType(model.Asset{
+						Bucket: "test-bucket",
+						S3Key:  "test-key",
+						ETag:   "test-etag",
+						SHA256: "test-sha256",
+						MIME:   "text/csv",
+						SizeB:  1024,
+					}),
+				}
+				expectedContent := &fileparser.FileContent{
+					Type: "csv",
+					Raw:  "name,age\nJohn,25",
+				}
+				m.On("GetByPath", mock.Anything, diskID, "/test/", "data.csv").Return(expectedFile, nil)
+				m.On("GetPresignedURLByPath", mock.Anything, diskID, "/test/", "data.csv", mock.AnythingOfType("time.Duration")).Return("https://example.com/presigned-url", nil)
+				m.On("GetFileContent", mock.Anything, diskID, "/test/", "data.csv").Return(expectedContent, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:          "successful artifact retrieval without content",
+			diskID:        uuid.New().String(),
+			filePath:      "/test/data.csv",
+			withContent:   false,
+			withPublicURL: false,
+			mockSetup: func(m *MockArtifactService, diskIDStr string, filePath string) {
+				diskID := uuid.MustParse(diskIDStr)
+				expectedFile := &model.Artifact{
+					ID:       uuid.New(),
+					DiskID:   diskID,
+					Path:     "/test/",
+					Filename: "data.csv",
+					Meta: map[string]interface{}{
+						model.ArtifactInfoKey: map[string]interface{}{
+							"path":     "/test/",
+							"filename": "data.csv",
+							"mime":     "text/csv",
+							"size":     1024,
+						},
+					},
+					AssetMeta: datatypes.NewJSONType(model.Asset{
+						Bucket: "test-bucket",
+						S3Key:  "test-key",
+						ETag:   "test-etag",
+						SHA256: "test-sha256",
+						MIME:   "text/csv",
+						SizeB:  1024,
+					}),
+				}
+				m.On("GetByPath", mock.Anything, diskID, "/test/", "data.csv").Return(expectedFile, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:          "invalid disk ID",
+			diskID:        "invalid-uuid",
+			filePath:      "/test/data.csv",
+			withContent:   true,
+			withPublicURL: true,
+			mockSetup: func(m *MockArtifactService, diskIDStr string, filePath string) {
+				// No mock setup needed for invalid UUID
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := new(MockArtifactService)
+			tt.mockSetup(mockService, tt.diskID, tt.filePath)
+
+			handler := NewArtifactHandler(mockService)
+
+			// Create request with query parameters
+			url := fmt.Sprintf("/disk/%s/artifact?file_path=%s", tt.diskID, tt.filePath)
+			if tt.withContent {
+				url += "&with_content=true"
+			} else {
+				url += "&with_content=false"
+			}
+			if tt.withPublicURL {
+				url += "&with_public_url=true"
+			} else {
+				url += "&with_public_url=false"
+			}
+
+			req := httptest.NewRequest(http.MethodGet, url, nil)
+
+			// Create response recorder
+			w := httptest.NewRecorder()
+
+			// Create gin context
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+			c.Params = []gin.Param{
+				{Key: "disk_id", Value: tt.diskID},
+			}
+
+			// Call handler
+			handler.GetArtifact(c)
+
+			// Assertions
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if tt.expectedStatus == http.StatusOK {
+				var response serializer.Response
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.NotNil(t, response.Data)
+
+				// Check if content is included when requested
+				if tt.withContent {
+					// Parse the response data to check content field
+					dataBytes, _ := json.Marshal(response.Data)
+					var respData map[string]interface{}
+					json.Unmarshal(dataBytes, &respData)
+					assert.Contains(t, respData, "content")
+				}
 			}
 
 			mockService.AssertExpectations(t)

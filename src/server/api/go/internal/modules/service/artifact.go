@@ -11,6 +11,7 @@ import (
 	"github.com/memodb-io/Acontext/internal/infra/blob"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
+	"github.com/memodb-io/Acontext/internal/pkg/utils/fileparser"
 	"gorm.io/datatypes"
 )
 
@@ -70,6 +71,7 @@ type ArtifactService interface {
 	GetByPath(ctx context.Context, diskID uuid.UUID, path string, filename string) (*model.Artifact, error)
 	GetPresignedURL(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID, expire time.Duration) (string, error)
 	GetPresignedURLByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, expire time.Duration) (string, error)
+	GetFileContent(ctx context.Context, diskID uuid.UUID, path string, filename string) (*fileparser.FileContent, error)
 	UpdateArtifact(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error)
 	UpdateArtifactByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error)
 	ListByPath(ctx context.Context, diskID uuid.UUID, path string) ([]*model.Artifact, error)
@@ -182,6 +184,33 @@ func (s *artifactService) GetPresignedURLByPath(ctx context.Context, diskID uuid
 	}
 
 	return s.s3.PresignGet(ctx, assetData.S3Key, expire)
+}
+
+func (s *artifactService) GetFileContent(ctx context.Context, diskID uuid.UUID, path string, filename string) (*fileparser.FileContent, error) {
+	artifact, err := s.GetByPath(ctx, diskID, path, filename)
+	if err != nil {
+		return nil, err
+	}
+
+	assetData := artifact.AssetMeta.Data()
+	if assetData.S3Key == "" {
+		return nil, errors.New("artifact has no S3 key")
+	}
+
+	// Download file content from S3
+	content, err := s.s3.DownloadFile(ctx, assetData.S3Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file content: %w", err)
+	}
+
+	// Parse file content
+	parser := fileparser.NewFileParser()
+	fileContent, err := parser.ParseFile(filename, assetData.MIME, content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse file content: %w", err)
+	}
+
+	return fileContent, nil
 }
 
 func (s *artifactService) UpdateArtifact(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error) {

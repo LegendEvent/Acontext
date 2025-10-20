@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/infra/blob"
 	"github.com/memodb-io/Acontext/internal/modules/model"
+	"github.com/memodb-io/Acontext/internal/pkg/utils/fileparser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/datatypes"
@@ -401,6 +402,15 @@ func (s *testArtifactService) GetAllPaths(ctx context.Context, diskID uuid.UUID)
 
 func (s *testArtifactService) GetByDiskID(ctx context.Context, diskID uuid.UUID) ([]*model.Artifact, error) {
 	return s.r.GetByDiskID(ctx, diskID)
+}
+
+func (s *testArtifactService) GetFileContent(ctx context.Context, diskID uuid.UUID, path string, filename string) (*fileparser.FileContent, error) {
+	// This is a test implementation that doesn't actually download from S3
+	// In real tests, you would mock the S3 download and file parsing
+	return &fileparser.FileContent{
+		Type: "text",
+		Raw:  "test content",
+	}, nil
 }
 
 // Test cases for Create method

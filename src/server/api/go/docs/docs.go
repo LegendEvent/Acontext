@@ -142,7 +142,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get artifact information by path and filename. Optionally include a presigned URL for downloading.",
+                "description": "Get artifact information by path and filename. Optionally include a presigned URL for downloading and parsed file content.",
                 "consumes": [
                     "application/json"
                 ],
@@ -174,6 +174,12 @@ const docTemplate = `{
                         "type": "boolean",
                         "description": "Whether to return public URL, default is true",
                         "name": "with_public_url",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to return parsed file content, default is true",
+                        "name": "with_content",
                         "in": "query"
                     },
                     {
@@ -2401,6 +2407,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "fileparser.FileContent": {
+            "type": "object",
+            "properties": {
+                "raw": {
+                    "description": "Raw text content",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"text\", \"json\", \"csv\", \"code\"",
+                    "type": "string"
+                }
+            }
+        },
         "handler.ConnectToSpaceReq": {
             "type": "object",
             "required": [
@@ -2495,6 +2514,9 @@ const docTemplate = `{
             "properties": {
                 "artifact": {
                     "$ref": "#/definitions/model.Artifact"
+                },
+                "content": {
+                    "$ref": "#/definitions/fileparser.FileContent"
                 },
                 "public_url": {
                     "type": "string"
@@ -2888,6 +2910,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.Space"
                     }
                 },
+                "tasks": {
+                    "description": "Project \u003c-\u003e Task",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Task"
+                    }
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -3005,6 +3034,17 @@ const docTemplate = `{
                 },
                 "order": {
                     "type": "integer"
+                },
+                "project": {
+                    "description": "Task \u003c-\u003e Project",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Project"
+                        }
+                    ]
+                },
+                "project_id": {
+                    "type": "string"
                 },
                 "session": {
                     "description": "Task \u003c-\u003e Session",

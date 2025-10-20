@@ -11,6 +11,7 @@ import (
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
+	"github.com/memodb-io/Acontext/internal/pkg/utils/fileparser"
 	"github.com/memodb-io/Acontext/internal/pkg/utils/path"
 )
 
@@ -148,24 +149,27 @@ func (h *ArtifactHandler) DeleteArtifact(c *gin.Context) {
 type GetArtifactReq struct {
 	FilePath      string `form:"file_path" json:"file_path" binding:"required"` // File path including filename
 	WithPublicURL bool   `form:"with_public_url,default=true" json:"with_public_url" example:"true"`
+	WithContent   bool   `form:"with_content,default=true" json:"with_content" example:"true"`
 	Expire        int    `form:"expire,default=3600" json:"expire" example:"3600"` // Expire time in seconds for presigned URL
 }
 
 type GetArtifactResp struct {
-	Artifact  *model.Artifact `json:"artifact"`
-	PublicURL *string         `json:"public_url,omitempty"`
+	Artifact  *model.Artifact         `json:"artifact"`
+	PublicURL *string                 `json:"public_url,omitempty"`
+	Content   *fileparser.FileContent `json:"content,omitempty"`
 }
 
 // GetArtifact godoc
 //
 //	@Summary		Get artifact
-//	@Description	Get artifact information by path and filename. Optionally include a presigned URL for downloading.
+//	@Description	Get artifact information by path and filename. Optionally include a presigned URL for downloading and parsed file content.
 //	@Tags			artifact
 //	@Accept			json
 //	@Produce		json
 //	@Param			disk_id			path	string	true	"Disk ID"													Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
 //	@Param			file_path		query	string	true	"File path including filename"								example:"/documents/report.pdf"
 //	@Param			with_public_url	query	boolean	false	"Whether to return public URL, default is true"				example:"true"
+//	@Param			with_content	query	boolean	false	"Whether to return parsed file content, default is true"	example:"true"
 //	@Param			expire			query	int		false	"Expire time in seconds for presigned URL (default: 3600)"	example:"3600"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=handler.GetArtifactResp}
@@ -208,6 +212,17 @@ func (h *ArtifactHandler) GetArtifact(c *gin.Context) {
 			return
 		}
 		resp.PublicURL = &url
+	}
+
+	// Parse file content if requested
+	if req.WithContent {
+		content, err := h.svc.GetFileContent(c.Request.Context(), diskID, filePath, filename)
+		// Only set content if parsing succeeded
+		// Unsupported file types (images, binaries, etc.) will not have content
+		if err == nil && content != nil {
+			resp.Content = content
+		}
+		// Don't return error for unsupported file types - just don't include content
 	}
 
 	c.JSON(http.StatusOK, serializer.Response{Data: resp})
