@@ -9,6 +9,7 @@ from .base import ORM_BASE, CommonMixin
 if TYPE_CHECKING:
     from .space import Space
     from .session import Session
+    from .task import Task
     from .tool_reference import ToolReference
 
 
@@ -45,6 +46,15 @@ class Project(CommonMixin):
         metadata={
             "db": relationship(
                 "Session", back_populates="project", cascade="all, delete-orphan"
+            )
+        },
+    )
+
+    tasks: List["Task"] = field(
+        default_factory=list,
+        metadata={
+            "db": relationship(
+                "Task", back_populates="project", cascade="all, delete-orphan"
             )
         },
     )
