@@ -41,8 +41,8 @@ func (m *MockArtifactService) GetByID(ctx context.Context, diskID uuid.UUID, art
 	return args.Get(0).(*model.Artifact), args.Error(1)
 }
 
-func (m *MockArtifactService) GetPresignedURL(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID, expire time.Duration) (string, error) {
-	args := m.Called(ctx, diskID, artifactID, expire)
+func (m *MockArtifactService) GetPresignedURL(ctx context.Context, artifact *model.Artifact, expire time.Duration) (string, error) {
+	args := m.Called(ctx, artifact, expire)
 	return args.String(0), args.Error(1)
 }
 
@@ -76,18 +76,13 @@ func (m *MockArtifactService) GetByPath(ctx context.Context, diskID uuid.UUID, p
 	return args.Get(0).(*model.Artifact), args.Error(1)
 }
 
-func (m *MockArtifactService) GetPresignedURLByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, expire time.Duration) (string, error) {
-	args := m.Called(ctx, diskID, path, filename, expire)
-	return args.String(0), args.Error(1)
-}
-
 func (m *MockArtifactService) UpdateArtifactByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error) {
 	args := m.Called(ctx, diskID, path, filename, fileHeader, newPath, newFilename)
 	return args.Get(0).(*model.Artifact), args.Error(1)
 }
 
-func (m *MockArtifactService) GetFileContent(ctx context.Context, diskID uuid.UUID, path string, filename string) (*fileparser.FileContent, error) {
-	args := m.Called(ctx, diskID, path, filename)
+func (m *MockArtifactService) GetFileContent(ctx context.Context, artifact *model.Artifact) (*fileparser.FileContent, error) {
+	args := m.Called(ctx, artifact)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -465,8 +460,8 @@ func TestArtifactHandler_GetArtifact(t *testing.T) {
 					Raw:  "name,age\nJohn,25",
 				}
 				m.On("GetByPath", mock.Anything, diskID, "/test/", "data.csv").Return(expectedFile, nil)
-				m.On("GetPresignedURLByPath", mock.Anything, diskID, "/test/", "data.csv", mock.AnythingOfType("time.Duration")).Return("https://example.com/presigned-url", nil)
-				m.On("GetFileContent", mock.Anything, diskID, "/test/", "data.csv").Return(expectedContent, nil)
+				m.On("GetPresignedURL", mock.Anything, expectedFile, mock.AnythingOfType("time.Duration")).Return("https://example.com/presigned-url", nil)
+				m.On("GetFileContent", mock.Anything, expectedFile).Return(expectedContent, nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
