@@ -83,8 +83,8 @@ type RouterDeps struct {
 	SpaceHandler    *handler.SpaceHandler
 	BlockHandler    *handler.BlockHandler
 	SessionHandler  *handler.SessionHandler
+	DiskHandler     *handler.DiskHandler
 	ArtifactHandler *handler.ArtifactHandler
-	FileHandler     *handler.FileHandler
 }
 
 func NewRouter(d RouterDeps) *gin.Engine {
@@ -177,19 +177,19 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			session.GET("/:session_id/messages", d.SessionHandler.GetMessages)
 		}
 
-		artifact := v1.Group("/artifact")
+		disk := v1.Group("/disk")
 		{
-			artifact.GET("", d.ArtifactHandler.ListArtifacts)
-			artifact.POST("", d.ArtifactHandler.CreateArtifact)
-			artifact.DELETE("/:artifact_id", d.ArtifactHandler.DeleteArtifact)
+			disk.GET("", d.DiskHandler.ListDisks)
+			disk.POST("", d.DiskHandler.CreateDisk)
+			disk.DELETE("/:disk_id", d.DiskHandler.DeleteDisk)
 
-			file := artifact.Group("/:artifact_id/file")
+			artifact := disk.Group("/:disk_id/artifact")
 			{
-				file.POST("", d.FileHandler.CreateFile)
-				file.GET("", d.FileHandler.GetFile)
-				file.PUT("", d.FileHandler.UpdateFile)
-				file.DELETE("", d.FileHandler.DeleteFile)
-				file.GET("/ls", d.FileHandler.ListFiles)
+				artifact.POST("", d.ArtifactHandler.CreateArtifact)
+				artifact.GET("", d.ArtifactHandler.GetArtifact)
+				artifact.PUT("", d.ArtifactHandler.UpdateArtifact)
+				artifact.DELETE("", d.ArtifactHandler.DeleteArtifact)
+				artifact.GET("/ls", d.ArtifactHandler.ListArtifacts)
 			}
 		}
 	}

@@ -10,8 +10,15 @@ import (
 
 type ArtifactRepo interface {
 	Create(ctx context.Context, a *model.Artifact) error
-	Delete(ctx context.Context, projectID uuid.UUID, artifactID uuid.UUID) error
-	List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error)
+	Delete(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID) error
+	DeleteByPath(ctx context.Context, diskID uuid.UUID, path string, filename string) error
+	Update(ctx context.Context, a *model.Artifact) error
+	GetByID(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID) (*model.Artifact, error)
+	GetByPath(ctx context.Context, diskID uuid.UUID, path string, filename string) (*model.Artifact, error)
+	ListByPath(ctx context.Context, diskID uuid.UUID, path string) ([]*model.Artifact, error)
+	GetAllPaths(ctx context.Context, diskID uuid.UUID) ([]string, error)
+	ExistsByPathAndFilename(ctx context.Context, diskID uuid.UUID, path string, filename string, excludeID *uuid.UUID) (bool, error)
+	GetByDiskID(ctx context.Context, diskID uuid.UUID) ([]*model.Artifact, error)
 }
 
 type artifactRepo struct{ db *gorm.DB }
@@ -24,12 +31,89 @@ func (r *artifactRepo) Create(ctx context.Context, a *model.Artifact) error {
 	return r.db.WithContext(ctx).Create(a).Error
 }
 
-func (r *artifactRepo) Delete(ctx context.Context, projectID uuid.UUID, artifactID uuid.UUID) error {
-	return r.db.WithContext(ctx).Where("id = ? AND project_id = ?", artifactID, projectID).Delete(&model.Artifact{}).Error
+func (r *artifactRepo) Delete(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("id = ? AND disk_id = ?", artifactID, diskID).Delete(&model.Artifact{}).Error
 }
 
-func (r *artifactRepo) List(ctx context.Context, projectID uuid.UUID) ([]*model.Artifact, error) {
+func (r *artifactRepo) DeleteByPath(ctx context.Context, diskID uuid.UUID, path string, filename string) error {
+	return r.db.WithContext(ctx).Where("disk_id = ? AND path = ? AND filename = ?", diskID, path, filename).Delete(&model.Artifact{}).Error
+}
+
+func (r *artifactRepo) Update(ctx context.Context, a *model.Artifact) error {
+	return r.db.WithContext(ctx).Where("id = ? AND disk_id = ?", a.ID, a.DiskID).Updates(a).Error
+}
+
+func (r *artifactRepo) GetByID(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID) (*model.Artifact, error) {
+	var artifact model.Artifact
+	err := r.db.WithContext(ctx).Where("id = ? AND disk_id = ?", artifactID, diskID).First(&artifact).Error
+	if err != nil {
+		return nil, err
+	}
+	return &artifact, nil
+}
+
+func (r *artifactRepo) GetByPath(ctx context.Context, diskID uuid.UUID, path string, filename string) (*model.Artifact, error) {
+	var artifact model.Artifact
+	err := r.db.WithContext(ctx).Where("disk_id = ? AND path = ? AND filename = ?", diskID, path, filename).First(&artifact).Error
+	if err != nil {
+		return nil, err
+	}
+	return &artifact, nil
+}
+
+func (r *artifactRepo) ListByPath(ctx context.Context, diskID uuid.UUID, path string) ([]*model.Artifact, error) {
 	var artifacts []*model.Artifact
-	err := r.db.WithContext(ctx).Where("project_id = ?", projectID).Order("created_at DESC").Find(&artifacts).Error
-	return artifacts, err
+	query := r.db.WithContext(ctx).Where("disk_id = ?", diskID)
+
+	// If path is specified, filter by path
+	if path != "" {
+		query = query.Where("path = ?", path)
+	}
+
+	err := query.Find(&artifacts).Error
+	if err != nil {
+		return nil, err
+	}
+	return artifacts, nil
+}
+
+func (r *artifactRepo) GetAllPaths(ctx context.Context, diskID uuid.UUID) ([]string, error) {
+	var paths []string
+	err := r.db.WithContext(ctx).
+		Model(&model.Artifact{}).
+		Where("disk_id = ?", diskID).
+		Distinct("path").
+		Pluck("path", &paths).Error
+	if err != nil {
+		return nil, err
+	}
+	return paths, nil
+}
+
+func (r *artifactRepo) ExistsByPathAndFilename(ctx context.Context, diskID uuid.UUID, path string, filename string, excludeID *uuid.UUID) (bool, error) {
+	query := r.db.WithContext(ctx).Model(&model.Artifact{}).
+		Where("disk_id = ? AND path = ? AND filename = ?",
+			diskID, path, filename)
+
+	// Exclude specific artifact ID (useful for update operations)
+	if excludeID != nil {
+		query = query.Where("id != ?", *excludeID)
+	}
+
+	var count int64
+	err := query.Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (r *artifactRepo) GetByDiskID(ctx context.Context, diskID uuid.UUID) ([]*model.Artifact, error) {
+	var artifacts []*model.Artifact
+	err := r.db.WithContext(ctx).Where("disk_id = ?", diskID).Find(&artifacts).Error
+	if err != nil {
+		return nil, err
+	}
+	return artifacts, nil
 }

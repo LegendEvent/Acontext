@@ -51,8 +51,8 @@ func BuildContainer() *do.Injector {
 				&model.Session{},
 				&model.Message{},
 				&model.Block{},
+				&model.Disk{},
 				&model.Artifact{},
-				&model.File{},
 			)
 		}
 
@@ -110,11 +110,11 @@ func BuildContainer() *do.Injector {
 	do.Provide(inj, func(i *do.Injector) (repo.BlockRepo, error) {
 		return repo.NewBlockRepo(do.MustInvoke[*gorm.DB](i)), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (repo.DiskRepo, error) {
+		return repo.NewDiskRepo(do.MustInvoke[*gorm.DB](i)), nil
+	})
 	do.Provide(inj, func(i *do.Injector) (repo.ArtifactRepo, error) {
 		return repo.NewArtifactRepo(do.MustInvoke[*gorm.DB](i)), nil
-	})
-	do.Provide(inj, func(i *do.Injector) (repo.FileRepo, error) {
-		return repo.NewFileRepo(do.MustInvoke[*gorm.DB](i)), nil
 	})
 
 	// Service
@@ -133,15 +133,15 @@ func BuildContainer() *do.Injector {
 	do.Provide(inj, func(i *do.Injector) (service.BlockService, error) {
 		return service.NewBlockService(do.MustInvoke[repo.BlockRepo](i)), nil
 	})
-	do.Provide(inj, func(i *do.Injector) (service.ArtifactService, error) {
-		return service.NewArtifactService(
-			do.MustInvoke[repo.ArtifactRepo](i),
+	do.Provide(inj, func(i *do.Injector) (service.DiskService, error) {
+		return service.NewDiskService(
+			do.MustInvoke[repo.DiskRepo](i),
 			do.MustInvoke[*blob.S3Deps](i),
 		), nil
 	})
-	do.Provide(inj, func(i *do.Injector) (service.FileService, error) {
-		return service.NewFileService(
-			do.MustInvoke[repo.FileRepo](i),
+	do.Provide(inj, func(i *do.Injector) (service.ArtifactService, error) {
+		return service.NewArtifactService(
+			do.MustInvoke[repo.ArtifactRepo](i),
 			do.MustInvoke[*blob.S3Deps](i),
 		), nil
 	})
@@ -156,11 +156,11 @@ func BuildContainer() *do.Injector {
 	do.Provide(inj, func(i *do.Injector) (*handler.BlockHandler, error) {
 		return handler.NewBlockHandler(do.MustInvoke[service.BlockService](i)), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (*handler.DiskHandler, error) {
+		return handler.NewDiskHandler(do.MustInvoke[service.DiskService](i)), nil
+	})
 	do.Provide(inj, func(i *do.Injector) (*handler.ArtifactHandler, error) {
 		return handler.NewArtifactHandler(do.MustInvoke[service.ArtifactService](i)), nil
-	})
-	do.Provide(inj, func(i *do.Injector) (*handler.FileHandler, error) {
-		return handler.NewFileHandler(do.MustInvoke[service.FileService](i)), nil
 	})
 
 	return inj

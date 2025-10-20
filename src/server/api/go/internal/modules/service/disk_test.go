@@ -1,0 +1,284 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/memodb-io/Acontext/internal/infra/blob"
+	"github.com/memodb-io/Acontext/internal/modules/model"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+// MockDiskRepo is a mock implementation of DiskRepo
+type MockDiskRepo struct {
+	mock.Mock
+}
+
+func (m *MockDiskRepo) Create(ctx context.Context, a *model.Disk) error {
+	args := m.Called(ctx, a)
+	return args.Error(0)
+}
+
+func (m *MockDiskRepo) Delete(ctx context.Context, projectID uuid.UUID, diskID uuid.UUID) error {
+	args := m.Called(ctx, projectID, diskID)
+	return args.Error(0)
+}
+
+func (m *MockDiskRepo) List(ctx context.Context, projectID uuid.UUID) ([]*model.Disk, error) {
+	args := m.Called(ctx, projectID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*model.Disk), args.Error(1)
+}
+
+// MockS3Deps is a mock implementation of blob.S3Deps
+type MockS3Deps struct {
+	mock.Mock
+}
+
+func (m *MockS3Deps) UploadFormFile(ctx context.Context, s3Key string, fileHeader interface{}) (*blob.UploadedMeta, error) {
+	args := m.Called(ctx, s3Key, fileHeader)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*blob.UploadedMeta), args.Error(1)
+}
+
+func (m *MockS3Deps) PresignGet(ctx context.Context, s3Key string, expire time.Duration) (string, error) {
+	args := m.Called(ctx, s3Key, expire)
+	return args.String(0), args.Error(1)
+}
+
+// testDiskService is a test version that uses interfaces
+type testDiskService struct {
+	r  *MockDiskRepo
+	s3 *MockS3Deps
+}
+
+func newTestDiskService(r *MockDiskRepo, s3 *MockS3Deps) DiskService {
+	return &testDiskService{r: r, s3: s3}
+}
+
+func (s *testDiskService) Create(ctx context.Context, projectID uuid.UUID) (*model.Disk, error) {
+	disk := &model.Disk{
+		ID:        uuid.New(),
+		ProjectID: projectID,
+	}
+
+	if err := s.r.Create(ctx, disk); err != nil {
+		return nil, err
+	}
+
+	return disk, nil
+}
+
+func (s *testDiskService) Delete(ctx context.Context, projectID uuid.UUID, diskID uuid.UUID) error {
+	if diskID == uuid.Nil {
+		return errors.New("disk id is empty")
+	}
+	return s.r.Delete(ctx, projectID, diskID)
+}
+
+func (s *testDiskService) List(ctx context.Context, projectID uuid.UUID) ([]*model.Disk, error) {
+	return s.r.List(ctx, projectID)
+}
+
+func createTestDisk() *model.Disk {
+	projectID := uuid.New()
+	diskID := uuid.New()
+
+	return &model.Disk{
+		ID:        diskID,
+		ProjectID: projectID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
+
+func TestDiskService_Create(t *testing.T) {
+	projectID := uuid.New()
+
+	tests := []struct {
+		name        string
+		setup       func(*MockDiskRepo)
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name: "successful creation",
+			setup: func(repo *MockDiskRepo) {
+				repo.On("Create", mock.Anything, mock.MatchedBy(func(a *model.Disk) bool {
+					return a.ProjectID == projectID && a.ID != uuid.Nil
+				})).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name: "create record error",
+			setup: func(repo *MockDiskRepo) {
+				repo.On("Create", mock.Anything, mock.Anything).Return(errors.New("create error"))
+			},
+			expectError: true,
+			errorMsg:    "create error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &MockDiskRepo{}
+			tt.setup(mockRepo)
+
+			service := newTestDiskService(mockRepo, &MockS3Deps{})
+
+			disk, err := service.Create(context.Background(), projectID)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, disk)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, disk)
+				assert.Equal(t, projectID, disk.ProjectID)
+				assert.NotEqual(t, uuid.Nil, disk.ID)
+			}
+
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestDiskService_List(t *testing.T) {
+	projectID := uuid.New()
+	disk1 := createTestDisk()
+	disk1.ProjectID = projectID
+	disk2 := createTestDisk()
+	disk2.ProjectID = projectID
+
+	tests := []struct {
+		name        string
+		setup       func(*MockDiskRepo)
+		expectError bool
+		errorMsg    string
+		expectCount int
+	}{
+		{
+			name: "successful list with disks",
+			setup: func(repo *MockDiskRepo) {
+				repo.On("List", mock.Anything, projectID).Return([]*model.Disk{disk1, disk2}, nil)
+			},
+			expectError: false,
+			expectCount: 2,
+		},
+		{
+			name: "successful list with empty result",
+			setup: func(repo *MockDiskRepo) {
+				repo.On("List", mock.Anything, projectID).Return([]*model.Disk{}, nil)
+			},
+			expectError: false,
+			expectCount: 0,
+		},
+		{
+			name: "repo error",
+			setup: func(repo *MockDiskRepo) {
+				repo.On("List", mock.Anything, projectID).Return(nil, errors.New("list error"))
+			},
+			expectError: true,
+			errorMsg:    "list error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &MockDiskRepo{}
+			tt.setup(mockRepo)
+
+			service := newTestDiskService(mockRepo, &MockS3Deps{})
+
+			disks, err := service.List(context.Background(), projectID)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, disks)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, disks)
+				assert.Len(t, disks, tt.expectCount)
+				for _, disk := range disks {
+					assert.Equal(t, projectID, disk.ProjectID)
+				}
+			}
+
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestDiskService_Delete(t *testing.T) {
+	projectID := uuid.New()
+	diskID := uuid.New()
+
+	tests := []struct {
+		name        string
+		diskID  uuid.UUID
+		setup       func(*MockDiskRepo)
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name:       "successful deletion",
+			diskID: diskID,
+			setup: func(repo *MockDiskRepo) {
+				repo.On("Delete", mock.Anything, projectID, diskID).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name:       "empty disk ID",
+			diskID: uuid.UUID{},
+			setup: func(repo *MockDiskRepo) {
+				// No mock setup needed as the service should return error before calling repo
+			},
+			expectError: true,
+			errorMsg:    "disk id is empty",
+		},
+		{
+			name:       "repo error",
+			diskID: diskID,
+			setup: func(repo *MockDiskRepo) {
+				repo.On("Delete", mock.Anything, projectID, diskID).Return(errors.New("delete error"))
+			},
+			expectError: true,
+			errorMsg:    "delete error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &MockDiskRepo{}
+			tt.setup(mockRepo)
+
+			service := newTestDiskService(mockRepo, &MockS3Deps{})
+
+			err := service.Delete(context.Background(), projectID, tt.diskID)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// Only assert expectations if we expect the repo to be called
+			if !tt.expectError || tt.errorMsg != "disk id is empty" {
+				mockRepo.AssertExpectations(t)
+			}
+		})
+	}
+}

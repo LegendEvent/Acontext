@@ -61,10 +61,10 @@ definitions:
         additionalProperties: true
         type: object
     type: object
-  handler.GetFileResp:
+  handler.GetArtifactResp:
     properties:
-      file:
-        $ref: '#/definitions/model.File'
+      artifact:
+        $ref: '#/definitions/model.Artifact'
       public_url:
         type: string
     type: object
@@ -89,15 +89,15 @@ definitions:
     required:
     - query
     type: object
-  handler.ListFilesResp:
+  handler.ListArtifactsResp:
     properties:
+      artifacts:
+        items:
+          $ref: '#/definitions/model.Artifact'
+        type: array
       directories:
         items:
           type: string
-        type: array
-      files:
-        items:
-          $ref: '#/definitions/model.File'
         type: array
     type: object
   handler.MoveBlockReq:
@@ -140,6 +140,11 @@ definitions:
     - parts
     - role
     type: object
+  handler.UpdateArtifactResp:
+    properties:
+      artifact:
+        $ref: '#/definitions/model.Artifact'
+    type: object
   handler.UpdateBlockPropertiesReq:
     properties:
       props:
@@ -152,11 +157,6 @@ definitions:
     properties:
       sort:
         type: integer
-    type: object
-  handler.UpdateFileResp:
-    properties:
-      file:
-        $ref: '#/definitions/model.File'
     type: object
   handler.UpdateFolderPropertiesReq:
     properties:
@@ -202,13 +202,17 @@ definitions:
     properties:
       created_at:
         type: string
-      id:
-        type: string
-      project:
+      disk:
         allOf:
-        - $ref: '#/definitions/model.Project'
-        description: Artifact <-> Project
-      project_id:
+        - $ref: '#/definitions/model.Disk'
+        description: Artifact <-> Disk
+      disk_id:
+        type: string
+      filename:
+        type: string
+      meta:
+        type: object
+      path:
         type: string
       updated_at:
         type: string
@@ -244,21 +248,17 @@ definitions:
       updated_at:
         type: string
     type: object
-  model.File:
+  model.Disk:
     properties:
-      artifact:
-        allOf:
-        - $ref: '#/definitions/model.Artifact'
-        description: File <-> Artifact
-      artifact_id:
-        type: string
       created_at:
         type: string
-      filename:
+      id:
         type: string
-      meta:
-        type: object
-      path:
+      project:
+        allOf:
+        - $ref: '#/definitions/model.Project'
+        description: Disk <-> Project
+      project_id:
         type: string
       updated_at:
         type: string
@@ -380,15 +380,19 @@ definitions:
     properties:
       created_at:
         type: string
+      data:
+        type: object
       id:
         type: string
-      is_planning_task:
+      is_planning:
         type: boolean
       messages:
         description: Task <-> Message (one-to-many)
         items:
           $ref: '#/definitions/model.Message'
         type: array
+      order:
+        type: integer
       session:
         allOf:
         - $ref: '#/definitions/model.Session'
@@ -397,11 +401,7 @@ definitions:
         type: string
       space_digested:
         type: boolean
-      task_data:
-        type: object
-      task_order:
-        type: integer
-      task_status:
+      status:
         type: string
       updated_at:
         type: string
@@ -445,11 +445,11 @@ info:
   title: Acontext API
   version: "1.0"
 paths:
-  /artifact:
+  /disk:
     get:
       consumes:
       - application/json
-      description: List all artifacts under a project
+      description: List all disks under a project
       produces:
       - application/json
       responses:
@@ -461,18 +461,18 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/model.Artifact'
+                    $ref: '#/definitions/model.Disk'
                   type: array
               type: object
       security:
       - BearerAuth: []
-      summary: List artifacts
+      summary: List disks
       tags:
-      - artifact
+      - disk
     post:
       consumes:
       - application/json
-      description: Create an artifact group under a project
+      description: Create a disk group under a project
       produces:
       - application/json
       responses:
@@ -483,24 +483,24 @@ paths:
             - $ref: '#/definitions/serializer.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/model.Artifact'
+                  $ref: '#/definitions/model.Disk'
               type: object
       security:
       - BearerAuth: []
-      summary: Create artifact
+      summary: Create disk
       tags:
-      - artifact
-  /artifact/{artifact_id}:
+      - disk
+  /disk/{disk_id}:
     delete:
       consumes:
       - application/json
-      description: Delete an artifact by its UUID
+      description: Delete a disk by its UUID
       parameters:
-      - description: Artifact ID
+      - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
-        name: artifact_id
+        name: disk_id
         required: true
         type: string
       produces:
@@ -512,20 +512,20 @@ paths:
             $ref: '#/definitions/serializer.Response'
       security:
       - BearerAuth: []
-      summary: Delete artifact
+      summary: Delete disk
       tags:
-      - artifact
-  /artifact/{artifact_id}/file:
+      - disk
+  /disk/{disk_id}/artifact:
     delete:
       consumes:
       - application/json
-      description: Delete a file by path and filename
+      description: Delete an artifact by path and filename
       parameters:
-      - description: Artifact ID
+      - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
-        name: artifact_id
+        name: disk_id
         required: true
         type: string
       - description: File path including filename
@@ -542,20 +542,20 @@ paths:
             $ref: '#/definitions/serializer.Response'
       security:
       - BearerAuth: []
-      summary: Delete file
+      summary: Delete artifact
       tags:
-      - file
+      - artifact
     get:
       consumes:
       - application/json
-      description: Get file information by path and filename. Optionally include a
-        presigned URL for downloading.
+      description: Get artifact information by path and filename. Optionally include
+        a presigned URL for downloading.
       parameters:
-      - description: Artifact ID
+      - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
-        name: artifact_id
+        name: disk_id
         required: true
         type: string
       - description: File path including filename
@@ -581,26 +581,26 @@ paths:
             - $ref: '#/definitions/serializer.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handler.GetFileResp'
+                  $ref: '#/definitions/handler.GetArtifactResp'
               type: object
       security:
       - BearerAuth: []
-      summary: Get file
+      summary: Get artifact
       tags:
-      - file
+      - artifact
     post:
       consumes:
       - multipart/form-data
-      description: Upload a file and create a file record under an artifact
+      description: Upload a file and create an artifact record under a disk
       parameters:
-      - description: Artifact ID
+      - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
-        name: artifact_id
+        name: disk_id
         required: true
         type: string
-      - description: File path in the artifact storage (optional, defaults to '/')
+      - description: File path in the disk storage (optional, defaults to '/')
         in: formData
         name: file_path
         type: string
@@ -610,7 +610,7 @@ paths:
         required: true
         type: file
       - description: Custom metadata as JSON string (optional, system metadata will
-          be stored under '__file_info__' key)
+          be stored under '__artifact_info__' key)
         in: formData
         name: meta
         type: string
@@ -624,23 +624,23 @@ paths:
             - $ref: '#/definitions/serializer.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/model.File'
+                  $ref: '#/definitions/model.Artifact'
               type: object
       security:
       - BearerAuth: []
-      summary: Create file
+      summary: Create artifact
       tags:
-      - file
+      - artifact
     put:
       consumes:
       - multipart/form-data
-      description: Update a file by uploading a new file (path cannot be changed)
+      description: Update an artifact by uploading a new file (path cannot be changed)
       parameters:
-      - description: Artifact ID
+      - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
-        name: artifact_id
+        name: disk_id
         required: true
         type: string
       - description: File path including filename
@@ -663,24 +663,24 @@ paths:
             - $ref: '#/definitions/serializer.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handler.UpdateFileResp'
+                  $ref: '#/definitions/handler.UpdateArtifactResp'
               type: object
       security:
       - BearerAuth: []
-      summary: Update file
+      summary: Update artifact
       tags:
-      - file
-  /artifact/{artifact_id}/file/ls:
+      - artifact
+  /disk/{disk_id}/artifact/ls:
     get:
       consumes:
       - application/json
-      description: List files in a specific path or all files in an artifact
+      description: List artifacts in a specific path or all artifacts in a disk
       parameters:
-      - description: Artifact ID
+      - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
         format: uuid
         in: path
-        name: artifact_id
+        name: disk_id
         required: true
         type: string
       - description: Path filter (optional, defaults to root '/')
@@ -697,13 +697,13 @@ paths:
             - $ref: '#/definitions/serializer.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handler.ListFilesResp'
+                  $ref: '#/definitions/handler.ListArtifactsResp'
               type: object
       security:
       - BearerAuth: []
-      summary: List files
+      summary: List artifacts
       tags:
-      - file
+      - artifact
   /session:
     get:
       consumes:

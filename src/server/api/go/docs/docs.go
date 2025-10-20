@@ -15,14 +15,14 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/artifact": {
+        "/disk": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all artifacts under a project",
+                "description": "List all disks under a project",
                 "consumes": [
                     "application/json"
                 ],
@@ -30,9 +30,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "artifact"
+                    "disk"
                 ],
-                "summary": "List artifacts",
+                "summary": "List disks",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -47,7 +47,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.Artifact"
+                                                "$ref": "#/definitions/model.Disk"
                                             }
                                         }
                                     }
@@ -63,7 +63,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create an artifact group under a project",
+                "description": "Create a disk group under a project",
                 "consumes": [
                     "application/json"
                 ],
@@ -71,9 +71,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "artifact"
+                    "disk"
                 ],
-                "summary": "Create artifact",
+                "summary": "Create disk",
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -86,7 +86,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.Artifact"
+                                            "$ref": "#/definitions/model.Disk"
                                         }
                                     }
                                 }
@@ -96,14 +96,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/artifact/{artifact_id}": {
+        "/disk/{disk_id}": {
             "delete": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an artifact by its UUID",
+                "description": "Delete a disk by its UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -111,16 +111,16 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "artifact"
+                    "disk"
                 ],
-                "summary": "Delete artifact",
+                "summary": "Delete disk",
                 "parameters": [
                     {
                         "type": "string",
                         "format": "uuid",
                         "example": "123e4567-e89b-12d3-a456-426614174000",
-                        "description": "Artifact ID",
-                        "name": "artifact_id",
+                        "description": "Disk ID",
+                        "name": "disk_id",
                         "in": "path",
                         "required": true
                     }
@@ -135,14 +135,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/artifact/{artifact_id}/file": {
+        "/disk/{disk_id}/artifact": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get file information by path and filename. Optionally include a presigned URL for downloading.",
+                "description": "Get artifact information by path and filename. Optionally include a presigned URL for downloading.",
                 "consumes": [
                     "application/json"
                 ],
@@ -150,16 +150,16 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "file"
+                    "artifact"
                 ],
-                "summary": "Get file",
+                "summary": "Get artifact",
                 "parameters": [
                     {
                         "type": "string",
                         "format": "uuid",
                         "example": "123e4567-e89b-12d3-a456-426614174000",
-                        "description": "Artifact ID",
-                        "name": "artifact_id",
+                        "description": "Disk ID",
+                        "name": "disk_id",
                         "in": "path",
                         "required": true
                     },
@@ -195,7 +195,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handler.GetFileResp"
+                                            "$ref": "#/definitions/handler.GetArtifactResp"
                                         }
                                     }
                                 }
@@ -210,7 +210,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update a file by uploading a new file (path cannot be changed)",
+                "description": "Update an artifact by uploading a new file (path cannot be changed)",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -218,16 +218,16 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "file"
+                    "artifact"
                 ],
-                "summary": "Update file",
+                "summary": "Update artifact",
                 "parameters": [
                     {
                         "type": "string",
                         "format": "uuid",
                         "example": "123e4567-e89b-12d3-a456-426614174000",
-                        "description": "Artifact ID",
-                        "name": "artifact_id",
+                        "description": "Disk ID",
+                        "name": "disk_id",
                         "in": "path",
                         "required": true
                     },
@@ -258,7 +258,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handler.UpdateFileResp"
+                                            "$ref": "#/definitions/handler.UpdateArtifactResp"
                                         }
                                     }
                                 }
@@ -273,7 +273,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload a file and create a file record under an artifact",
+                "description": "Upload a file and create an artifact record under a disk",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -281,22 +281,22 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "file"
+                    "artifact"
                 ],
-                "summary": "Create file",
+                "summary": "Create artifact",
                 "parameters": [
                     {
                         "type": "string",
                         "format": "uuid",
                         "example": "123e4567-e89b-12d3-a456-426614174000",
-                        "description": "Artifact ID",
-                        "name": "artifact_id",
+                        "description": "Disk ID",
+                        "name": "disk_id",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "File path in the artifact storage (optional, defaults to '/')",
+                        "description": "File path in the disk storage (optional, defaults to '/')",
                         "name": "file_path",
                         "in": "formData"
                     },
@@ -309,7 +309,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Custom metadata as JSON string (optional, system metadata will be stored under '__file_info__' key)",
+                        "description": "Custom metadata as JSON string (optional, system metadata will be stored under '__artifact_info__' key)",
                         "name": "meta",
                         "in": "formData"
                     }
@@ -326,7 +326,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.File"
+                                            "$ref": "#/definitions/model.Artifact"
                                         }
                                     }
                                 }
@@ -341,7 +341,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a file by path and filename",
+                "description": "Delete an artifact by path and filename",
                 "consumes": [
                     "application/json"
                 ],
@@ -349,16 +349,16 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "file"
+                    "artifact"
                 ],
-                "summary": "Delete file",
+                "summary": "Delete artifact",
                 "parameters": [
                     {
                         "type": "string",
                         "format": "uuid",
                         "example": "123e4567-e89b-12d3-a456-426614174000",
-                        "description": "Artifact ID",
-                        "name": "artifact_id",
+                        "description": "Disk ID",
+                        "name": "disk_id",
                         "in": "path",
                         "required": true
                     },
@@ -380,14 +380,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/artifact/{artifact_id}/file/ls": {
+        "/disk/{disk_id}/artifact/ls": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "List files in a specific path or all files in an artifact",
+                "description": "List artifacts in a specific path or all artifacts in a disk",
                 "consumes": [
                     "application/json"
                 ],
@@ -395,16 +395,16 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "file"
+                    "artifact"
                 ],
-                "summary": "List files",
+                "summary": "List artifacts",
                 "parameters": [
                     {
                         "type": "string",
                         "format": "uuid",
                         "example": "123e4567-e89b-12d3-a456-426614174000",
-                        "description": "Artifact ID",
-                        "name": "artifact_id",
+                        "description": "Disk ID",
+                        "name": "disk_id",
                         "in": "path",
                         "required": true
                     },
@@ -427,7 +427,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handler.ListFilesResp"
+                                            "$ref": "#/definitions/handler.ListArtifactsResp"
                                         }
                                     }
                                 }
@@ -2490,11 +2490,11 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.GetFileResp": {
+        "handler.GetArtifactResp": {
             "type": "object",
             "properties": {
-                "file": {
-                    "$ref": "#/definitions/model.File"
+                "artifact": {
+                    "$ref": "#/definitions/model.Artifact"
                 },
                 "public_url": {
                     "type": "string"
@@ -2534,19 +2534,19 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.ListFilesResp": {
+        "handler.ListArtifactsResp": {
             "type": "object",
             "properties": {
+                "artifacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Artifact"
+                    }
+                },
                 "directories": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
-                },
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.File"
                     }
                 }
             }
@@ -2610,6 +2610,14 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.UpdateArtifactResp": {
+            "type": "object",
+            "properties": {
+                "artifact": {
+                    "$ref": "#/definitions/model.Artifact"
+                }
+            }
+        },
         "handler.UpdateBlockPropertiesReq": {
             "type": "object",
             "properties": {
@@ -2627,14 +2635,6 @@ const docTemplate = `{
             "properties": {
                 "sort": {
                     "type": "integer"
-                }
-            }
-        },
-        "handler.UpdateFileResp": {
-            "type": "object",
-            "properties": {
-                "file": {
-                    "$ref": "#/definitions/model.File"
                 }
             }
         },
@@ -2705,18 +2705,24 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string"
-                },
-                "project": {
-                    "description": "Artifact \u003c-\u003e Project",
+                "disk": {
+                    "description": "Artifact \u003c-\u003e Disk",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.Project"
+                            "$ref": "#/definitions/model.Disk"
                         }
                     ]
                 },
-                "project_id": {
+                "disk_id": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "meta": {
+                    "type": "object"
+                },
+                "path": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -2771,30 +2777,24 @@ const docTemplate = `{
                 }
             }
         },
-        "model.File": {
+        "model.Disk": {
             "type": "object",
             "properties": {
-                "artifact": {
-                    "description": "File \u003c-\u003e Artifact",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Artifact"
-                        }
-                    ]
-                },
-                "artifact_id": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
-                "filename": {
+                "id": {
                     "type": "string"
                 },
-                "meta": {
-                    "type": "object"
+                "project": {
+                    "description": "Disk \u003c-\u003e Project",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Project"
+                        }
+                    ]
                 },
-                "path": {
+                "project_id": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -2987,10 +2987,13 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "data": {
+                    "type": "object"
+                },
                 "id": {
                     "type": "string"
                 },
-                "is_planning_task": {
+                "is_planning": {
                     "type": "boolean"
                 },
                 "messages": {
@@ -2999,6 +3002,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.Message"
                     }
+                },
+                "order": {
+                    "type": "integer"
                 },
                 "session": {
                     "description": "Task \u003c-\u003e Session",
@@ -3014,13 +3020,7 @@ const docTemplate = `{
                 "space_digested": {
                     "type": "boolean"
                 },
-                "task_data": {
-                    "type": "object"
-                },
-                "task_order": {
-                    "type": "integer"
-                },
-                "task_status": {
+                "status": {
                     "type": "string"
                 },
                 "updated_at": {
