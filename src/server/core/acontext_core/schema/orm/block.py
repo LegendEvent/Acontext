@@ -31,11 +31,19 @@ BLOCK_TYPES = {
         "name": "text",
         "allow_children": True,
         "require_parent": True,
+        "props_schema": {
+            "use_when": str,
+            "notes": str,
+        },
     },
     "sop": {
         "name": "sop",
         "allow_children": True,
         "require_parent": True,
+        "props_schema": {
+            "use_when": str,
+            "notes": str,
+        },
     },
 }
 

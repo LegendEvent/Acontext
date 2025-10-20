@@ -37,7 +37,7 @@ async def _append_messages_to_task_handler(
         )
     if actually_task.status in (TaskStatus.SUCCESS, TaskStatus.FAILED):
         return Result.resolve(
-            f"Task {task_order} is already {actually_task.status}, appending failed."
+            f"Appending failed. Task {task_order} is already {actually_task.status}. Update its status to 'running' first then append messages."
         )
     r = await TD.append_messages_to_task(
         ctx.db_session,
@@ -62,7 +62,7 @@ _append_messages_to_task_tool = (
                 "description": """Link current message ids to a task for tracking progress and context.
 Use this to associate conversation messages with relevant tasks.
 Make sure you append messages first(if any), then update the task status.
-If the task is marked as 'success' or 'failed', don't append messages to it.""",
+If you decide to append message to a task marked as 'success' or 'failed', update it's status to 'running' first""",
                 "parameters": {
                     "type": "object",
                     "properties": {

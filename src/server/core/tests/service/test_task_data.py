@@ -41,26 +41,26 @@ class TestFetchCurrentTasks:
             tasks_data = [
                 {
                     "session_id": test_session.id,
-                    "task_order": 1,
-                    "task_data": {"name": "task1", "description": "First task"},
-                    "task_status": "pending",
+                    "order": 1,
+                    "data": {"name": "task1", "description": "First task"},
+                    "status": "pending",
                 },
                 {
                     "session_id": test_session.id,
-                    "task_order": 2,
-                    "task_data": {"name": "task2", "description": "Second task"},
-                    "task_status": "running",
+                    "order": 2,
+                    "data": {"name": "task2", "description": "Second task"},
+                    "status": "running",
                 },
                 {
                     "session_id": test_session.id,
-                    "task_order": 3,
-                    "task_data": {"name": "task3", "description": "Third task"},
-                    "task_status": "success",
+                    "order": 3,
+                    "data": {"name": "task3", "description": "Third task"},
+                    "status": "success",
                 },
             ]
 
-            for task_data in tasks_data:
-                task = Task(**task_data)
+            for data in tasks_data:
+                task = Task(**data)
                 session.add(task)
 
             await session.flush()
@@ -74,10 +74,10 @@ class TestFetchCurrentTasks:
             assert data is not None
             assert len(data) == 3
 
-            # Check if tasks are ordered by task_order
-            assert data[0].task_order == 1
-            assert data[1].task_order == 2
-            assert data[2].task_order == 3
+            # Check if tasks are ordered by order
+            assert data[0].order == 1
+            assert data[1].order == 2
+            assert data[2].order == 3
 
             await session.delete(project)
 
@@ -106,15 +106,15 @@ class TestFetchCurrentTasks:
             # Create sample tasks with different statuses
             task1 = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "task1"},
-                task_status="pending",
+                order=1,
+                data={"name": "task1"},
+                status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
-                task_order=2,
-                task_data={"name": "task2"},
-                task_status="running",
+                order=2,
+                data={"name": "task2"},
+                status="running",
             )
             session.add_all([task1, task2])
             await session.flush()
@@ -128,7 +128,7 @@ class TestFetchCurrentTasks:
             assert error is None
             assert data is not None
             assert len(data) == 1
-            assert data[0].task_status == "pending"
+            assert data[0].status == "pending"
 
             await session.delete(project)
 
@@ -151,7 +151,7 @@ class TestFetchCurrentTasks:
 
 class TestUpdateTask:
     @pytest.mark.asyncio
-    async def test_update_task_status_success(self):
+    async def test_update_status_success(self):
         """Test updating task status"""
         db_client = DatabaseClient()
         await db_client.create_tables()
@@ -174,27 +174,27 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "test_task"},
-                task_status="pending",
+                order=1,
+                data={"name": "test_task"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
 
-            original_status = task.task_status
+            original_status = task.status
 
             result = await update_task(session, task.id, status="success")
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
-            assert data.task_status == "success"
-            assert data.task_status != original_status
+            assert data.status == "success"
+            assert data.status != original_status
 
             await session.delete(project)
 
     @pytest.mark.asyncio
-    async def test_update_task_order_success(self):
+    async def test_update_order_success(self):
         """Test updating task order"""
         db_client = DatabaseClient()
         await db_client.create_tables()
@@ -217,14 +217,14 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "test_task"},
-                task_status="pending",
+                order=1,
+                data={"name": "test_task"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
 
-            original_order = task.task_order
+            original_order = task.order
             new_order = 10
 
             result = await update_task(session, task.id, order=new_order)
@@ -232,13 +232,13 @@ class TestUpdateTask:
             data, error = result.unpack()
             assert error is None
             assert data is not None
-            assert data.task_order == new_order
-            assert data.task_order != original_order
+            assert data.order == new_order
+            assert data.order != original_order
 
             await session.delete(project)
 
     @pytest.mark.asyncio
-    async def test_update_task_data_success(self):
+    async def test_update_data_success(self):
         """Test updating task data"""
         db_client = DatabaseClient()
         await db_client.create_tables()
@@ -261,9 +261,9 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "original_task"},
-                task_status="pending",
+                order=1,
+                data={"name": "original_task"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
@@ -275,7 +275,7 @@ class TestUpdateTask:
             data, error = result.unpack()
             assert error is None
             assert data is not None
-            assert data.task_data == new_data
+            assert data.data == new_data
 
             await session.delete(project)
 
@@ -303,9 +303,9 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "original_task"},
-                task_status="pending",
+                order=1,
+                data={"name": "original_task"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
@@ -321,9 +321,9 @@ class TestUpdateTask:
             data, error = result.unpack()
             assert error is None
             assert data is not None
-            assert data.task_status == new_status
-            assert data.task_order == new_order
-            assert data.task_data == new_data
+            assert data.status == new_status
+            assert data.order == new_order
+            assert data.data == new_data
 
             await session.delete(project)
 
@@ -367,16 +367,16 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "test_task"},
-                task_status="pending",
+                order=1,
+                data={"name": "test_task"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
 
-            original_status = task.task_status
-            original_order = task.task_order
-            original_data = task.task_data
+            original_status = task.status
+            original_order = task.order
+            original_data = task.data
 
             result = await update_task(
                 session, task.id, status=None, order=None, data=None
@@ -385,9 +385,9 @@ class TestUpdateTask:
             data, error = result.unpack()
             assert error is None
             assert data is not None
-            assert data.task_status == original_status
-            assert data.task_order == original_order
-            assert data.task_data == original_data
+            assert data.status == original_status
+            assert data.order == original_order
+            assert data.data == original_data
 
             await session.delete(project)
 
@@ -423,9 +423,9 @@ class TestUpdateTask:
             }
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data=initial_data,
-                task_status="pending",
+                order=1,
+                data=initial_data,
+                status="pending",
             )
             session.add(task)
             await session.flush()
@@ -439,11 +439,11 @@ class TestUpdateTask:
             assert data is not None
 
             # Verify the patched field is updated
-            assert data.task_data["task_description"] == "updated task description"
+            assert data.data["task_description"] == "updated task description"
             # Verify other fields remain unchanged
-            assert data.task_data["priority"] == "medium"
-            assert data.task_data["metadata"] == initial_data["metadata"]
-            assert data.task_data["status_details"] == initial_data["status_details"]
+            assert data.data["priority"] == "medium"
+            assert data.data["metadata"] == initial_data["metadata"]
+            assert data.data["status_details"] == initial_data["status_details"]
 
             # Test 2: Add new fields via patch_data
             patch_data = {"new_field": "new_value", "assigned_to": "user123"}
@@ -454,11 +454,11 @@ class TestUpdateTask:
             assert data is not None
 
             # Verify new fields are added
-            assert data.task_data["new_field"] == "new_value"
-            assert data.task_data["assigned_to"] == "user123"
+            assert data.data["new_field"] == "new_value"
+            assert data.data["assigned_to"] == "user123"
             # Verify existing fields remain unchanged
-            assert data.task_data["task_description"] == "updated task description"
-            assert data.task_data["priority"] == "medium"
+            assert data.data["task_description"] == "updated task description"
+            assert data.data["priority"] == "medium"
 
             # Test 3: Update multiple existing fields
             patch_data = {
@@ -472,14 +472,14 @@ class TestUpdateTask:
             assert data is not None
 
             # Verify updated fields
-            assert data.task_data["priority"] == "high"
-            assert data.task_data["status_details"] == {
+            assert data.data["priority"] == "high"
+            assert data.data["status_details"] == {
                 "attempts": 1,
                 "last_error": None,
             }
             # Verify other fields remain unchanged
-            assert data.task_data["task_description"] == "updated task description"
-            assert data.task_data["new_field"] == "new_value"
+            assert data.data["task_description"] == "updated task description"
+            assert data.data["new_field"] == "new_value"
 
             # Test 4: Verify data parameter takes precedence over patch_data
             complete_new_data = {"completely": "new", "data": "structure"}
@@ -494,8 +494,8 @@ class TestUpdateTask:
             assert data is not None
 
             # Verify data parameter took precedence
-            assert data.task_data == complete_new_data
-            assert "should" not in data.task_data
+            assert data.data == complete_new_data
+            assert "should" not in data.data
 
             await session.delete(project)
 
@@ -524,9 +524,9 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"task_description": "original", "step": "init"},
-                task_status="pending",
+                order=1,
+                data={"task_description": "original", "step": "init"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
@@ -545,10 +545,10 @@ class TestUpdateTask:
             assert data is not None
 
             # Verify all updates were applied
-            assert data.task_status == "running"
-            assert data.task_order == 5
-            assert data.task_data["task_description"] == "patched description"
-            assert data.task_data["step"] == "processing"
+            assert data.status == "running"
+            assert data.order == 5
+            assert data.data["task_description"] == "patched description"
+            assert data.data["step"] == "processing"
 
             await session.delete(project)
 
@@ -576,17 +576,17 @@ class TestInsertTask:
             session.add(test_session)
             await session.flush()
 
-            task_data = {"name": "new_task", "description": "A new task"}
+            data = {"name": "new_task", "description": "A new task"}
             after_order = 0  # Insert after position 0 (will become position 1)
 
-            result = await insert_task(session, test_session.id, after_order, task_data)
+            result = await insert_task(session, test_session.id, after_order, data)
 
-            data, error = result.unpack()
+            t_data, error = result.unpack()
             assert error is None
-            assert data is not None
-            assert isinstance(data, Task)  # Should return Task object, not UUID
-            assert data.task_order == 1  # Should be at position 1
-            assert data.task_data == task_data
+            assert t_data is not None
+            assert isinstance(t_data, Task)  # Should return Task object, not UUID
+            assert t_data.order == 1  # Should be at position 1
+            assert t_data.data == data
 
             await session.delete(project)
 
@@ -612,21 +612,21 @@ class TestInsertTask:
             session.add(test_session)
             await session.flush()
 
-            task_data = {"name": "custom_status_task"}
+            data = {"name": "custom_status_task"}
             after_order = 1  # Insert after position 1 (will become position 2)
             custom_status = "running"
 
             result = await insert_task(
-                session, test_session.id, after_order, task_data, status=custom_status
+                session, test_session.id, after_order, data, status=custom_status
             )
 
-            data, error = result.unpack()
+            t_data, error = result.unpack()
             assert error is None
-            assert data is not None
-            assert isinstance(data, Task)
-            assert data.task_status == custom_status
-            assert data.task_order == 2  # Should be at position 2
-            assert data.task_data == task_data
+            assert t_data is not None
+            assert isinstance(t_data, Task)
+            assert t_data.status == custom_status
+            assert t_data.order == 2  # Should be at position 2
+            assert t_data.data == data
 
             await session.delete(project)
 
@@ -652,17 +652,17 @@ class TestInsertTask:
             session.add(test_session)
             await session.flush()
 
-            task_data = {"name": "default_status_task"}
+            data = {"name": "default_status_task"}
             after_order = 2  # Insert after position 2 (will become position 3)
 
-            result = await insert_task(session, test_session.id, after_order, task_data)
+            result = await insert_task(session, test_session.id, after_order, data)
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
             assert isinstance(data, Task)
-            assert data.task_status == "pending"  # Should have default status
-            assert data.task_order == 3  # Should be at position 3
+            assert data.status == "pending"  # Should have default status
+            assert data.order == 3  # Should be at position 3
 
             await session.delete(project)
 
@@ -707,12 +707,12 @@ class TestInsertTask:
             assert error is None
             assert data is not None
             assert isinstance(data, Task)
-            assert data.task_data == complex_data
+            assert data.data == complex_data
 
             await session.delete(project)
 
     @pytest.mark.asyncio
-    async def test_insert_task_order_increment(self):
+    async def test_insert_order_increment(self):
         """Test that inserting a task increments subsequent task orders"""
         db_client = DatabaseClient()
         await db_client.create_tables()
@@ -737,32 +737,32 @@ class TestInsertTask:
             # Create initial tasks with orders 1, 2, 3
             task1 = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "task1"},
-                task_status="pending",
+                order=1,
+                data={"name": "task1"},
+                status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
-                task_order=2,
-                task_data={"name": "task2"},
-                task_status="pending",
+                order=2,
+                data={"name": "task2"},
+                status="pending",
             )
             task3 = Task(
                 session_id=test_session.id,
-                task_order=3,
-                task_data={"name": "task3"},
-                task_status="pending",
+                order=3,
+                data={"name": "task3"},
+                status="pending",
             )
             session.add_all([task1, task2, task3])
             await session.flush()
 
             # Insert a new task after position 1 (should become position 2)
-            new_task_data = {"name": "inserted_task"}
-            result = await insert_task(session, test_session.id, 1, new_task_data)
+            new_data = {"name": "inserted_task"}
+            result = await insert_task(session, test_session.id, 1, new_data)
 
             new_task, error = result.unpack()
             assert error is None
-            assert new_task.task_order == 2
+            assert new_task.order == 2
 
             # Fetch all tasks and verify the new ordering
             fetch_result = await fetch_current_tasks(session, test_session.id)
@@ -771,17 +771,17 @@ class TestInsertTask:
             assert len(all_tasks) == 4
 
             # Verify the new order: task1(1), inserted_task(2), task2(3), task3(4)
-            assert all_tasks[0].task_data["name"] == "task1"
-            assert all_tasks[0].task_order == 1
+            assert all_tasks[0].data["name"] == "task1"
+            assert all_tasks[0].order == 1
 
-            assert all_tasks[1].task_data["name"] == "inserted_task"
-            assert all_tasks[1].task_order == 2
+            assert all_tasks[1].data["name"] == "inserted_task"
+            assert all_tasks[1].order == 2
 
-            assert all_tasks[2].task_data["name"] == "task2"
-            assert all_tasks[2].task_order == 3  # Was 2, now 3
+            assert all_tasks[2].data["name"] == "task2"
+            assert all_tasks[2].order == 3  # Was 2, now 3
 
-            assert all_tasks[3].task_data["name"] == "task3"
-            assert all_tasks[3].task_order == 4  # Was 3, now 4
+            assert all_tasks[3].data["name"] == "task3"
+            assert all_tasks[3].order == 4  # Was 3, now 4
 
             await session.delete(project)
 
@@ -811,9 +811,9 @@ class TestDeleteTask:
 
             task = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "task_to_delete"},
-                task_status="pending",
+                order=1,
+                data={"name": "task_to_delete"},
+                status="pending",
             )
             session.add(task)
             await session.flush()
@@ -875,21 +875,21 @@ class TestDeleteTask:
             # Create multiple tasks
             task1 = Task(
                 session_id=test_session.id,
-                task_order=1,
-                task_data={"name": "task1"},
-                task_status="pending",
+                order=1,
+                data={"name": "task1"},
+                status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
-                task_order=2,
-                task_data={"name": "task2"},
-                task_status="running",
+                order=2,
+                data={"name": "task2"},
+                status="running",
             )
             task3 = Task(
                 session_id=test_session.id,
-                task_order=3,
-                task_data={"name": "task3"},
-                task_status="success",
+                order=3,
+                data={"name": "task3"},
+                status="success",
             )
             session.add_all([task1, task2, task3])
             await session.flush()
@@ -950,15 +950,15 @@ class TestIntegrationScenarios:
                 session, task_id, data=updated_data, status="running"
             )
             updated_task, _ = update_result.unpack()
-            assert updated_task.task_data == updated_data
-            assert updated_task.task_status == "running"
+            assert updated_task.data == updated_data
+            assert updated_task.status == "running"
 
             # 3. Fetch the task
             fetch_result = await fetch_current_tasks(session, test_session.id)
             tasks, _ = fetch_result.unpack()
             assert len(tasks) == 1
             assert tasks[0].id == task_id
-            assert tasks[0].task_data == updated_data
+            assert tasks[0].data == updated_data
 
             # 4. Delete the task
             delete_result = await delete_task(session, task_id)
@@ -1017,7 +1017,7 @@ class TestIntegrationScenarios:
             await session.delete(project)
 
     @pytest.mark.asyncio
-    async def test_task_ordering_after_updates(self):
+    async def test_ordering_after_updates(self):
         """Test that task ordering is maintained after updates and insertions"""
         db_client = DatabaseClient()
         await db_client.create_tables()
@@ -1079,16 +1079,16 @@ class TestIntegrationScenarios:
 
             # Expected order: task1(1), middle_task(2), task2(3), task3(4)
             assert tasks[0].id == task1.id
-            assert tasks[0].task_order == 1
+            assert tasks[0].order == 1
 
             assert tasks[1].id == middle_task.id
-            assert tasks[1].task_order == 2
+            assert tasks[1].order == 2
 
             assert tasks[2].id == task2.id
-            assert tasks[2].task_order == 3  # Was 2, incremented to 3
+            assert tasks[2].order == 3  # Was 2, incremented to 3
 
             assert tasks[3].id == task3.id
-            assert tasks[3].task_order == 4  # Was 3, incremented to 4
+            assert tasks[3].order == 4  # Was 3, incremented to 4
 
             # Now test manual order updates
             await update_task(session, task1.id, order=10)  # Move task1 to the end
@@ -1100,6 +1100,6 @@ class TestIntegrationScenarios:
             # Note: This doesn't automatically reorder other tasks - that would need
             # additional logic. For now, just verify the update worked.
             task1_updated = next(t for t in tasks2 if t.id == task1.id)
-            assert task1_updated.task_order == 10
+            assert task1_updated.order == 10
 
             await session.delete(project)

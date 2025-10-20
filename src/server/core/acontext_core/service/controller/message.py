@@ -61,11 +61,12 @@ async def process_session_pending_message(
             ]
 
         r = await AT.task_agent_curd(
-            project_id, session_id, previous_messages_data, messages_data
+            project_id,
+            session_id,
+            previous_messages_data,
+            messages_data,
+            max_iterations=project_config.default_task_agent_max_iterations,
         )
-        # r = await AT.task_agent_curd_debug(
-        #     project_id, session_id, previous_messages_data, messages_data
-        # )
 
         after_status = TaskStatus.SUCCESS
         if not r.ok():

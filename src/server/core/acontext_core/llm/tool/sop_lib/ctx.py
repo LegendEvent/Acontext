@@ -7,4 +7,5 @@ from ....schema.utils import asUUID
 class SOPCtx:
     db_session: AsyncSession
     project_id: asUUID
-    session_id: asUUID
+    space_id: asUUID
+    task_id: asUUID

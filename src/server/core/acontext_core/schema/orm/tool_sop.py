@@ -17,12 +17,11 @@ if TYPE_CHECKING:
 class ToolSOP(CommonMixin):
     __tablename__ = "tool_sops"
 
-    __table_args__ = (Index("ix_tool_sop_project_id", "project_id"),)
+    __table_args__ = (Index("ix_tool_sop_tool_reference_id", "tool_reference_id"),)
 
-    purpose_annotation: str = field(metadata={"db": Column(String, nullable=False)})
     placeholder_arguments: dict = field(metadata={"db": Column(JSONB, nullable=False)})
 
-    tool_id: asUUID = field(
+    tool_reference_id: asUUID = field(
         metadata={
             "db": Column(
                 UUID(as_uuid=True),
@@ -39,6 +38,10 @@ class ToolSOP(CommonMixin):
                 nullable=False,
             )
         }
+    )
+
+    props: Optional[dict] = field(
+        default=None, metadata={"db": Column(JSONB, nullable=True)}
     )
 
     # Relationships

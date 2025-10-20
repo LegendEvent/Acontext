@@ -1,9 +1,10 @@
 from ..data import message as MD
+from ..data import task as TD
 from ...infra.db import DB_CLIENT
 from ...schema.session.task import TaskStatus
 from ...schema.session.message import MessageBlob
 from ...schema.utils import asUUID
-from ...llm.agent import task as AT
+from ...llm.agent import task_sop as TSOP
 from ...schema.result import ResultError
 from ...env import LOG, DEFAULT_CORE_CONFIG
 from ...schema.config import ProjectConfig
@@ -11,7 +12,11 @@ from ...schema.session.task import TaskSchema
 
 
 async def process_space_task(
-    project_config: ProjectConfig, space_id: asUUID, task: TaskSchema
+    project_config: ProjectConfig,
+    project_id: asUUID,
+    space_id: asUUID,
+    session_id: asUUID,
+    task: TaskSchema,
 ):
     if task.status != TaskStatus.SUCCESS:
         LOG.info(f"Task {task.id} is not success, skipping")
@@ -28,8 +33,19 @@ async def process_space_task(
             MessageBlob(message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id)
             for m in messages
         ]
+
+        r = await TD.fetch_planning_task(db_session, session_id)
+        if not r.ok():
+            return
+        planning_message, _ = r.unpack()
     # 2. call agent to digest raw messages to SOP
-    ...
+    await TSOP.sop_agent_curd(
+        project_id,
+        space_id,
+        task.id,
+        messages_data,
+        max_iterations=project_config.default_sop_agent_max_iterations,
+    )
 
     # 3. Create block and trigger space_agent to save it
     ...

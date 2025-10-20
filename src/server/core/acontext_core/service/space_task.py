@@ -53,4 +53,6 @@ async def space_complete_new_task(body: NewTaskComplete, message: Message):
         if eil:
             return
 
-    await STC.process_space_task(project_config, SPACE_ID, TASK_DATA)
+    await STC.process_space_task(
+        project_config, body.project_id, SPACE_ID, body.session_id, TASK_DATA
+    )

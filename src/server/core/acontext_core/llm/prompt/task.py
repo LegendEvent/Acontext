@@ -29,6 +29,7 @@ class TaskPrompt(BasePrompt):
 ## Planning Detection
 - Planning messages often consist of user and agent discussions, clarify what's tasks to do at next.
 - Append those messages to planning section.
+- Make sure the planning section have the full context of user requirements.
 
 ## Task Creation/Modifcation
 - Tasks are often confirmed by the agent's response to user's requirements, don't invent them.
@@ -50,10 +51,10 @@ class TaskPrompt(BasePrompt):
 - Update task statuses or descriptions when confident about relationships 
 
 ## Update Task Status 
-- `running`: When task work begins or is actively discussed
-- `success`: When completion is confirmed or deliverables provided
-- `failed`: When explicit errors occur or tasks are abandoned
 - `pending`: For tasks not yet started
+- `running`: When task work begins, or re-run because the previous works were failed or wrong.
+- `failed`: When explicit errors occur or tasks are abandoned, or user directly tell that some tasks are failed or wrong.
+- `success`: Only when task's completion is confirmed by user, or agent starts to process the next task without explicitly report errors or failure.
 
 
 ## Input Format
@@ -66,12 +67,15 @@ class TaskPrompt(BasePrompt):
 ## Report your Thinking
 Use extremely brief wordings to report:
 1. Any user requirement or planning?
-2. How existing tasks are related to current conversation? 
-3. Any new task is created?
-4. Which Messages are contributed to planning? Which of them are contributed to which task?
-5. Which task's status/description need to be updated?
-6. Describe your tool-call actions to correctly manage the tasks.
-7. Confirm your will call `finish` tool after every tools are called
+2. Does the user report that any task failed and need to re-run?
+3. How existing tasks are related to current conversation? 
+4. Any new task is created?
+5. Which Messages are contributed to planning? 
+6. Which of them are contributed to which task?
+7. Which task's status/description need to be updated?
+8. Briefly describe your tool-call actions to correctly manage the tasks.
+
+Make sure your will call `finish` tool after every tools are called
 """
 
     @classmethod

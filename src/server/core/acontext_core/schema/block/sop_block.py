@@ -6,13 +6,13 @@ from ..utils import asUUID
 class SOPStep(BaseModel):
     tool_name: str
     tool_arguments_with_placeholder: dict[str, Any]
-    purpose_annotation: Optional[str] = None
+    props: Optional[dict] = None
 
 
 class SOPData(BaseModel):
     use_when: str
     notes: str
-    sop: List[SOPStep]
+    tool_sops: List[SOPStep]
 
 
 class SOPBlock(SOPData):
