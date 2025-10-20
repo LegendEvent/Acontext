@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -1023,6 +1024,184 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
+
+		// Additional edge cases and error scenarios
+		{
+			name:           "missing role field",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"parts": []map[string]interface{}{
+					{"type": "text", "text": "Hello"},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "missing parts field",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role": "user",
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "empty parts array",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":  "user",
+				"parts": []map[string]interface{}{},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "malformed JSON structure",
+			sessionIDParam: sessionID.String(),
+			requestBody:    map[string]interface{}{"invalid": "json structure"},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "acontext format - missing required fields in tool-call",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "acontext",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool-call",
+						// missing meta field
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "openai format - missing required fields in tool_call",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool_call",
+						// missing id and function fields
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "anthropic format - missing required fields in tool_use",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "assistant",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type": "tool_use",
+						// missing id, name, and input fields
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "openai format - invalid image_url structure",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type":      "image_url",
+						"image_url": "invalid_url_structure", // should be an object
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "anthropic format - invalid image source structure",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type":   "image",
+						"source": "invalid_source_structure", // should be an object
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "openai format - tool_result without tool_call_id",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "tool",
+				"format": "openai",
+				"parts": []map[string]interface{}{
+					{
+						"type":   "tool_result",
+						"output": "Result",
+						// missing tool_call_id
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "anthropic format - tool_result without tool_use_id",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":   "user",
+				"format": "anthropic",
+				"parts": []map[string]interface{}{
+					{
+						"type":    "tool_result",
+						"content": "Result",
+						// missing tool_use_id
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "unsupported part type",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role": "user",
+				"parts": []map[string]interface{}{
+					{
+						"type": "unsupported_type",
+						"text": "Hello",
+					},
+				},
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "malformed parts structure",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"role":  "user",
+				"parts": "not_an_array",
+			},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1105,6 +1284,192 @@ func TestSessionHandler_GetMessages(t *testing.T) {
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
+
+		// Additional edge cases and error scenarios for GetMessages
+		{
+			name:           "limit exceeds maximum (201)",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=201",
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "negative limit",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=-1",
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "zero limit",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=0",
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid limit format (non-numeric)",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=abc",
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid format parameter",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&format=invalid_format",
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "with_asset_public_url with invalid boolean",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&with_asset_public_url=maybe",
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "acontext format conversion",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&format=acontext",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "anthropic format conversion",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&format=anthropic",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "pagination with cursor",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&cursor=eyJpZCI6IjEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCJ9",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore:    true,
+					NextCursor: "eyJpZCI6IjEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMSJ9",
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.Cursor == "eyJpZCI6IjEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCJ9"
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "with_asset_public_url false",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&with_asset_public_url=false",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.WithAssetPublicURL == false
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "with_asset_public_url true (default)",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&with_asset_public_url=true",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.WithAssetPublicURL == true
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "default limit when not specified",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 // default limit
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "empty messages list",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items:   []model.Message{},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1125,4 +1490,228 @@ func TestSessionHandler_GetMessages(t *testing.T) {
 			mockService.AssertExpectations(t)
 		})
 	}
+}
+func TestSessionHandler_SendMessage_Multipart(t *testing.T) {
+	projectID := uuid.New()
+	sessionID := uuid.New()
+
+	tests := []struct {
+		name           string
+		sessionIDParam string
+		payload        string
+		files          map[string]string // field name -> file content
+		setup          func(*MockSessionService)
+		expectedStatus int
+	}{
+		{
+			name:           "successful multipart message with file",
+			sessionIDParam: sessionID.String(),
+			payload: `{
+				"role": "user",
+				"format": "openai",
+				"parts": [
+					{
+						"type": "text",
+						"text": "Please analyze this file"
+					},
+					{
+						"type": "image_url",
+						"image_url": {
+							"url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+						},
+						"file_field": "image_file"
+					}
+				]
+			}`,
+			files: map[string]string{
+				"image_file": "fake image content",
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user" && len(in.Files) > 0
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "multipart with invalid JSON payload",
+			sessionIDParam: sessionID.String(),
+			payload:        "invalid json",
+			files:          map[string]string{},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "multipart with missing required file",
+			sessionIDParam: sessionID.String(),
+			payload: `{
+				"role": "user",
+				"format": "openai",
+				"parts": [
+					{
+						"type": "image_url",
+						"image_url": {
+							"url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+						},
+						"file_field": "missing_file"
+					}
+				]
+			}`,
+			files:          map[string]string{},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "multipart with empty payload",
+			sessionIDParam: sessionID.String(),
+			payload:        "",
+			files:          map[string]string{},
+			setup:          func(svc *MockSessionService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "multipart with acontext format and file",
+			sessionIDParam: sessionID.String(),
+			payload: `{
+				"role": "user",
+				"format": "acontext",
+				"parts": [
+					{
+						"type": "text",
+						"text": "Please analyze this file"
+					},
+					{
+						"type": "image",
+						"file_field": "document_file"
+					}
+				]
+			}`,
+			files: map[string]string{
+				"document_file": "fake document content",
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user" && len(in.Files) > 0
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "multipart with anthropic format and file",
+			sessionIDParam: sessionID.String(),
+			payload: `{
+				"role": "user",
+				"format": "anthropic",
+				"parts": [
+					{
+						"type": "text",
+						"text": "Please analyze this file"
+					},
+					{
+						"type": "image",
+						"source": {
+							"type": "base64",
+							"media_type": "image/jpeg",
+							"data": "base64data..."
+						},
+						"file_field": "image_file"
+					}
+				]
+			}`,
+			files: map[string]string{
+				"image_file": "fake image content",
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user" && len(in.Files) > 0
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &MockSessionService{}
+			tt.setup(mockService)
+
+			handler := NewSessionHandler(mockService)
+			router := setupSessionRouter()
+			router.POST("/session/:session_id/messages", func(c *gin.Context) {
+				project := &model.Project{ID: projectID}
+				c.Set("project", project)
+				handler.SendMessage(c)
+			})
+
+			// Create multipart form data
+			var buf bytes.Buffer
+			writer := multipart.NewWriter(&buf)
+
+			// Add payload field
+			if tt.payload != "" {
+				payloadField, _ := writer.CreateFormField("payload")
+				payloadField.Write([]byte(tt.payload))
+			}
+
+			// Add files
+			for fieldName, content := range tt.files {
+				fileField, _ := writer.CreateFormFile(fieldName, "test_file.txt")
+				fileField.Write([]byte(content))
+			}
+
+			writer.Close()
+
+			req := httptest.NewRequest("POST", "/session/"+tt.sessionIDParam+"/messages", &buf)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestSessionHandler_SendMessage_InvalidJSON(t *testing.T) {
+	projectID := uuid.New()
+	sessionID := uuid.New()
+
+	t.Run("invalid JSON in request body", func(t *testing.T) {
+		mockService := &MockSessionService{}
+		// No setup needed as the request should fail before reaching the service
+
+		handler := NewSessionHandler(mockService)
+		router := setupSessionRouter()
+		router.POST("/session/:session_id/messages", func(c *gin.Context) {
+			project := &model.Project{ID: projectID}
+			c.Set("project", project)
+			handler.SendMessage(c)
+		})
+
+		// Send invalid JSON directly
+		req := httptest.NewRequest("POST", "/session/"+sessionID.String()+"/messages", bytes.NewBufferString("invalid json"))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		mockService.AssertExpectations(t)
+	})
 }

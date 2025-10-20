@@ -420,6 +420,12 @@ func (h *SessionHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	// Validate that we have at least one part
+	if len(normalizedParts) == 0 {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("message must contain at least one part")))
+		return
+	}
+
 	// Handle file uploads if multipart
 	fileMap := map[string]*multipart.FileHeader{}
 	if strings.HasPrefix(ct, "multipart/form-data") {
