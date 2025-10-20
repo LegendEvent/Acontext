@@ -20,197 +20,8 @@ func NewBlockHandler(s service.BlockService) *BlockHandler {
 	return &BlockHandler{svc: s}
 }
 
-type CreatePageReq struct {
-	ParentID *uuid.UUID     `from:"parent_id" json:"parent_id"`
-	Title    string         `form:"title" json:"title"`
-	Props    map[string]any `form:"props" json:"props"`
-}
-
-// CreatePage godoc
-//
-//	@Summary		Create page
-//	@Description	Create a new page in the space
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string					true	"Space ID"	Format(uuid)
-//	@Param			payload		body	handler.CreatePageReq	true	"CreatePage payload"
-//	@Security		BearerAuth
-//	@Success		201	{object}	serializer.Response{data=model.Block}
-//	@Router			/space/{space_id}/page [post]
-func (h *BlockHandler) CreatePage(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("space_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	req := CreatePageReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	page := model.Block{
-		SpaceID:  spaceID,
-		Type:     model.BlockTypePage,
-		ParentID: req.ParentID,
-		Title:    req.Title,
-		Props:    datatypes.NewJSONType(req.Props),
-	}
-	if err := h.svc.CreatePage(c.Request.Context(), &page); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusCreated, serializer.Response{Data: page})
-}
-
-// DeletePage godoc
-//
-//	@Summary		Delete page
-//	@Description	Delete a page by its ID in the space
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			page_id		path	string	true	"Page ID"	Format(uuid)
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/page/{page_id} [delete]
-func (h *BlockHandler) DeletePage(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("space_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	pageID, err := uuid.Parse(c.Param("page_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	if err := h.svc.DeletePage(c.Request.Context(), spaceID, pageID); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-// GetPageProperties godoc
-//
-//	@Summary		Get page properties
-//	@Description	Get page properties by page ID
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			page_id		path	string	true	"Page ID"	Format(uuid)
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response{data=model.Block}
-//	@Router			/space/{space_id}/page/{page_id}/properties [get]
-func (h *BlockHandler) GetPageProperties(c *gin.Context) {
-	pageID, err := uuid.Parse(c.Param("page_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	b, err := h.svc.GetPageProperties(c.Request.Context(), pageID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{Data: b})
-}
-
-type UpdatePagePropertiesReq struct {
-	Title string         `form:"title" json:"title"`
-	Props map[string]any `form:"props" json:"props"`
-}
-
-// UpdatePageProperties godoc
-//
-//	@Summary		Update page properties
-//	@Description	Update page title and properties
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string							true	"Space ID"	Format(uuid)
-//	@Param			page_id		path	string							true	"Page ID"	Format(uuid)
-//	@Param			payload		body	handler.UpdatePagePropertiesReq	true	"UpdatePageProperties payload"
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/page/{page_id}/properties [put]
-func (h *BlockHandler) UpdatePageProperties(c *gin.Context) {
-	pageID, err := uuid.Parse(c.Param("page_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	req := UpdatePagePropertiesReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	b := model.Block{
-		ID:    pageID,
-		Title: req.Title,
-		Props: datatypes.NewJSONType(req.Props),
-	}
-	if err := h.svc.UpdatePageProperties(c.Request.Context(), &b); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-// ListPages godoc
-//
-//	@Summary		List pages
-//	@Description	List pages in a space, optionally filtered by parent_id (use parent_id query parameter to get children of a specific page, or omit it to get top-level pages where parent_id is null)
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			parent_id	query	string	false	"Parent ID"	Format(uuid)
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response{data=[]model.Block}
-//	@Router			/space/{space_id}/page [get]
-func (h *BlockHandler) ListPages(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("space_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	var parentID *uuid.UUID
-	if parentIDStr := c.Query("parent_id"); parentIDStr != "" {
-		pid, err := uuid.Parse(parentIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", err))
-			return
-		}
-		parentID = &pid
-	}
-
-	list, err := h.svc.ListPages(c.Request.Context(), spaceID, parentID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{Data: list})
-}
-
 type CreateBlockReq struct {
-	ParentID uuid.UUID      `from:"parent_id" json:"parent_id" binding:"required"`
+	ParentID *uuid.UUID     `from:"parent_id" json:"parent_id"`
 	Type     string         `from:"type" json:"type" binding:"required" example:"text"`
 	Title    string         `from:"title" json:"title"`
 	Props    map[string]any `from:"props" json:"props"`
@@ -219,7 +30,7 @@ type CreateBlockReq struct {
 // CreateBlock godoc
 //
 //	@Summary		Create block
-//	@Description	Create a new block under a parent
+//	@Description	Create a new block (supports all types: page, folder, text, sop, etc.). For page and folder types, parent_id is optional. For other types, parent_id is required.
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
@@ -246,15 +57,16 @@ func (h *BlockHandler) CreateBlock(c *gin.Context) {
 		return
 	}
 
-	parentID := req.ParentID
 	b := model.Block{
 		SpaceID:  spaceID,
 		Type:     req.Type,
-		ParentID: &parentID,
+		ParentID: req.ParentID,
 		Title:    req.Title,
 		Props:    datatypes.NewJSONType(req.Props),
 	}
-	if err := h.svc.CreateBlock(c.Request.Context(), &b); err != nil {
+
+	// Use unified Create method - it handles special logic for folder path
+	if err := h.svc.Create(c.Request.Context(), &b); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
 	}
@@ -265,7 +77,7 @@ func (h *BlockHandler) CreateBlock(c *gin.Context) {
 // DeleteBlock godoc
 //
 //	@Summary		Delete block
-//	@Description	Delete a block by its ID
+//	@Description	Delete a block by its ID (works for all block types: page, folder, text, sop, etc.)
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
@@ -287,7 +99,7 @@ func (h *BlockHandler) DeleteBlock(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.DeleteBlock(c.Request.Context(), spaceID, blockID); err != nil {
+	if err := h.svc.Delete(c.Request.Context(), spaceID, blockID); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
 	}
@@ -298,7 +110,7 @@ func (h *BlockHandler) DeleteBlock(c *gin.Context) {
 // GetBlockProperties godoc
 //
 //	@Summary		Get block properties
-//	@Description	Get a block's properties by its ID
+//	@Description	Get a block's properties by its ID (works for all block types: page, folder, text, sop, etc.)
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
@@ -331,7 +143,7 @@ type UpdateBlockPropertiesReq struct {
 // UpdateBlockProperties godoc
 //
 //	@Summary		Update block properties
-//	@Description	Update a block's title and properties by its ID
+//	@Description	Update a block's title and properties by its ID (works for all block types: page, folder, text, sop, etc.)
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
@@ -367,15 +179,21 @@ func (h *BlockHandler) UpdateBlockProperties(c *gin.Context) {
 	c.JSON(http.StatusOK, serializer.Response{})
 }
 
+type ListBlocksReq struct {
+	Type     string `form:"type" json:"type"`
+	ParentID string `form:"parent_id" json:"parent_id"`
+}
+
 // ListBlocks godoc
 //
 //	@Summary		List blocks
-//	@Description	List blocks under a parent (page or block), excludes page type blocks (type != page), parent_id is required
+//	@Description	List blocks in a space. Use type query parameter to filter by block type (page, folder, text, sop, etc.). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			parent_id	query	string	true	"Parent ID"	Format(uuid)
+//	@Param			space_id	path	string	true	"Space ID"		Format(uuid)
+//	@Param			type		query	string	false	"Block type"	Enums(page, folder, text, sop)
+//	@Param			parent_id	query	string	false	"Parent ID"		Format(uuid)
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=[]model.Block}
 //	@Router			/space/{space_id}/block [get]
@@ -386,117 +204,42 @@ func (h *BlockHandler) ListBlocks(c *gin.Context) {
 		return
 	}
 
-	parentIDStr := c.Query("parent_id")
-	if parentIDStr == "" {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent_id is required")))
+	req := ListBlocksReq{}
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
 		return
 	}
 
-	parentID, err := uuid.Parse(parentIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", err))
-		return
+	// Parse parent_id if provided
+	var parentID *uuid.UUID
+	if req.ParentID != "" {
+		pid, err := uuid.Parse(req.ParentID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", err))
+			return
+		}
+		parentID = &pid
 	}
 
-	list, err := h.svc.ListBlocks(c.Request.Context(), spaceID, parentID)
+	// Use unified List method - it handles type and parent_id filtering
+	list, err := h.svc.List(c.Request.Context(), spaceID, req.Type, parentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
 	}
+
 	c.JSON(http.StatusOK, serializer.Response{Data: list})
 }
 
-type MovePageReq struct {
+type MoveBlockReq struct {
 	ParentID *uuid.UUID `form:"parent_id" json:"parent_id"`
 	Sort     *int64     `form:"sort" json:"sort"`
 }
 
-// MovePage godoc
-//
-//	@Summary		Move page (change parent_id)
-//	@Description	Move page by updating its parent_id
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string				true	"Space ID"	Format(uuid)
-//	@Param			page_id		path	string				true	"Page ID"	Format(uuid)
-//	@Param			payload		body	handler.MovePageReq	true	"MovePage payload"
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/page/{page_id}/move [put]
-func (h *BlockHandler) MovePage(c *gin.Context) {
-	pageID, err := uuid.Parse(c.Param("page_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-	req := MovePageReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	// Validate: parent_id cannot be the page itself
-	if req.ParentID != nil && *req.ParentID == pageID {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent_id cannot be self")))
-		return
-	}
-
-	if err := h.svc.MovePage(c.Request.Context(), pageID, req.ParentID, req.Sort); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-type UpdatePageSortReq struct {
-	Sort int64 `form:"sort" json:"sort"`
-}
-
-// UpdatePageSort godoc
-//
-//	@Summary		Update page sort
-//	@Description	Update page sort value
-//	@Tags			page
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string						true	"Space ID"	Format(uuid)
-//	@Param			page_id		path	string						true	"Page ID"	Format(uuid)
-//	@Param			payload		body	handler.UpdatePageSortReq	true	"UpdatePageSort payload"
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/page/{page_id}/sort [put]
-func (h *BlockHandler) UpdatePageSort(c *gin.Context) {
-	pageID, err := uuid.Parse(c.Param("page_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	req := UpdatePageSortReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	if err := h.svc.UpdatePageSort(c.Request.Context(), pageID, req.Sort); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-type MoveBlockReq struct {
-	ParentID uuid.UUID `form:"parent_id" json:"parent_id" binding:"required"`
-	Sort     *int64    `form:"sort" json:"sort"`
-}
-
 // MoveBlock godoc
 //
-//	@Summary		Move block (to page or block)
-//	@Description	Move block by updating its parent_id to page or block
+//	@Summary		Move block
+//	@Description	Move block by updating its parent_id. Works for all block types (page, folder, text, sop, etc.). For page and folder types, parent_id can be null (root level).
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
@@ -520,12 +263,13 @@ func (h *BlockHandler) MoveBlock(c *gin.Context) {
 	}
 
 	// Validate: parent_id cannot be the block itself
-	if req.ParentID == blockID {
+	if req.ParentID != nil && *req.ParentID == blockID {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent_id cannot be self")))
 		return
 	}
 
-	if err := h.svc.MoveBlock(c.Request.Context(), blockID, req.ParentID, req.Sort); err != nil {
+	// Use unified Move method - it handles special logic for folder path
+	if err := h.svc.Move(c.Request.Context(), blockID, req.ParentID, req.Sort); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
 	}
@@ -540,7 +284,7 @@ type UpdateBlockSortReq struct {
 // UpdateBlockSort godoc
 //
 //	@Summary		Update block sort
-//	@Description	Update block sort value
+//	@Description	Update block sort value (works for all block types: page, folder, text, sop, etc.)
 //	@Tags			block
 //	@Accept			json
 //	@Produce		json
@@ -563,280 +307,7 @@ func (h *BlockHandler) UpdateBlockSort(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.UpdateBlockSort(c.Request.Context(), blockID, req.Sort); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-// Folder-related handlers
-
-type CreateFolderReq struct {
-	ParentID *uuid.UUID     `from:"parent_id" json:"parent_id"`
-	Title    string         `form:"title" json:"title"`
-	Props    map[string]any `form:"props" json:"props"`
-}
-
-// CreateFolder godoc
-//
-//	@Summary		Create folder
-//	@Description	Create a new folder in the space
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string					true	"Space ID"	Format(uuid)
-//	@Param			payload		body	handler.CreateFolderReq	true	"CreateFolder payload"
-//	@Security		BearerAuth
-//	@Success		201	{object}	serializer.Response{data=model.Block}
-//	@Router			/space/{space_id}/folder [post]
-func (h *BlockHandler) CreateFolder(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("space_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	req := CreateFolderReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	folder := model.Block{
-		SpaceID:  spaceID,
-		Type:     model.BlockTypeFolder,
-		ParentID: req.ParentID,
-		Title:    req.Title,
-		Props:    datatypes.NewJSONType(req.Props),
-	}
-	if err := h.svc.CreateFolder(c.Request.Context(), &folder); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusCreated, serializer.Response{Data: folder})
-}
-
-// DeleteFolder godoc
-//
-//	@Summary		Delete folder
-//	@Description	Delete a folder by its ID in the space
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			folder_id	path	string	true	"Folder ID"	Format(uuid)
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/folder/{folder_id} [delete]
-func (h *BlockHandler) DeleteFolder(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("space_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	folderID, err := uuid.Parse(c.Param("folder_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	if err := h.svc.DeleteFolder(c.Request.Context(), spaceID, folderID); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-// GetFolderProperties godoc
-//
-//	@Summary		Get folder properties
-//	@Description	Get folder properties by folder ID
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			folder_id	path	string	true	"Folder ID"	Format(uuid)
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response{data=model.Block}
-//	@Router			/space/{space_id}/folder/{folder_id}/properties [get]
-func (h *BlockHandler) GetFolderProperties(c *gin.Context) {
-	folderID, err := uuid.Parse(c.Param("folder_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	b, err := h.svc.GetFolderProperties(c.Request.Context(), folderID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{Data: b})
-}
-
-type UpdateFolderPropertiesReq struct {
-	Title string         `form:"title" json:"title"`
-	Props map[string]any `form:"props" json:"props"`
-}
-
-// UpdateFolderProperties godoc
-//
-//	@Summary		Update folder properties
-//	@Description	Update folder title and properties
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string								true	"Space ID"	Format(uuid)
-//	@Param			folder_id	path	string								true	"Folder ID"	Format(uuid)
-//	@Param			payload		body	handler.UpdateFolderPropertiesReq	true	"UpdateFolderProperties payload"
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/folder/{folder_id}/properties [put]
-func (h *BlockHandler) UpdateFolderProperties(c *gin.Context) {
-	folderID, err := uuid.Parse(c.Param("folder_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	req := UpdateFolderPropertiesReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	b := model.Block{
-		ID:    folderID,
-		Title: req.Title,
-		Props: datatypes.NewJSONType(req.Props),
-	}
-	if err := h.svc.UpdateFolderProperties(c.Request.Context(), &b); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-// ListFolders godoc
-//
-//	@Summary		List folders
-//	@Description	List folders in a space, optionally filtered by parent_id (use parent_id query parameter to get children of a specific folder, or omit it to get top-level folders where parent_id is null)
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string	true	"Space ID"	Format(uuid)
-//	@Param			parent_id	query	string	false	"Parent ID"	Format(uuid)
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response{data=[]model.Block}
-//	@Router			/space/{space_id}/folder [get]
-func (h *BlockHandler) ListFolders(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("space_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	var parentID *uuid.UUID
-	if parentIDStr := c.Query("parent_id"); parentIDStr != "" {
-		pid, err := uuid.Parse(parentIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", err))
-			return
-		}
-		parentID = &pid
-	}
-
-	list, err := h.svc.ListFolders(c.Request.Context(), spaceID, parentID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{Data: list})
-}
-
-type MoveFolderReq struct {
-	ParentID *uuid.UUID `form:"parent_id" json:"parent_id"`
-	Sort     *int64     `form:"sort" json:"sort"`
-}
-
-// MoveFolder godoc
-//
-//	@Summary		Move folder (change parent_id)
-//	@Description	Move folder by updating its parent_id
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string					true	"Space ID"	Format(uuid)
-//	@Param			folder_id	path	string					true	"Folder ID"	Format(uuid)
-//	@Param			payload		body	handler.MoveFolderReq	true	"MoveFolder payload"
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/folder/{folder_id}/move [put]
-func (h *BlockHandler) MoveFolder(c *gin.Context) {
-	folderID, err := uuid.Parse(c.Param("folder_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-	req := MoveFolderReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	// Validate: parent_id cannot be the folder itself
-	if req.ParentID != nil && *req.ParentID == folderID {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent_id cannot be self")))
-		return
-	}
-
-	if err := h.svc.MoveFolder(c.Request.Context(), folderID, req.ParentID, req.Sort); err != nil {
-		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, serializer.Response{})
-}
-
-type UpdateFolderSortReq struct {
-	Sort int64 `form:"sort" json:"sort"`
-}
-
-// UpdateFolderSort godoc
-//
-//	@Summary		Update folder sort
-//	@Description	Update folder sort value
-//	@Tags			folder
-//	@Accept			json
-//	@Produce		json
-//	@Param			space_id	path	string						true	"Space ID"	Format(uuid)
-//	@Param			folder_id	path	string						true	"Folder ID"	Format(uuid)
-//	@Param			payload		body	handler.UpdateFolderSortReq	true	"UpdateFolderSort payload"
-//	@Security		BearerAuth
-//	@Success		200	{object}	serializer.Response
-//	@Router			/space/{space_id}/folder/{folder_id}/sort [put]
-func (h *BlockHandler) UpdateFolderSort(c *gin.Context) {
-	folderID, err := uuid.Parse(c.Param("folder_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	req := UpdateFolderSortReq{}
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
-		return
-	}
-
-	if err := h.svc.UpdateFolderSort(c.Request.Context(), folderID, req.Sort); err != nil {
+	if err := h.svc.UpdateSort(c.Request.Context(), blockID, req.Sort); err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return
 	}
