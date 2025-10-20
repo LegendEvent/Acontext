@@ -63,7 +63,7 @@ async def update_task_handler(
                 )
             )
         )
-    return Result.resolve(f"Task {t.task_order} updated")
+    return Result.resolve(f"Task {t.order} updated")
 
 
 _update_task_tool = (

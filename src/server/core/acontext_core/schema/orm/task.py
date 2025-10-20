@@ -32,17 +32,17 @@ class Task(CommonMixin):
 
     __table_args__ = (
         CheckConstraint(
-            "task_status IN ('success', 'failed', 'running', 'pending')",
-            name="ck_task_status",
+            "status IN ('success', 'failed', 'running', 'pending')",
+            name="ck_status",
         ),
         UniqueConstraint(
             "session_id",
-            "task_order",
-            name="uq_session_id_task_order",
+            "order",
+            name="uq_session_id_order",
         ),
         Index("ix_session_session_id", "session_id"),
         Index("ix_session_session_id_task_id", "session_id", "id"),
-        Index("ix_session_session_id_task_status", "session_id", "task_status"),
+        Index("ix_session_session_id_status", "session_id", "status"),
     )
 
     session_id: asUUID = field(
@@ -55,11 +55,11 @@ class Task(CommonMixin):
         }
     )
 
-    task_order: int = field(metadata={"db": Column(Integer, nullable=False)})
+    order: int = field(metadata={"db": Column(Integer, nullable=False)})
 
-    task_data: dict = field(metadata={"db": Column(JSONB, nullable=False)})
+    data: dict = field(metadata={"db": Column(JSONB, nullable=False)})
 
-    task_status: str = field(
+    status: str = field(
         default="pending",
         metadata={
             "db": Column(
@@ -70,7 +70,7 @@ class Task(CommonMixin):
         },
     )
 
-    is_planning_task: bool = field(
+    is_planning: bool = field(
         default=False,
         metadata={
             "db": Column(Boolean, nullable=False, default=False, server_default="false")

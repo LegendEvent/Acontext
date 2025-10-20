@@ -13,7 +13,7 @@ from ...schema.session.task import TaskSchema
 async def process_space_task(
     project_config: ProjectConfig, space_id: asUUID, task: TaskSchema
 ):
-    if task.task_status != TaskStatus.SUCCESS:
+    if task.status != TaskStatus.SUCCESS:
         LOG.info(f"Task {task.id} is not success, skipping")
         return
 

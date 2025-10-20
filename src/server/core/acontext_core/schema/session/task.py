@@ -14,12 +14,12 @@ class TaskSchema(BaseModel):
     id: asUUID
     session_id: asUUID
 
-    task_order: int
+    order: int
     task_description: str
-    task_status: TaskStatus
-    task_data: dict
+    status: TaskStatus
+    data: dict
     space_digested: bool
     raw_message_ids: list[asUUID]
 
     def to_string(self) -> str:
-        return f"Task {self.task_order}: {self.task_description} (Status: {self.task_status})"
+        return f"Task {self.order}: {self.task_description} (Status: {self.status})"

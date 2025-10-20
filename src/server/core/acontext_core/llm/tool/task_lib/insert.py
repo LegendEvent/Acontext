@@ -19,7 +19,7 @@ async def insert_task_handler(ctx: TaskCtx, llm_arguments: dict) -> Result[str]:
     t, eil = r.unpack()
     if eil:
         return r
-    return Result.resolve(f"Task {t.task_order} created")
+    return Result.resolve(f"Task {t.order} created")
 
 
 _insert_task_tool = (

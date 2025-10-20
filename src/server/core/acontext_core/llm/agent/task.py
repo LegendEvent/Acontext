@@ -37,7 +37,7 @@ def pack_previous_messages_section(
             task_descs.append("(no task linked)")
             continue
         elif ti in mappings:
-            task_descs.append(f"(append to task_{mappings[ti].task_order})")
+            task_descs.append(f"(append to task_{mappings[ti].order})")
         elif planning_task is not None and ti == planning_task.id:
             task_descs.append("(append to planning_section)")
         else:
@@ -73,7 +73,7 @@ async def build_task_ctx(
     if eil:
         return r
     LOG.info(
-        f"Built task context {[(t.task_order, t.task_status.value, t.task_description) for t in current_tasks]}"
+        f"Built task context {[(t.order, t.status.value, t.task_description) for t in current_tasks]}"
     )
     use_ctx = TaskCtx(
         db_session=db_session,

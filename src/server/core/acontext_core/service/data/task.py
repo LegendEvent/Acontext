@@ -18,7 +18,7 @@ async def fetch_planning_task(
         select(Task)
         .where(Task.session_id == session_id)
         .options(selectinload(Task.messages))
-        .where(Task.is_planning_task == True)
+        .where(Task.is_planning == True)
     )
     result = await db_session.execute(query)
     planning = result.scalars().first()
@@ -28,10 +28,10 @@ async def fetch_planning_task(
         TaskSchema(
             id=planning.id,
             session_id=planning.session_id,
-            task_order=planning.task_order,
-            task_status=planning.task_status,
+            order=planning.order,
+            status=planning.status,
             task_description="",
-            task_data=planning.task_data,
+            data=planning.data,
             space_digested=planning.space_digested,
             raw_message_ids=[
                 msg.id for msg in sorted(planning.messages, key=lambda m: m.created_at)
@@ -50,10 +50,10 @@ async def fetch_task(db_session: AsyncSession, task_id: asUUID) -> Result[TaskSc
         TaskSchema(
             id=task.id,
             session_id=task.session_id,
-            task_order=task.task_order,
-            task_status=task.task_status,
-            task_description=task.task_data.get("task_description", ""),
-            task_data=task.task_data,
+            order=task.order,
+            status=task.status,
+            task_description=task.data.get("task_description", ""),
+            data=task.data,
             space_digested=task.space_digested,
             raw_message_ids=[
                 msg.id for msg in sorted(task.messages, key=lambda m: m.created_at)
@@ -68,22 +68,22 @@ async def fetch_current_tasks(
     query = (
         select(Task)
         .where(Task.session_id == session_id)
-        .where(Task.is_planning_task == False)
+        .where(Task.is_planning == False)
         .options(selectinload(Task.messages))  # Eagerly load related messages
-        .order_by(Task.task_order.asc())
+        .order_by(Task.order.asc())
     )
     if status:
-        query = query.where(Task.task_status == status)
+        query = query.where(Task.status == status)
     result = await db_session.execute(query)
     tasks = list(result.scalars().all())
     tasks_d = [
         TaskSchema(
             id=t.id,
             session_id=t.session_id,
-            task_order=t.task_order,
-            task_status=t.task_status,
-            task_description=t.task_data.get("task_description", ""),
-            task_data=t.task_data,
+            order=t.order,
+            status=t.status,
+            task_description=t.data.get("task_description", ""),
+            data=t.data,
             space_digested=t.space_digested,
             raw_message_ids=[
                 msg.id for msg in sorted(t.messages, key=lambda m: m.created_at)
@@ -112,16 +112,16 @@ async def update_task(
 
     # Update only the non-None parameters
     if status is not None:
-        task.task_status = status
+        task.status = status
     if order is not None:
-        task.task_order = order
+        task.order = order
 
     if data is not None:
-        task.task_data = data
+        task.data = data
     elif patch_data is not None:
-        new_data = task.task_data.copy()
+        new_data = task.data.copy()
         new_data.update(patch_data)
-        task.task_data = new_data
+        task.data = new_data
 
     await db_session.flush()
     # Changes will be committed when the session context exits
@@ -173,8 +173,8 @@ async def insert_task(
     temp_update_stmt = (
         update(Task)
         .where(Task.session_id == session_id)
-        .where(Task.task_order > after_order)
-        .values(task_order=-Task.task_order)
+        .where(Task.order > after_order)
+        .values(order=-Task.order)
     )
     await db_session.execute(temp_update_stmt)
     await db_session.flush()
@@ -183,8 +183,8 @@ async def insert_task(
     final_update_stmt = (
         update(Task)
         .where(Task.session_id == session_id)
-        .where(Task.task_order < 0)
-        .values(task_order=-Task.task_order + 1)
+        .where(Task.order < 0)
+        .values(order=-Task.order + 1)
     )
     await db_session.execute(final_update_stmt)
     await db_session.flush()
@@ -192,9 +192,9 @@ async def insert_task(
     # Step 3: Create new task
     task = Task(
         session_id=session_id,
-        task_order=after_order + 1,
-        task_data=data,
-        task_status=status,
+        order=after_order + 1,
+        data=data,
+        status=status,
     )
 
     db_session.add(task)
@@ -230,7 +230,7 @@ async def append_messages_to_planning_section(
     query = (
         select(Task)
         .where(Task.session_id == session_id)
-        .where(Task.is_planning_task == True)
+        .where(Task.is_planning == True)
     )
     result = await db_session.execute(query)
     planning_task = result.scalars().first()
@@ -238,10 +238,10 @@ async def append_messages_to_planning_section(
         # add planning section
         planning_task = Task(
             session_id=session_id,
-            task_order=0,
-            task_data={},
-            task_status="pending",
-            is_planning_task=True,
+            order=0,
+            data={},
+            status="pending",
+            is_planning=True,
         )
         db_session.add(planning_task)
         await db_session.flush()

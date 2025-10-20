@@ -35,9 +35,9 @@ async def _append_messages_to_task_handler(
         return Result.resolve(
             f"No message ids to append, skip: {message_order_indexes}"
         )
-    if actually_task.task_status in (TaskStatus.SUCCESS, TaskStatus.FAILED):
+    if actually_task.status in (TaskStatus.SUCCESS, TaskStatus.FAILED):
         return Result.resolve(
-            f"Task {task_order} is already {actually_task.task_status}, appending failed."
+            f"Task {task_order} is already {actually_task.status}, appending failed."
         )
     r = await TD.append_messages_to_task(
         ctx.db_session,
