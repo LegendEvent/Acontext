@@ -49,6 +49,7 @@ func BuildContainer() *do.Injector {
 				&model.Project{},
 				&model.Space{},
 				&model.Session{},
+				&model.Task{},
 				&model.Message{},
 				&model.Block{},
 				&model.Disk{},

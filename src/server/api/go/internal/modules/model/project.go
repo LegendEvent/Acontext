@@ -21,6 +21,9 @@ type Project struct {
 
 	// Project <-> Session
 	Sessions []Session `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"sessions"`
+
+	// Project <-> Task
+	Tasks []Task `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"tasks"`
 }
 
 func (Project) TableName() string { return "projects" }

@@ -44,6 +44,7 @@ class Task(CommonMixin):
         Index("ix_session_session_id", "session_id"),
         Index("ix_session_session_id_task_id", "session_id", "id"),
         Index("ix_session_session_id_status", "session_id", "status"),
+        Index("ix_session_project_id", "project_id"),
     )
 
     session_id: asUUID = field(

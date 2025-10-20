@@ -10,6 +10,7 @@ import (
 type Task struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	SessionID uuid.UUID `gorm:"type:uuid;not null;index:ix_session_session_id;index:ix_session_session_id_task_id,priority:1;index:ix_session_session_id_status,priority:1;uniqueIndex:uq_session_id_order,priority:1" json:"session_id"`
+	ProjectID uuid.UUID `gorm:"type:uuid;not null;index:ix_session_project_id" json:"project_id"`
 
 	Order         int               `gorm:"not null;uniqueIndex:uq_session_id_order,priority:2" json:"order"`
 	Data          datatypes.JSONMap `gorm:"type:jsonb;not null" swaggertype:"object" json:"data"`
@@ -22,6 +23,9 @@ type Task struct {
 
 	// Task <-> Session
 	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"session"`
+
+	// Task <-> Project
+	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
 
 	// Task <-> Message (one-to-many)
 	Messages []Message `gorm:"constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"messages"`
