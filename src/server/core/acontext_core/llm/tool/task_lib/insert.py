@@ -10,6 +10,7 @@ from .ctx import TaskCtx
 async def insert_task_handler(ctx: TaskCtx, llm_arguments: dict) -> Result[str]:
     r = await TD.insert_task(
         ctx.db_session,
+        ctx.project_id,
         ctx.session_id,
         after_order=llm_arguments["after_task_order"],
         data={

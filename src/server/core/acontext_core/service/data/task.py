@@ -154,6 +154,7 @@ async def set_task_space_digested(
 
 async def insert_task(
     db_session: AsyncSession,
+    project_id: asUUID,
     session_id: asUUID,
     after_order: int,
     data: dict,
@@ -192,6 +193,7 @@ async def insert_task(
     # Step 3: Create new task
     task = Task(
         session_id=session_id,
+        project_id=project_id,
         order=after_order + 1,
         data=data,
         status=status,
@@ -223,6 +225,7 @@ async def append_messages_to_task(
 
 async def append_messages_to_planning_section(
     db_session: AsyncSession,
+    project_id: asUUID,
     session_id: asUUID,
     message_ids: list[asUUID],
 ) -> Result[None]:
@@ -237,6 +240,7 @@ async def append_messages_to_planning_section(
     if planning_task is None:
         # add planning section
         planning_task = Task(
+            project_id=project_id,
             session_id=session_id,
             order=0,
             data={},

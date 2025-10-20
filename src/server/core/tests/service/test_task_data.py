@@ -60,7 +60,7 @@ class TestFetchCurrentTasks:
             ]
 
             for data in tasks_data:
-                task = Task(**data)
+                task = Task(project_id=project.id, **data)
                 session.add(task)
 
             await session.flush()
@@ -106,12 +106,14 @@ class TestFetchCurrentTasks:
             # Create sample tasks with different statuses
             task1 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "task1"},
                 status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=2,
                 data={"name": "task2"},
                 status="running",
@@ -174,6 +176,7 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "test_task"},
                 status="pending",
@@ -217,6 +220,7 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "test_task"},
                 status="pending",
@@ -261,6 +265,7 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "original_task"},
                 status="pending",
@@ -303,6 +308,7 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "original_task"},
                 status="pending",
@@ -367,6 +373,7 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "test_task"},
                 status="pending",
@@ -423,6 +430,7 @@ class TestUpdateTask:
             }
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data=initial_data,
                 status="pending",
@@ -524,6 +532,7 @@ class TestUpdateTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"task_description": "original", "step": "init"},
                 status="pending",
@@ -579,7 +588,9 @@ class TestInsertTask:
             data = {"name": "new_task", "description": "A new task"}
             after_order = 0  # Insert after position 0 (will become position 1)
 
-            result = await insert_task(session, test_session.id, after_order, data)
+            result = await insert_task(
+                session, project.id, test_session.id, after_order, data
+            )
 
             t_data, error = result.unpack()
             assert error is None
@@ -617,7 +628,12 @@ class TestInsertTask:
             custom_status = "running"
 
             result = await insert_task(
-                session, test_session.id, after_order, data, status=custom_status
+                session,
+                project.id,
+                test_session.id,
+                after_order,
+                data,
+                status=custom_status,
             )
 
             t_data, error = result.unpack()
@@ -655,7 +671,9 @@ class TestInsertTask:
             data = {"name": "default_status_task"}
             after_order = 2  # Insert after position 2 (will become position 3)
 
-            result = await insert_task(session, test_session.id, after_order, data)
+            result = await insert_task(
+                session, project.id, test_session.id, after_order, data
+            )
 
             data, error = result.unpack()
             assert error is None
@@ -701,7 +719,9 @@ class TestInsertTask:
                 ],
             }
 
-            result = await insert_task(session, test_session.id, 0, complex_data)
+            result = await insert_task(
+                session, project.id, test_session.id, 0, complex_data
+            )
 
             data, error = result.unpack()
             assert error is None
@@ -737,18 +757,21 @@ class TestInsertTask:
             # Create initial tasks with orders 1, 2, 3
             task1 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "task1"},
                 status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=2,
                 data={"name": "task2"},
                 status="pending",
             )
             task3 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=3,
                 data={"name": "task3"},
                 status="pending",
@@ -758,7 +781,9 @@ class TestInsertTask:
 
             # Insert a new task after position 1 (should become position 2)
             new_data = {"name": "inserted_task"}
-            result = await insert_task(session, test_session.id, 1, new_data)
+            result = await insert_task(
+                session, project.id, test_session.id, 1, new_data
+            )
 
             new_task, error = result.unpack()
             assert error is None
@@ -811,6 +836,7 @@ class TestDeleteTask:
 
             task = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "task_to_delete"},
                 status="pending",
@@ -875,18 +901,21 @@ class TestDeleteTask:
             # Create multiple tasks
             task1 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=1,
                 data={"name": "task1"},
                 status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=2,
                 data={"name": "task2"},
                 status="running",
             )
             task3 = Task(
                 session_id=test_session.id,
+                project_id=project.id,
                 order=3,
                 data={"name": "task3"},
                 status="success",
@@ -939,7 +968,9 @@ class TestIntegrationScenarios:
 
             # 1. Create a task
             initial_data = {"name": "lifecycle_task", "step": "created"}
-            create_result = await insert_task(session, test_session.id, 0, initial_data)
+            create_result = await insert_task(
+                session, project.id, test_session.id, 0, initial_data
+            )
             created_task, _ = create_result.unpack()
             assert created_task is not None
             task_id = created_task.id
@@ -997,9 +1028,15 @@ class TestIntegrationScenarios:
             await session.flush()
 
             # Create tasks in each session
-            await insert_task(session, session1.id, 0, {"session": "1", "task": "A"})
-            await insert_task(session, session1.id, 1, {"session": "1", "task": "B"})
-            await insert_task(session, session2.id, 0, {"session": "2", "task": "A"})
+            await insert_task(
+                session, project.id, session1.id, 0, {"session": "1", "task": "A"}
+            )
+            await insert_task(
+                session, project.id, session1.id, 1, {"session": "1", "task": "B"}
+            )
+            await insert_task(
+                session, project.id, session2.id, 0, {"session": "2", "task": "A"}
+            )
 
             # Fetch tasks for each session
             session1_tasks_result = await fetch_current_tasks(session, session1.id)
@@ -1041,18 +1078,21 @@ class TestIntegrationScenarios:
             # Create initial tasks in order
             task1_result = await insert_task(
                 session,
+                project.id,
                 test_session.id,
                 0,
                 {"name": "task1"},  # Insert after 0 -> position 1
             )
             task2_result = await insert_task(
                 session,
+                project.id,
                 test_session.id,
                 1,
                 {"name": "task2"},  # Insert after 1 -> position 2
             )
             task3_result = await insert_task(
                 session,
+                project.id,
                 test_session.id,
                 2,
                 {"name": "task3"},  # Insert after 2 -> position 3
@@ -1065,6 +1105,7 @@ class TestIntegrationScenarios:
             # Insert a new task in the middle (after position 1)
             middle_task_result = await insert_task(
                 session,
+                project.id,
                 test_session.id,
                 1,
                 {"name": "middle_task"},  # Insert after 1 -> position 2

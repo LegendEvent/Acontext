@@ -26,6 +26,7 @@ async def _append_messages_to_planning_section_handler(
         )
     r = await TD.append_messages_to_planning_section(
         ctx.db_session,
+        ctx.project_id,
         ctx.session_id,
         actually_message_ids,
     )

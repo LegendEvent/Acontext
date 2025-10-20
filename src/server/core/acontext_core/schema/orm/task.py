@@ -19,6 +19,7 @@ from ..session.task import TaskStatus
 from ..utils import asUUID
 
 if TYPE_CHECKING:
+    from .project import Project
     from .session import Session
     from .message import Message
 
@@ -50,6 +51,16 @@ class Task(CommonMixin):
             "db": Column(
                 UUID(as_uuid=True),
                 ForeignKey("sessions.id", ondelete="CASCADE"),
+                nullable=False,
+            )
+        }
+    )
+
+    project_id: asUUID = field(
+        metadata={
+            "db": Column(
+                UUID(as_uuid=True),
+                ForeignKey("projects.id", ondelete="CASCADE"),
                 nullable=False,
             )
         }
@@ -93,4 +104,9 @@ class Task(CommonMixin):
     session: "Session" = field(
         init=False,
         metadata={"db": relationship("Session", back_populates="tasks")},
+    )
+
+    project: "Project" = field(
+        init=False,
+        metadata={"db": relationship("Project", back_populates="tasks")},
     )
