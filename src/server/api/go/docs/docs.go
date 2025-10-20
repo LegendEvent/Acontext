@@ -279,7 +279,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload a file and create an artifact record under a disk",
+                "description": "Upload a file and create or update an artifact record under a disk",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -289,7 +289,7 @@ const docTemplate = `{
                 "tags": [
                     "artifact"
                 ],
-                "summary": "Create artifact",
+                "summary": "Upsert artifact",
                 "parameters": [
                     {
                         "type": "string",

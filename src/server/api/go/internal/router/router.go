@@ -185,7 +185,7 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 			artifact := disk.Group("/:disk_id/artifact")
 			{
-				artifact.POST("", d.ArtifactHandler.CreateArtifact)
+				artifact.POST("", d.ArtifactHandler.UpsertArtifact)
 				artifact.GET("", d.ArtifactHandler.GetArtifact)
 				artifact.PUT("", d.ArtifactHandler.UpdateArtifact)
 				artifact.DELETE("", d.ArtifactHandler.DeleteArtifact)

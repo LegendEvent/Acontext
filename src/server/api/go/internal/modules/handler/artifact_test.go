@@ -94,7 +94,7 @@ func (m *MockArtifactService) GetFileContent(ctx context.Context, diskID uuid.UU
 	return args.Get(0).(*fileparser.FileContent), args.Error(1)
 }
 
-func TestArtifactHandler_CreateArtifact(t *testing.T) {
+func TestArtifactHandler_UpsertArtifact(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -108,7 +108,7 @@ func TestArtifactHandler_CreateArtifact(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:        "successful file creation",
+			name:        "successful file upsert",
 			diskID:      uuid.New().String(),
 			filePath:    "/test/test.txt",
 			meta:        `{"description": "test file"}`,
@@ -187,7 +187,7 @@ func TestArtifactHandler_CreateArtifact(t *testing.T) {
 			}
 
 			// Call handler
-			handler.CreateArtifact(c)
+			handler.UpsertArtifact(c)
 
 			// Assertions
 			assert.Equal(t, tt.expectedStatus, w.Code)

@@ -28,10 +28,10 @@ type CreateArtifactReq struct {
 	Meta     string `form:"meta" json:"meta"`
 }
 
-// CreateArtifact godoc
+// UpsertArtifact godoc
 //
-//	@Summary		Create artifact
-//	@Description	Upload a file and create an artifact record under a disk
+//	@Summary		Upsert artifact
+//	@Description	Upload a file and create or update an artifact record under a disk
 //	@Tags			artifact
 //	@Accept			multipart/form-data
 //	@Produce		json
@@ -42,7 +42,7 @@ type CreateArtifactReq struct {
 //	@Security		BearerAuth
 //	@Success		201	{object}	serializer.Response{data=model.Artifact}
 //	@Router			/disk/{disk_id}/artifact [post]
-func (h *ArtifactHandler) CreateArtifact(c *gin.Context) {
+func (h *ArtifactHandler) UpsertArtifact(c *gin.Context) {
 	req := CreateArtifactReq{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))

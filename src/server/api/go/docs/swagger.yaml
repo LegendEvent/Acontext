@@ -617,7 +617,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Upload a file and create an artifact record under a disk
+      description: Upload a file and create or update an artifact record under a disk
       parameters:
       - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
@@ -654,7 +654,7 @@ paths:
               type: object
       security:
       - BearerAuth: []
-      summary: Create artifact
+      summary: Upsert artifact
       tags:
       - artifact
     put:

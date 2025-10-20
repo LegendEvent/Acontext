@@ -276,7 +276,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload a file and create an artifact record under a disk",
+                "description": "Upload a file and create or update an artifact record under a disk",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -286,7 +286,7 @@
                 "tags": [
                     "artifact"
                 ],
-                "summary": "Create artifact",
+                "summary": "Upsert artifact",
                 "parameters": [
                     {
                         "type": "string",
