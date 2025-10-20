@@ -31,28 +31,7 @@ definitions:
         example: text
         type: string
     required:
-    - parent_id
     - type
-    type: object
-  handler.CreateFolderReq:
-    properties:
-      parent_id:
-        type: string
-      props:
-        additionalProperties: {}
-        type: object
-      title:
-        type: string
-    type: object
-  handler.CreatePageReq:
-    properties:
-      parent_id:
-        type: string
-      props:
-        additionalProperties: {}
-        type: object
-      title:
-        type: string
     type: object
   handler.CreateSessionReq:
     properties:
@@ -117,22 +96,6 @@ definitions:
         type: string
       sort:
         type: integer
-    required:
-    - parent_id
-    type: object
-  handler.MoveFolderReq:
-    properties:
-      parent_id:
-        type: string
-      sort:
-        type: integer
-    type: object
-  handler.MovePageReq:
-    properties:
-      parent_id:
-        type: string
-      sort:
-        type: integer
     type: object
   handler.SendMessageReq:
     properties:
@@ -165,32 +128,6 @@ definitions:
         type: string
     type: object
   handler.UpdateBlockSortReq:
-    properties:
-      sort:
-        type: integer
-    type: object
-  handler.UpdateFolderPropertiesReq:
-    properties:
-      props:
-        additionalProperties: {}
-        type: object
-      title:
-        type: string
-    type: object
-  handler.UpdateFolderSortReq:
-    properties:
-      sort:
-        type: integer
-    type: object
-  handler.UpdatePagePropertiesReq:
-    properties:
-      props:
-        additionalProperties: {}
-        type: object
-      title:
-        type: string
-    type: object
-  handler.UpdatePageSortReq:
     properties:
       sort:
         type: integer
@@ -1086,8 +1023,10 @@ paths:
     get:
       consumes:
       - application/json
-      description: List blocks under a parent (page or block), excludes page type
-        blocks (type != page), parent_id is required
+      description: List blocks in a space. Use type query parameter to filter by block
+        type (page, folder, text, sop, etc.). Use parent_id query parameter to filter
+        by parent. If both type and parent_id are empty, returns top-level pages and
+        folders.
       parameters:
       - description: Space ID
         format: uuid
@@ -1095,11 +1034,19 @@ paths:
         name: space_id
         required: true
         type: string
+      - description: Block type
+        enum:
+        - page
+        - folder
+        - text
+        - sop
+        in: query
+        name: type
+        type: string
       - description: Parent ID
         format: uuid
         in: query
         name: parent_id
-        required: true
         type: string
       produces:
       - application/json
@@ -1123,7 +1070,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new block under a parent
+      description: 'Create a new block (supports all types: page, folder, text, sop,
+        etc.). For page and folder types, parent_id is optional. For other types,
+        parent_id is required.'
       parameters:
       - description: Space ID
         format: uuid
@@ -1158,7 +1107,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a block by its ID
+      description: 'Delete a block by its ID (works for all block types: page, folder,
+        text, sop, etc.)'
       parameters:
       - description: Space ID
         format: uuid
@@ -1188,7 +1138,9 @@ paths:
     put:
       consumes:
       - application/json
-      description: Move block by updating its parent_id to page or block
+      description: Move block by updating its parent_id. Works for all block types
+        (page, folder, text, sop, etc.). For page and folder types, parent_id can
+        be null (root level).
       parameters:
       - description: Space ID
         format: uuid
@@ -1217,14 +1169,15 @@ paths:
             $ref: '#/definitions/serializer.Response'
       security:
       - BearerAuth: []
-      summary: Move block (to page or block)
+      summary: Move block
       tags:
       - block
   /space/{space_id}/block/{block_id}/properties:
     get:
       consumes:
       - application/json
-      description: Get a block's properties by its ID
+      description: 'Get a block''s properties by its ID (works for all block types:
+        page, folder, text, sop, etc.)'
       parameters:
       - description: Space ID
         format: uuid
@@ -1258,7 +1211,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update a block's title and properties by its ID
+      description: 'Update a block''s title and properties by its ID (works for all
+        block types: page, folder, text, sop, etc.)'
       parameters:
       - description: Space ID
         format: uuid
@@ -1294,7 +1248,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update block sort value
+      description: 'Update block sort value (works for all block types: page, folder,
+        text, sop, etc.)'
       parameters:
       - description: Space ID
         format: uuid
@@ -1386,494 +1341,6 @@ paths:
       summary: Update space configs
       tags:
       - space
-  /space/{space_id}/folder:
-    get:
-      consumes:
-      - application/json
-      description: List folders in a space, optionally filtered by parent_id (use
-        parent_id query parameter to get children of a specific folder, or omit it
-        to get top-level folders where parent_id is null)
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Parent ID
-        format: uuid
-        in: query
-        name: parent_id
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/serializer.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Block'
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: List folders
-      tags:
-      - folder
-    post:
-      consumes:
-      - application/json
-      description: Create a new folder in the space
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: CreateFolder payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.CreateFolderReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            allOf:
-            - $ref: '#/definitions/serializer.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Block'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Create folder
-      tags:
-      - folder
-  /space/{space_id}/folder/{folder_id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a folder by its ID in the space
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Folder ID
-        format: uuid
-        in: path
-        name: folder_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete folder
-      tags:
-      - folder
-  /space/{space_id}/folder/{folder_id}/move:
-    put:
-      consumes:
-      - application/json
-      description: Move folder by updating its parent_id
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Folder ID
-        format: uuid
-        in: path
-        name: folder_id
-        required: true
-        type: string
-      - description: MoveFolder payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.MoveFolderReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Move folder (change parent_id)
-      tags:
-      - folder
-  /space/{space_id}/folder/{folder_id}/properties:
-    get:
-      consumes:
-      - application/json
-      description: Get folder properties by folder ID
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Folder ID
-        format: uuid
-        in: path
-        name: folder_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/serializer.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Block'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Get folder properties
-      tags:
-      - folder
-    put:
-      consumes:
-      - application/json
-      description: Update folder title and properties
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Folder ID
-        format: uuid
-        in: path
-        name: folder_id
-        required: true
-        type: string
-      - description: UpdateFolderProperties payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.UpdateFolderPropertiesReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Update folder properties
-      tags:
-      - folder
-  /space/{space_id}/folder/{folder_id}/sort:
-    put:
-      consumes:
-      - application/json
-      description: Update folder sort value
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Folder ID
-        format: uuid
-        in: path
-        name: folder_id
-        required: true
-        type: string
-      - description: UpdateFolderSort payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.UpdateFolderSortReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Update folder sort
-      tags:
-      - folder
-  /space/{space_id}/page:
-    get:
-      consumes:
-      - application/json
-      description: List pages in a space, optionally filtered by parent_id (use parent_id
-        query parameter to get children of a specific page, or omit it to get top-level
-        pages where parent_id is null)
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Parent ID
-        format: uuid
-        in: query
-        name: parent_id
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/serializer.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Block'
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: List pages
-      tags:
-      - page
-    post:
-      consumes:
-      - application/json
-      description: Create a new page in the space
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: CreatePage payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.CreatePageReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            allOf:
-            - $ref: '#/definitions/serializer.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Block'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Create page
-      tags:
-      - page
-  /space/{space_id}/page/{page_id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a page by its ID in the space
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Page ID
-        format: uuid
-        in: path
-        name: page_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete page
-      tags:
-      - page
-  /space/{space_id}/page/{page_id}/move:
-    put:
-      consumes:
-      - application/json
-      description: Move page by updating its parent_id
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Page ID
-        format: uuid
-        in: path
-        name: page_id
-        required: true
-        type: string
-      - description: MovePage payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.MovePageReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Move page (change parent_id)
-      tags:
-      - page
-  /space/{space_id}/page/{page_id}/properties:
-    get:
-      consumes:
-      - application/json
-      description: Get page properties by page ID
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Page ID
-        format: uuid
-        in: path
-        name: page_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/serializer.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Block'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Get page properties
-      tags:
-      - page
-    put:
-      consumes:
-      - application/json
-      description: Update page title and properties
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Page ID
-        format: uuid
-        in: path
-        name: page_id
-        required: true
-        type: string
-      - description: UpdatePageProperties payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.UpdatePagePropertiesReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Update page properties
-      tags:
-      - page
-  /space/{space_id}/page/{page_id}/sort:
-    put:
-      consumes:
-      - application/json
-      description: Update page sort value
-      parameters:
-      - description: Space ID
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: Page ID
-        format: uuid
-        in: path
-        name: page_id
-        required: true
-        type: string
-      - description: UpdatePageSort payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.UpdatePageSortReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Update page sort
-      tags:
-      - page
   /space/{space_id}/semantic_answer:
     get:
       consumes:

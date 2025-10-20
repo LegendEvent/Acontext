@@ -122,32 +122,6 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			space.GET("/:space_id/semantic_global", d.SpaceHandler.GetSemanticGlobal)
 			space.GET("/:space_id/semantic_grep", d.SpaceHandler.GetSemanticGrep)
 
-			page := space.Group("/:space_id/page")
-			{
-				page.GET("", d.BlockHandler.ListPages)
-				page.POST("", d.BlockHandler.CreatePage)
-				page.DELETE("/:page_id", d.BlockHandler.DeletePage)
-
-				page.GET("/:page_id/properties", d.BlockHandler.GetPageProperties)
-				page.PUT("/:page_id/properties", d.BlockHandler.UpdatePageProperties)
-
-				page.PUT("/:page_id/move", d.BlockHandler.MovePage)
-				page.PUT("/:page_id/sort", d.BlockHandler.UpdatePageSort)
-			}
-
-			folder := space.Group("/:space_id/folder")
-			{
-				folder.GET("", d.BlockHandler.ListFolders)
-				folder.POST("", d.BlockHandler.CreateFolder)
-				folder.DELETE("/:folder_id", d.BlockHandler.DeleteFolder)
-
-				folder.GET("/:folder_id/properties", d.BlockHandler.GetFolderProperties)
-				folder.PUT("/:folder_id/properties", d.BlockHandler.UpdateFolderProperties)
-
-				folder.PUT("/:folder_id/move", d.BlockHandler.MoveFolder)
-				folder.PUT("/:folder_id/sort", d.BlockHandler.UpdateFolderSort)
-			}
-
 			block := space.Group("/:space_id/block")
 			{
 				block.GET("", d.BlockHandler.ListBlocks)

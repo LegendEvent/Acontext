@@ -10,31 +10,24 @@ import (
 )
 
 type BlockService interface {
-	CreatePage(ctx context.Context, b *model.Block) error
-	DeletePage(ctx context.Context, spaceID uuid.UUID, pageID uuid.UUID) error
-	GetPageProperties(ctx context.Context, pageID uuid.UUID) (*model.Block, error)
-	UpdatePageProperties(ctx context.Context, b *model.Block) error
-	ListPageChildren(ctx context.Context, pageID uuid.UUID) ([]model.Block, error)
-	ListPages(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) ([]model.Block, error)
-	MovePage(ctx context.Context, pageID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error
-	UpdatePageSort(ctx context.Context, pageID uuid.UUID, sort int64) error
+	// Create - unified method, handles special logic for folder path
+	Create(ctx context.Context, b *model.Block) error
 
-	CreateFolder(ctx context.Context, b *model.Block) error
-	DeleteFolder(ctx context.Context, spaceID uuid.UUID, folderID uuid.UUID) error
-	GetFolderProperties(ctx context.Context, folderID uuid.UUID) (*model.Block, error)
-	UpdateFolderProperties(ctx context.Context, b *model.Block) error
-	ListFolders(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) ([]model.Block, error)
-	MoveFolder(ctx context.Context, folderID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error
-	UpdateFolderSort(ctx context.Context, folderID uuid.UUID, sort int64) error
+	// Delete - unified method
+	Delete(ctx context.Context, spaceID uuid.UUID, blockID uuid.UUID) error
 
-	CreateBlock(ctx context.Context, b *model.Block) error
-	DeleteBlock(ctx context.Context, spaceID uuid.UUID, blockID uuid.UUID) error
+	// Properties - unified methods
 	GetBlockProperties(ctx context.Context, blockID uuid.UUID) (*model.Block, error)
 	UpdateBlockProperties(ctx context.Context, b *model.Block) error
-	ListBlockChildren(ctx context.Context, blockID uuid.UUID) ([]model.Block, error)
-	ListBlocks(ctx context.Context, spaceID uuid.UUID, parentID uuid.UUID) ([]model.Block, error)
-	MoveBlock(ctx context.Context, blockID uuid.UUID, newParentID uuid.UUID, targetSort *int64) error
-	UpdateBlockSort(ctx context.Context, blockID uuid.UUID, sort int64) error
+
+	// List - unified method with optional filters
+	List(ctx context.Context, spaceID uuid.UUID, blockType string, parentID *uuid.UUID) ([]model.Block, error)
+
+	// Move - unified method, handles special logic for folder path
+	Move(ctx context.Context, blockID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error
+
+	// Sort - unified method
+	UpdateSort(ctx context.Context, blockID uuid.UUID, sort int64) error
 }
 
 type blockService struct{ r repo.BlockRepo }
@@ -76,6 +69,36 @@ func (s *blockService) prepareBlockForCreation(ctx context.Context, b *model.Blo
 	return nil
 }
 
+// Create - unified create method for all block types
+func (s *blockService) Create(ctx context.Context, b *model.Block) error {
+	if b.Type == "" {
+		return errors.New("block type is required")
+	}
+
+	parent, err := s.validateAndPrepareCreate(ctx, b)
+	if err != nil {
+		return err
+	}
+
+	// Special handling for folder type - calculate and set path
+	if b.Type == model.BlockTypeFolder {
+		path := b.Title
+		if parent != nil {
+			parentPath := parent.GetFolderPath()
+			if parentPath != "" {
+				path = parentPath + "/" + b.Title
+			}
+		}
+		b.SetFolderPath(path)
+	}
+
+	if err := s.prepareBlockForCreation(ctx, b); err != nil {
+		return err
+	}
+
+	return s.r.Create(ctx, b)
+}
+
 // validateAndPrepareMove validates a block move and prepares the new parent
 func (s *blockService) validateAndPrepareMove(ctx context.Context, blockID uuid.UUID, newParentID *uuid.UUID) (*model.Block, *model.Block, error) {
 	if len(blockID) == 0 {
@@ -109,98 +132,15 @@ func (s *blockService) validateAndPrepareMove(ctx context.Context, blockID uuid.
 	return block, parent, nil
 }
 
-func (s *blockService) CreatePage(ctx context.Context, b *model.Block) error {
-	if b.Type == "" {
-		b.Type = model.BlockTypePage
-	}
-
-	if _, err := s.validateAndPrepareCreate(ctx, b); err != nil {
-		return err
-	}
-
-	if err := s.prepareBlockForCreation(ctx, b); err != nil {
-		return err
-	}
-
-	return s.r.Create(ctx, b)
-}
-
-func (s *blockService) DeletePage(ctx context.Context, spaceID uuid.UUID, pageID uuid.UUID) error {
-	if len(pageID) == 0 {
-		return errors.New("page id is empty")
-	}
-	return s.r.Delete(ctx, spaceID, pageID)
-}
-
-func (s *blockService) GetPageProperties(ctx context.Context, pageID uuid.UUID) (*model.Block, error) {
-	if len(pageID) == 0 {
-		return nil, errors.New("page id is empty")
-	}
-	return s.r.Get(ctx, pageID)
-}
-
-func (s *blockService) UpdatePageProperties(ctx context.Context, b *model.Block) error {
-	if len(b.ID) == 0 {
-		return errors.New("page id is empty")
-	}
-	return s.r.Update(ctx, b)
-}
-
-func (s *blockService) ListPageChildren(ctx context.Context, pageID uuid.UUID) ([]model.Block, error) {
-	if len(pageID) == 0 {
-		return nil, errors.New("page id is empty")
-	}
-	return s.r.ListChildren(ctx, pageID)
-}
-
-func (s *blockService) ListPages(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) ([]model.Block, error) {
-	if len(spaceID) == 0 {
-		return nil, errors.New("space id is empty")
-	}
-	return s.r.ListBySpace(ctx, spaceID, model.BlockTypePage, parentID)
-}
-
-func (s *blockService) MovePage(ctx context.Context, pageID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
-	if _, _, err := s.validateAndPrepareMove(ctx, pageID, newParentID); err != nil {
-		return err
-	}
-
-	if targetSort == nil {
-		return s.r.MoveToParentAppend(ctx, pageID, newParentID)
-	}
-	return s.r.MoveToParentAtSort(ctx, pageID, newParentID, *targetSort)
-}
-
-func (s *blockService) UpdatePageSort(ctx context.Context, pageID uuid.UUID, sort int64) error {
-	if len(pageID) == 0 {
-		return errors.New("page id is empty")
-	}
-	return s.r.ReorderWithinGroup(ctx, pageID, sort)
-}
-
-func (s *blockService) CreateBlock(ctx context.Context, b *model.Block) error {
-	if b.Type == "" {
-		return errors.New("block type is empty")
-	}
-
-	if _, err := s.validateAndPrepareCreate(ctx, b); err != nil {
-		return err
-	}
-
-	if err := s.prepareBlockForCreation(ctx, b); err != nil {
-		return err
-	}
-
-	return s.r.Create(ctx, b)
-}
-
-func (s *blockService) DeleteBlock(ctx context.Context, spaceID uuid.UUID, blockID uuid.UUID) error {
+// Delete - unified delete method for all block types
+func (s *blockService) Delete(ctx context.Context, spaceID uuid.UUID, blockID uuid.UUID) error {
 	if len(blockID) == 0 {
 		return errors.New("block id is empty")
 	}
 	return s.r.Delete(ctx, spaceID, blockID)
 }
 
+// GetBlockProperties - unified get properties method
 func (s *blockService) GetBlockProperties(ctx context.Context, blockID uuid.UUID) (*model.Block, error) {
 	if len(blockID) == 0 {
 		return nil, errors.New("block id is empty")
@@ -208,6 +148,7 @@ func (s *blockService) GetBlockProperties(ctx context.Context, blockID uuid.UUID
 	return s.r.Get(ctx, blockID)
 }
 
+// UpdateBlockProperties - unified update properties method
 func (s *blockService) UpdateBlockProperties(ctx context.Context, b *model.Block) error {
 	if len(b.ID) == 0 {
 		return errors.New("block id is empty")
@@ -215,128 +156,48 @@ func (s *blockService) UpdateBlockProperties(ctx context.Context, b *model.Block
 	return s.r.Update(ctx, b)
 }
 
-func (s *blockService) ListBlockChildren(ctx context.Context, blockID uuid.UUID) ([]model.Block, error) {
-	if len(blockID) == 0 {
-		return nil, errors.New("block id is empty")
-	}
-	return s.r.ListChildren(ctx, blockID)
-}
-
-func (s *blockService) ListBlocks(ctx context.Context, spaceID uuid.UUID, parentID uuid.UUID) ([]model.Block, error) {
+// List - unified list method with optional type and parent_id filters
+func (s *blockService) List(ctx context.Context, spaceID uuid.UUID, blockType string, parentID *uuid.UUID) ([]model.Block, error) {
 	if len(spaceID) == 0 {
 		return nil, errors.New("space id is empty")
 	}
-	if len(parentID) == 0 {
-		return nil, errors.New("parent id is required")
-	}
-	return s.r.ListBlocksExcludingPages(ctx, spaceID, parentID)
+	return s.r.ListBySpace(ctx, spaceID, blockType, parentID)
 }
 
-func (s *blockService) MoveBlock(ctx context.Context, blockID uuid.UUID, newParentID uuid.UUID, targetSort *int64) error {
-	if _, _, err := s.validateAndPrepareMove(ctx, blockID, &newParentID); err != nil {
+// Move - unified move method for all block types
+func (s *blockService) Move(ctx context.Context, blockID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
+	block, parent, err := s.validateAndPrepareMove(ctx, blockID, newParentID)
+	if err != nil {
 		return err
 	}
 
-	if targetSort == nil {
-		return s.r.MoveToParentAppend(ctx, blockID, &newParentID)
+	// Special handling for folder type - update path
+	if block.Type == model.BlockTypeFolder {
+		path := block.Title
+		if parent != nil {
+			parentPath := parent.GetFolderPath()
+			if parentPath != "" {
+				path = parentPath + "/" + block.Title
+			}
+		}
+		block.SetFolderPath(path)
+
+		// Update the folder properties with the new path
+		if err := s.r.Update(ctx, block); err != nil {
+			return err
+		}
 	}
-	return s.r.MoveToParentAtSort(ctx, blockID, &newParentID, *targetSort)
+
+	if targetSort == nil {
+		return s.r.MoveToParentAppend(ctx, blockID, newParentID)
+	}
+	return s.r.MoveToParentAtSort(ctx, blockID, newParentID, *targetSort)
 }
 
-func (s *blockService) UpdateBlockSort(ctx context.Context, blockID uuid.UUID, sort int64) error {
+// UpdateSort - unified sort method for all block types
+func (s *blockService) UpdateSort(ctx context.Context, blockID uuid.UUID, sort int64) error {
 	if len(blockID) == 0 {
 		return errors.New("block id is empty")
 	}
 	return s.r.ReorderWithinGroup(ctx, blockID, sort)
-}
-
-// Folder-related methods
-
-func (s *blockService) CreateFolder(ctx context.Context, b *model.Block) error {
-	if b.Type == "" {
-		b.Type = model.BlockTypeFolder
-	}
-
-	parent, err := s.validateAndPrepareCreate(ctx, b)
-	if err != nil {
-		return err
-	}
-
-	// Calculate and set the folder path
-	path := b.Title
-	if parent != nil {
-		parentPath := parent.GetFolderPath()
-		if parentPath != "" {
-			path = parentPath + "/" + b.Title
-		}
-	}
-	b.SetFolderPath(path)
-
-	if err := s.prepareBlockForCreation(ctx, b); err != nil {
-		return err
-	}
-
-	return s.r.Create(ctx, b)
-}
-
-func (s *blockService) DeleteFolder(ctx context.Context, spaceID uuid.UUID, folderID uuid.UUID) error {
-	if len(folderID) == 0 {
-		return errors.New("folder id is empty")
-	}
-	return s.r.Delete(ctx, spaceID, folderID)
-}
-
-func (s *blockService) GetFolderProperties(ctx context.Context, folderID uuid.UUID) (*model.Block, error) {
-	if len(folderID) == 0 {
-		return nil, errors.New("folder id is empty")
-	}
-	return s.r.Get(ctx, folderID)
-}
-
-func (s *blockService) UpdateFolderProperties(ctx context.Context, b *model.Block) error {
-	if len(b.ID) == 0 {
-		return errors.New("folder id is empty")
-	}
-	return s.r.Update(ctx, b)
-}
-
-func (s *blockService) ListFolders(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) ([]model.Block, error) {
-	if len(spaceID) == 0 {
-		return nil, errors.New("space id is empty")
-	}
-	return s.r.ListBySpace(ctx, spaceID, model.BlockTypeFolder, parentID)
-}
-
-func (s *blockService) MoveFolder(ctx context.Context, folderID uuid.UUID, newParentID *uuid.UUID, targetSort *int64) error {
-	folder, parent, err := s.validateAndPrepareMove(ctx, folderID, newParentID)
-	if err != nil {
-		return err
-	}
-
-	// Update the folder path
-	path := folder.Title
-	if parent != nil {
-		parentPath := parent.GetFolderPath()
-		if parentPath != "" {
-			path = parentPath + "/" + folder.Title
-		}
-	}
-	folder.SetFolderPath(path)
-
-	// Update the folder properties with the new path
-	if err := s.r.Update(ctx, folder); err != nil {
-		return err
-	}
-
-	if targetSort == nil {
-		return s.r.MoveToParentAppend(ctx, folderID, newParentID)
-	}
-	return s.r.MoveToParentAtSort(ctx, folderID, newParentID, *targetSort)
-}
-
-func (s *blockService) UpdateFolderSort(ctx context.Context, folderID uuid.UUID, sort int64) error {
-	if len(folderID) == 0 {
-		return errors.New("folder id is empty")
-	}
-	return s.r.ReorderWithinGroup(ctx, folderID, sort)
 }

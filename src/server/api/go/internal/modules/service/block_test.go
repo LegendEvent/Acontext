@@ -98,7 +98,7 @@ func (m *MockBlockRepo) ListBlocksExcludingPages(ctx context.Context, spaceID uu
 	return args.Get(0).([]model.Block), args.Error(1)
 }
 
-func TestBlockService_CreatePage(t *testing.T) {
+func TestBlockService_Create_Page(t *testing.T) {
 	ctx := context.Background()
 	spaceID := uuid.New()
 	parentID := uuid.New()
@@ -114,6 +114,7 @@ func TestBlockService_CreatePage(t *testing.T) {
 			name: "successful page creation",
 			block: &model.Block{
 				SpaceID: spaceID,
+				Type:    model.BlockTypePage,
 				Title:   "Test Page",
 			},
 			setup: func(repo *MockBlockRepo) {
@@ -128,6 +129,7 @@ func TestBlockService_CreatePage(t *testing.T) {
 			name: "valid parent folder",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypePage,
 				ParentID: &parentID,
 				Title:    "Child Page",
 			},
@@ -148,6 +150,7 @@ func TestBlockService_CreatePage(t *testing.T) {
 			name: "invalid parent page type",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypePage,
 				ParentID: &parentID,
 				Title:    "Child Page",
 			},
@@ -165,6 +168,7 @@ func TestBlockService_CreatePage(t *testing.T) {
 			name: "page with text parent - invalid",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypePage,
 				ParentID: &parentID,
 				Title:    "Child Page",
 			},
@@ -186,7 +190,7 @@ func TestBlockService_CreatePage(t *testing.T) {
 			tt.setup(repo)
 
 			service := NewBlockService(repo)
-			err := service.CreatePage(ctx, tt.block)
+			err := service.Create(ctx, tt.block)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -203,29 +207,29 @@ func TestBlockService_CreatePage(t *testing.T) {
 	}
 }
 
-func TestBlockService_DeletePage(t *testing.T) {
+func TestBlockService_Delete(t *testing.T) {
 	ctx := context.Background()
 	spaceID := uuid.New()
-	pageID := uuid.New()
+	blockID := uuid.New()
 
 	tests := []struct {
 		name    string
-		pageID  uuid.UUID
+		blockID uuid.UUID
 		setup   func(*MockBlockRepo)
 		wantErr bool
 		errMsg  string
 	}{
 		{
-			name:   "successful page deletion",
-			pageID: pageID,
+			name:    "successful block deletion",
+			blockID: blockID,
 			setup: func(repo *MockBlockRepo) {
-				repo.On("Delete", ctx, spaceID, pageID).Return(nil)
+				repo.On("Delete", ctx, spaceID, blockID).Return(nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:   "empty page ID",
-			pageID: uuid.UUID{},
+			name:    "empty block ID",
+			blockID: uuid.UUID{},
 			setup: func(repo *MockBlockRepo) {
 				// Note: len() of uuid.UUID{} is not 0, so Delete will be called
 				repo.On("Delete", ctx, spaceID, uuid.UUID{}).Return(nil)
@@ -233,10 +237,10 @@ func TestBlockService_DeletePage(t *testing.T) {
 			wantErr: false, // Actually won't error, because len(uuid.UUID{}) != 0
 		},
 		{
-			name:   "deletion failure",
-			pageID: pageID,
+			name:    "deletion failure",
+			blockID: blockID,
 			setup: func(repo *MockBlockRepo) {
-				repo.On("Delete", ctx, spaceID, pageID).Return(errors.New("database error"))
+				repo.On("Delete", ctx, spaceID, blockID).Return(errors.New("database error"))
 			},
 			wantErr: true,
 		},
@@ -248,7 +252,7 @@ func TestBlockService_DeletePage(t *testing.T) {
 			tt.setup(repo)
 
 			service := NewBlockService(repo)
-			err := service.DeletePage(ctx, spaceID, tt.pageID)
+			err := service.Delete(ctx, spaceID, tt.blockID)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -264,7 +268,7 @@ func TestBlockService_DeletePage(t *testing.T) {
 	}
 }
 
-func TestBlockService_CreateBlock(t *testing.T) {
+func TestBlockService_Create_Text(t *testing.T) {
 	ctx := context.Background()
 	spaceID := uuid.New()
 	parentID := uuid.New()
@@ -277,7 +281,7 @@ func TestBlockService_CreateBlock(t *testing.T) {
 		errMsg  string
 	}{
 		{
-			name: "successful block creation",
+			name: "successful text block creation",
 			block: &model.Block{
 				SpaceID:  spaceID,
 				ParentID: &parentID,
@@ -306,7 +310,7 @@ func TestBlockService_CreateBlock(t *testing.T) {
 			},
 			setup:   func(repo *MockBlockRepo) {},
 			wantErr: true,
-			errMsg:  "block type is empty",
+			errMsg:  "block type is required",
 		},
 		{
 			name: "parent block cannot have children",
@@ -394,7 +398,7 @@ func TestBlockService_CreateBlock(t *testing.T) {
 			tt.setup(repo)
 
 			service := NewBlockService(repo)
-			err := service.CreateBlock(ctx, tt.block)
+			err := service.Create(ctx, tt.block)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -410,9 +414,7 @@ func TestBlockService_CreateBlock(t *testing.T) {
 	}
 }
 
-// Folder service tests
-
-func TestBlockService_CreateFolder(t *testing.T) {
+func TestBlockService_Create_Folder(t *testing.T) {
 	ctx := context.Background()
 	spaceID := uuid.New()
 	parentID := uuid.New()
@@ -429,6 +431,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			name: "successful folder creation without parent",
 			block: &model.Block{
 				SpaceID: spaceID,
+				Type:    model.BlockTypeFolder,
 				Title:   "RootFolder",
 			},
 			setup: func(repo *MockBlockRepo) {
@@ -444,6 +447,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			name: "successful folder creation with parent",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypeFolder,
 				ParentID: &parentID,
 				Title:    "Subfolder",
 			},
@@ -466,6 +470,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			name: "deep nested folder creation",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypeFolder,
 				ParentID: &parentID,
 				Title:    "DeepFolder",
 			},
@@ -488,6 +493,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			name: "invalid parent type - page",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypeFolder,
 				ParentID: &parentID,
 				Title:    "Subfolder",
 			},
@@ -505,6 +511,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			name: "invalid parent type - text",
 			block: &model.Block{
 				SpaceID:  spaceID,
+				Type:     model.BlockTypeFolder,
 				ParentID: &parentID,
 				Title:    "Subfolder",
 			},
@@ -526,7 +533,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 			tt.setup(repo)
 
 			service := NewBlockService(repo)
-			err := service.CreateFolder(ctx, tt.block)
+			err := service.Create(ctx, tt.block)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -546,55 +553,7 @@ func TestBlockService_CreateFolder(t *testing.T) {
 	}
 }
 
-func TestBlockService_DeleteFolder(t *testing.T) {
-	ctx := context.Background()
-	spaceID := uuid.New()
-	folderID := uuid.New()
-
-	tests := []struct {
-		name     string
-		folderID uuid.UUID
-		setup    func(*MockBlockRepo)
-		wantErr  bool
-	}{
-		{
-			name:     "successful folder deletion",
-			folderID: folderID,
-			setup: func(repo *MockBlockRepo) {
-				repo.On("Delete", ctx, spaceID, folderID).Return(nil)
-			},
-			wantErr: false,
-		},
-		{
-			name:     "deletion failure",
-			folderID: folderID,
-			setup: func(repo *MockBlockRepo) {
-				repo.On("Delete", ctx, spaceID, folderID).Return(errors.New("database error"))
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			repo := &MockBlockRepo{}
-			tt.setup(repo)
-
-			service := NewBlockService(repo)
-			err := service.DeleteFolder(ctx, spaceID, tt.folderID)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-}
-
-func TestBlockService_MoveFolder(t *testing.T) {
+func TestBlockService_Move_Folder(t *testing.T) {
 	ctx := context.Background()
 	folderID := uuid.New()
 	newParentID := uuid.New()
@@ -685,7 +644,7 @@ func TestBlockService_MoveFolder(t *testing.T) {
 			tt.setup(repo)
 
 			service := NewBlockService(repo)
-			err := service.MoveFolder(ctx, tt.folderID, tt.newParentID, tt.targetSort)
+			err := service.Move(ctx, tt.folderID, tt.newParentID, tt.targetSort)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -701,33 +660,56 @@ func TestBlockService_MoveFolder(t *testing.T) {
 	}
 }
 
-func TestBlockService_ListFolders(t *testing.T) {
+func TestBlockService_List(t *testing.T) {
 	ctx := context.Background()
 	spaceID := uuid.New()
 	parentID := uuid.New()
 
 	tests := []struct {
-		name     string
-		spaceID  uuid.UUID
-		parentID *uuid.UUID
-		setup    func(*MockBlockRepo)
-		wantErr  bool
+		name      string
+		spaceID   uuid.UUID
+		blockType string
+		parentID  *uuid.UUID
+		setup     func(*MockBlockRepo)
+		wantErr   bool
 	}{
 		{
-			name:     "list top-level folders",
-			spaceID:  spaceID,
-			parentID: nil,
+			name:      "list top-level folders",
+			spaceID:   spaceID,
+			blockType: model.BlockTypeFolder,
+			parentID:  nil,
 			setup: func(repo *MockBlockRepo) {
 				repo.On("ListBySpace", ctx, spaceID, model.BlockTypeFolder, (*uuid.UUID)(nil)).Return([]model.Block{}, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:     "list folders with parent filter",
-			spaceID:  spaceID,
-			parentID: &parentID,
+			name:      "list folders with parent filter",
+			spaceID:   spaceID,
+			blockType: model.BlockTypeFolder,
+			parentID:  &parentID,
 			setup: func(repo *MockBlockRepo) {
 				repo.On("ListBySpace", ctx, spaceID, model.BlockTypeFolder, &parentID).Return([]model.Block{}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:      "list all types at root",
+			spaceID:   spaceID,
+			blockType: "",
+			parentID:  nil,
+			setup: func(repo *MockBlockRepo) {
+				repo.On("ListBySpace", ctx, spaceID, "", (*uuid.UUID)(nil)).Return([]model.Block{}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:      "list pages with parent",
+			spaceID:   spaceID,
+			blockType: model.BlockTypePage,
+			parentID:  &parentID,
+			setup: func(repo *MockBlockRepo) {
+				repo.On("ListBySpace", ctx, spaceID, model.BlockTypePage, &parentID).Return([]model.Block{}, nil)
 			},
 			wantErr: false,
 		},
@@ -739,7 +721,7 @@ func TestBlockService_ListFolders(t *testing.T) {
 			tt.setup(repo)
 
 			service := NewBlockService(repo)
-			_, err := service.ListFolders(ctx, tt.spaceID, tt.parentID)
+			_, err := service.List(ctx, tt.spaceID, tt.blockType, tt.parentID)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -772,7 +754,7 @@ func TestBlockService_ComprehensiveNesting(t *testing.T) {
 		})).Return(nil)
 
 		service := NewBlockService(repo)
-		err := service.CreateFolder(ctx, rootFolder)
+		err := service.Create(ctx, rootFolder)
 		assert.NoError(t, err)
 		assert.Equal(t, "Root", rootFolder.GetFolderPath())
 
@@ -797,7 +779,7 @@ func TestBlockService_ComprehensiveNesting(t *testing.T) {
 		repo.On("Get", ctx, pageID).Return(pageBlock, nil)
 
 		service := NewBlockService(repo)
-		err := service.CreateFolder(ctx, folderUnderPage)
+		err := service.Create(ctx, folderUnderPage)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot be a child of")
 
@@ -814,7 +796,7 @@ func TestBlockService_ComprehensiveNesting(t *testing.T) {
 		}
 
 		service := NewBlockService(repo)
-		err := service.CreateBlock(ctx, textAtRoot)
+		err := service.Create(ctx, textAtRoot)
 		assert.Error(t, err)
 		// The error comes from Validate() which checks RequireParent first
 		assert.Contains(t, err.Error(), "requires a parent")
