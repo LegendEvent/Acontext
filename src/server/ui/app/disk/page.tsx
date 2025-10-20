@@ -48,7 +48,20 @@ import { Disk, ListArtifactsResp, Artifact as FileInfo } from "@/types";
 import ReactCodeMirror from "@uiw/react-codemirror";
 import { okaidia } from "@uiw/codemirror-theme-okaidia";
 import { json } from "@codemirror/lang-json";
+import { javascript } from "@codemirror/lang-javascript";
+import { python } from "@codemirror/lang-python";
+import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
+import { markdown } from "@codemirror/lang-markdown";
+import { xml } from "@codemirror/lang-xml";
+import { sql } from "@codemirror/lang-sql";
 import { EditorView } from "@codemirror/view";
+import { StreamLanguage } from "@codemirror/language";
+import { go } from "@codemirror/legacy-modes/mode/go";
+import { yaml } from "@codemirror/legacy-modes/mode/yaml";
+import { shell } from "@codemirror/legacy-modes/mode/shell";
+import { rust } from "@codemirror/legacy-modes/mode/rust";
+import { ruby } from "@codemirror/legacy-modes/mode/ruby";
 
 interface TreeNode {
   id: string;
@@ -80,6 +93,79 @@ function truncateMiddle(str: string, maxLength: number = 30): string {
     ellipsis +
     str.substring(str.length - backChars)
   );
+}
+
+// Get language extension based on file type or filename
+function getLanguageExtension(contentType: string | null, filename?: string) {
+  // First try to determine by content type
+  if (contentType) {
+    const type = contentType.toLowerCase();
+    if (type.includes("json")) return json();
+    if (type.includes("javascript") || type.includes("js")) return javascript();
+    if (type.includes("typescript") || type.includes("ts"))
+      return javascript({ typescript: true });
+    if (type.includes("python") || type.includes("py")) return python();
+    if (type.includes("html")) return html();
+    if (type.includes("css")) return css();
+    if (type.includes("markdown") || type.includes("md")) return markdown();
+    if (type.includes("xml")) return xml();
+    if (type.includes("sql")) return sql();
+    if (type.includes("yaml") || type.includes("yml"))
+      return StreamLanguage.define(yaml);
+    if (type.includes("shell") || type.includes("bash") || type.includes("sh"))
+      return StreamLanguage.define(shell);
+    if (type.includes("go")) return StreamLanguage.define(go);
+    if (type.includes("rust") || type.includes("rs"))
+      return StreamLanguage.define(rust);
+    if (type.includes("ruby") || type.includes("rb"))
+      return StreamLanguage.define(ruby);
+  }
+
+  // Then try to determine by filename extension
+  if (filename) {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "json":
+        return json();
+      case "js":
+      case "jsx":
+      case "mjs":
+        return javascript({ jsx: true });
+      case "ts":
+      case "tsx":
+        return javascript({ typescript: true, jsx: ext === "tsx" });
+      case "py":
+        return python();
+      case "html":
+      case "htm":
+        return html();
+      case "css":
+        return css();
+      case "md":
+      case "markdown":
+        return markdown();
+      case "xml":
+        return xml();
+      case "sql":
+        return sql();
+      case "yaml":
+      case "yml":
+        return StreamLanguage.define(yaml);
+      case "sh":
+      case "bash":
+      case "zsh":
+        return StreamLanguage.define(shell);
+      case "go":
+        return StreamLanguage.define(go);
+      case "rs":
+        return StreamLanguage.define(rust);
+      case "rb":
+        return StreamLanguage.define(ruby);
+    }
+  }
+
+  // Return empty array as fallback
+  return [];
 }
 
 function Node({
@@ -233,26 +319,27 @@ export default function DiskPage() {
 
   // Disk related states
   const [disks, setDisks] = useState<Disk[]>([]);
-  const [selectedDisk, setSelectedDisk] = useState<Disk | null>(
-    null
-  );
+  const [selectedDisk, setSelectedDisk] = useState<Disk | null>(null);
   const [isLoadingDisks, setIsLoadingDisks] = useState(true);
 
   // File preview states
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fileContentType, setFileContentType] = useState<string | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isLoadingDownload, setIsLoadingDownload] = useState(false);
 
   // Delete confirmation dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [diskToDelete, setDiskToDelete] = useState<Disk | null>(
-    null
-  );
+  const [diskToDelete, setDiskToDelete] = useState<Disk | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Delete artifact confirmation dialog states
-  const [deleteArtifactDialogOpen, setDeleteArtifactDialogOpen] = useState(false);
-  const [artifactToDelete, setArtifactToDelete] = useState<TreeNode | null>(null);
+  const [deleteArtifactDialogOpen, setDeleteArtifactDialogOpen] =
+    useState(false);
+  const [artifactToDelete, setArtifactToDelete] = useState<TreeNode | null>(
+    null
+  );
   const [isDeletingArtifact, setIsDeletingArtifact] = useState(false);
 
   // Upload artifact states
@@ -632,7 +719,8 @@ export default function DiskPage() {
 
   // Handle delete file confirmation
   const handleDeleteArtifact = async () => {
-    if (!artifactToDelete || !selectedDisk || !artifactToDelete.fileInfo) return;
+    if (!artifactToDelete || !selectedDisk || !artifactToDelete.fileInfo)
+      return;
 
     try {
       setIsDeletingArtifact(true);
@@ -724,6 +812,8 @@ export default function DiskPage() {
   // Reset preview states when file selection changes
   useEffect(() => {
     setImageUrl(null);
+    setFileContent(null);
+    setFileContentType(null);
   }, [selectedFile]);
 
   // Handle preview button click
@@ -734,13 +824,22 @@ export default function DiskPage() {
       setIsLoadingPreview(true);
       const res = await getArtifact(
         selectedDisk.id,
-        `${selectedFile.path}${selectedFile.fileInfo.filename}`
+        `${selectedFile.path}${selectedFile.fileInfo.filename}`,
+        true // with_content
       );
-      if (res.code !== 0) {
+      if (res.code !== 0 || !res.data) {
         console.error(res.message);
         return;
       }
-      setImageUrl(res.data?.public_url || null);
+
+      // Set image URL for image files
+      setImageUrl(res.data.public_url || null);
+
+      // Set file content for text-based files
+      if (res.data.content) {
+        setFileContent(res.data.content.raw);
+        setFileContentType(res.data.content.type);
+      }
     } catch (error) {
       console.error("Failed to load preview:", error);
     } finally {
@@ -756,7 +855,8 @@ export default function DiskPage() {
       setIsLoadingDownload(true);
       const res = await getArtifact(
         selectedDisk.id,
-        `${selectedFile.path}${selectedFile.fileInfo.filename}`
+        `${selectedFile.path}${selectedFile.fileInfo.filename}`,
+        false // with_content = false for download
       );
       if (res.code !== 0) {
         console.error(res.message);
@@ -1102,50 +1202,75 @@ export default function DiskPage() {
                   </div>
                 </div>
 
-                {/* Preview section for images */}
-                {selectedFile.fileInfo.meta.__artifact_info__.mime.startsWith(
-                  "image/"
-                ) && (
-                  <div className="border-t pt-6">
-                    <p className="text-sm font-medium text-muted-foreground mb-3">
-                      {t("preview")}
-                    </p>
-                    {isLoadingPreview ? (
-                      <div className="flex items-center justify-center h-64 bg-muted rounded-md">
-                        <div className="flex flex-col items-center gap-2">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">
-                            {t("loadingImage")}
-                          </p>
-                        </div>
+                {/* Preview section */}
+                <div className="border-t pt-6">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">
+                    {t("preview")}
+                  </p>
+                  {isLoadingPreview ? (
+                    <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {t("loadingPreview")}
+                        </p>
                       </div>
-                    ) : imageUrl ? (
-                      <div className="rounded-md border bg-muted p-4">
-                        <div className="relative w-full min-h-[200px]">
-                          <Image
-                            src={imageUrl}
-                            alt={selectedFile.fileInfo.filename}
-                            width={800}
-                            height={600}
-                            className="max-w-full h-auto rounded-md shadow-sm"
-                            style={{ objectFit: "contain" }}
-                            unoptimized
+                    </div>
+                  ) : imageUrl || fileContent ? (
+                    <>
+                      {/* Image preview */}
+                      {imageUrl &&
+                        selectedFile.fileInfo.meta.__artifact_info__.mime.startsWith(
+                          "image/"
+                        ) && (
+                          <div className="rounded-md border bg-muted p-4 mb-4">
+                            <div className="relative w-full min-h-[200px]">
+                              <Image
+                                src={imageUrl}
+                                alt={selectedFile.fileInfo.filename}
+                                width={800}
+                                height={600}
+                                className="max-w-full h-auto rounded-md shadow-sm"
+                                style={{ objectFit: "contain" }}
+                                unoptimized
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Text content preview */}
+                      {fileContent && (
+                        <div>
+                          <ReactCodeMirror
+                            value={fileContent}
+                            height="400px"
+                            theme={resolvedTheme === "dark" ? okaidia : "light"}
+                            extensions={[
+                              getLanguageExtension(
+                                fileContentType,
+                                selectedFile.fileInfo?.filename
+                              ),
+                              EditorView.lineWrapping,
+                            ].flat()}
+                            editable={false}
+                            readOnly
+                            className="border rounded-md overflow-hidden"
                           />
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-64 bg-muted rounded-md">
-                        <Button
-                          variant="outline"
-                          onClick={handlePreviewClick}
-                          disabled={isLoadingPreview}
-                        >
-                          {t("loadPreview")}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+                      <Button
+                        variant="outline"
+                        onClick={handlePreviewClick}
+                        disabled={isLoadingPreview}
+                      >
+                        {t("loadPreview")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -1285,7 +1410,9 @@ export default function DiskPage() {
                 className="border rounded-md overflow-hidden"
               />
               {uploadMetaError && (
-                <p className="mt-2 text-sm text-destructive">{uploadMetaError}</p>
+                <p className="mt-2 text-sm text-destructive">
+                  {uploadMetaError}
+                </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
                 {t("metaJsonHelp")}
@@ -1302,7 +1429,9 @@ export default function DiskPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleUploadConfirm}
-              disabled={isUploading || !selectedUploadFile || !isUploadMetaValid}
+              disabled={
+                isUploading || !selectedUploadFile || !isUploadMetaValid
+              }
             >
               {isUploading ? (
                 <>

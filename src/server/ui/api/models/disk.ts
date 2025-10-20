@@ -14,10 +14,11 @@ export const getListArtifacts = async (
 
 export const getArtifact = async (
   disk_id: string,
-  file_path: string
+  file_path: string,
+  with_content: boolean = true
 ): Promise<Res<GetArtifactResp>> => {
   return await service.get(
-    `/api/disk/${disk_id}/artifact?file_path=${file_path}`
+    `/api/disk/${disk_id}/artifact?file_path=${encodeURIComponent(file_path)}&with_content=${with_content}`
   );
 };
 

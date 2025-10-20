@@ -27,9 +27,15 @@ export interface ListArtifactsResp {
   directories: string[];
 }
 
+export interface FileContent {
+  type: string; // "text", "json", "csv", "code"
+  raw: string;  // Raw text content
+}
+
 export interface GetArtifactResp {
   artifact: Artifact;
   public_url: string | null;
+  content?: FileContent | null;
 }
 
 export interface Space {
