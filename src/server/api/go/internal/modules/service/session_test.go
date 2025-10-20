@@ -515,7 +515,7 @@ func TestPartIn_Validate(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "tool-call part requires 'tool_name' in meta",
+			errMsg:  "tool-call/tool-use part requires 'tool_name' or 'name' in meta",
 		},
 		{
 			name: "tool-call part missing arguments",
@@ -526,7 +526,7 @@ func TestPartIn_Validate(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "tool-call part requires 'arguments' in meta",
+			errMsg:  "tool-call/tool-use part requires 'arguments' or 'input' in meta",
 		},
 		{
 			name: "valid tool-result part",
@@ -548,7 +548,7 @@ func TestPartIn_Validate(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "tool-result part requires 'tool_call_id' in meta",
+			errMsg:  "tool-result part requires 'tool_call_id' or 'tool_use_id' in meta",
 		},
 		{
 			name: "valid data part",
