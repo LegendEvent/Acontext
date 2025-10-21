@@ -15,12 +15,7 @@ type BlockRepo interface {
 	Delete(ctx context.Context, spaceID uuid.UUID, id uuid.UUID) error
 	Get(ctx context.Context, id uuid.UUID) (*model.Block, error)
 	Update(ctx context.Context, b *model.Block) error
-	ListChildren(ctx context.Context, parentID uuid.UUID) ([]model.Block, error)
 	ListBySpace(ctx context.Context, spaceID uuid.UUID, blockType string, parentID *uuid.UUID) ([]model.Block, error)
-	ListBlocksExcludingPages(ctx context.Context, spaceID uuid.UUID, parentID uuid.UUID) ([]model.Block, error)
-	BulkUpdateSort(ctx context.Context, items map[uuid.UUID]int64) error
-	UpdateParent(ctx context.Context, id uuid.UUID, parentID *uuid.UUID) error
-	UpdateSort(ctx context.Context, id uuid.UUID, sort int64) error
 	NextSort(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) (int64, error)
 	MoveToParentAppend(ctx context.Context, id uuid.UUID, newParentID *uuid.UUID) error
 	ReorderWithinGroup(ctx context.Context, id uuid.UUID, newSort int64) error
@@ -48,12 +43,6 @@ func (r *blockRepo) Update(ctx context.Context, b *model.Block) error {
 	return r.db.WithContext(ctx).Where(&model.Block{ID: b.ID}).Updates(b).Error
 }
 
-func (r *blockRepo) ListChildren(ctx context.Context, parentID uuid.UUID) ([]model.Block, error) {
-	var list []model.Block
-	err := r.db.WithContext(ctx).Where(&model.Block{ParentID: &parentID}).Order("sort ASC").Find(&list).Error
-	return list, err
-}
-
 func (r *blockRepo) ListBySpace(ctx context.Context, spaceID uuid.UUID, blockType string, parentID *uuid.UUID) ([]model.Block, error) {
 	var list []model.Block
 	query := r.db.WithContext(ctx).Where(&model.Block{SpaceID: spaceID})
@@ -68,50 +57,17 @@ func (r *blockRepo) ListBySpace(ctx context.Context, spaceID uuid.UUID, blockTyp
 		query = query.Where("parent_id = ?", *parentID)
 	}
 
-	err := query.Order("sort ASC").Find(&list).Error
+	err := query.Order("type ASC, sort ASC").Find(&list).Error
 	return list, err
-}
-
-func (r *blockRepo) ListBlocksExcludingPages(ctx context.Context, spaceID uuid.UUID, parentID uuid.UUID) ([]model.Block, error) {
-	var list []model.Block
-	err := r.db.WithContext(ctx).
-		Where(&model.Block{SpaceID: spaceID, ParentID: &parentID}).
-		Where("type != ?", model.BlockTypePage).
-		Order("sort ASC").
-		Find(&list).Error
-	return list, err
-}
-
-func (r *blockRepo) BulkUpdateSort(ctx context.Context, items map[uuid.UUID]int64) error {
-	tx := r.db.WithContext(ctx).Begin()
-	for id, sort := range items {
-		if err := tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Update("sort", sort).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit().Error
-}
-
-func (r *blockRepo) UpdateParent(ctx context.Context, id uuid.UUID, parentID *uuid.UUID) error {
-	return r.db.WithContext(ctx).Model(&model.Block{}).Where(&model.Block{ID: id}).Update("parent_id", parentID).Error
-}
-
-func (r *blockRepo) UpdateSort(ctx context.Context, id uuid.UUID, sort int64) error {
-	return r.db.WithContext(ctx).Model(&model.Block{}).Where(&model.Block{ID: id}).Update("sort", sort).Error
 }
 
 // NextSort returns max(sort)+1 within group (space_id, parent_id)
 func (r *blockRepo) NextSort(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) (int64, error) {
 	type result struct{ Next int64 }
 	var res result
-	db := r.db.WithContext(ctx).Model(&model.Block{}).Select("COALESCE(MAX(sort), -1) + 1 AS next").Where(&model.Block{SpaceID: spaceID})
-	if parentID == nil {
-		db = db.Where("parent_id IS NULL")
-	} else {
-		db = db.Where("parent_id = ?", *parentID)
-	}
-	if err := db.Take(&res).Error; err != nil {
+	query := r.buildGroupQuery(r.db.WithContext(ctx), spaceID, parentID).
+		Select("COALESCE(MAX(sort), -1) + 1 AS next")
+	if err := query.Take(&res).Error; err != nil {
 		return 0, err
 	}
 	return res.Next, nil
@@ -124,25 +80,19 @@ func (r *blockRepo) MoveToParentAppend(ctx context.Context, id uuid.UUID, newPar
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(&model.Block{ID: id}).First(&b).Error; err != nil {
 			return err
 		}
-		// compute next sort in target group
+
+		// Compute next sort in target group
 		var next int64
-		q := tx.Model(&model.Block{}).Select("COALESCE(MAX(sort), -1) + 1")
-		q = q.Where(&model.Block{SpaceID: b.SpaceID})
-		if newParentID == nil {
-			q = q.Where("parent_id IS NULL")
-		} else {
-			q = q.Where("parent_id = ?", *newParentID)
-		}
+		q := r.buildGroupQuery(tx, b.SpaceID, newParentID).Select("COALESCE(MAX(sort), -1) + 1")
 		if err := q.Take(&next).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Updates(map[string]any{
+
+		// Move to new parent at end
+		return tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Updates(map[string]any{
 			"parent_id": newParentID,
 			"sort":      next,
-		}).Error; err != nil {
-			return err
-		}
-		return nil
+		}).Error
 	})
 }
 
@@ -153,39 +103,7 @@ func (r *blockRepo) ReorderWithinGroup(ctx context.Context, id uuid.UUID, newSor
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(&model.Block{ID: id}).First(&b).Error; err != nil {
 			return err
 		}
-		if newSort < 0 {
-			newSort = 0
-		}
-		if newSort == b.Sort {
-			return nil
-		}
-
-		// Temporarily set to a sentinel to avoid unique conflict during bulk shift
-		if err := tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Update("sort", math.MinInt64).Error; err != nil {
-			return err
-		}
-
-		group := tx.Model(&model.Block{}).Where(&model.Block{SpaceID: b.SpaceID})
-		if b.ParentID == nil {
-			group = group.Where("parent_id IS NULL")
-		} else {
-			group = group.Where("parent_id = ?", *b.ParentID)
-		}
-
-		if newSort < b.Sort {
-			if err := group.Where("sort >= ? AND sort < ?", newSort, b.Sort).Update("sort", gorm.Expr("sort + 1")).Error; err != nil {
-				return err
-			}
-		} else { // newSort > b.Sort
-			if err := group.Where("sort <= ? AND sort > ?", newSort, b.Sort).Update("sort", gorm.Expr("sort - 1")).Error; err != nil {
-				return err
-			}
-		}
-
-		if err := tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Update("sort", newSort).Error; err != nil {
-			return err
-		}
-		return nil
+		return r.reorderInTransaction(tx, &b, newSort)
 	})
 }
 
@@ -198,65 +116,100 @@ func (r *blockRepo) MoveToParentAtSort(ctx context.Context, id uuid.UUID, newPar
 			return err
 		}
 
-		// If moving within same group, delegate to reorder
-		sameGroup := false
-		if b.ParentID == nil && newParentID == nil {
-			sameGroup = true
-		} else if b.ParentID != nil && newParentID != nil && *b.ParentID == *newParentID {
-			sameGroup = true
-		}
+		// Check if moving within same group
+		sameGroup := (b.ParentID == nil && newParentID == nil) ||
+			(b.ParentID != nil && newParentID != nil && *b.ParentID == *newParentID)
+
 		if sameGroup {
-			return r.ReorderWithinGroup(ctx, id, targetSort)
+			// Same group: simple reorder
+			return r.reorderInTransaction(tx, &b, targetSort)
 		}
 
-		// Normalize targetSort within [0, max+1]
-		var maxSort int64
-		q := tx.Model(&model.Block{}).Select("COALESCE(MAX(sort), -1)").Where(&model.Block{SpaceID: b.SpaceID})
-		if newParentID == nil {
-			q = q.Where("parent_id IS NULL")
-		} else {
-			q = q.Where("parent_id = ?", *newParentID)
-		}
-		if err := q.Take(&maxSort).Error; err != nil {
-			return err
-		}
-		if targetSort < 0 {
-			targetSort = 0
-		}
-		if targetSort > maxSort+1 {
-			targetSort = maxSort + 1
-		}
-
-		// 1) Close gap in old group by shifting down items after current position
-		oldGroup := tx.Model(&model.Block{}).Where(&model.Block{SpaceID: b.SpaceID})
-		if b.ParentID == nil {
-			oldGroup = oldGroup.Where("parent_id IS NULL")
-		} else {
-			oldGroup = oldGroup.Where("parent_id = ?", *b.ParentID)
-		}
-		if err := oldGroup.Where("sort > ?", b.Sort).Update("sort", gorm.Expr("sort - 1")).Error; err != nil {
-			return err
-		}
-
-		// 2) Make space in target group by shifting up items from targetSort
-		newGroup := tx.Model(&model.Block{}).Where(&model.Block{SpaceID: b.SpaceID})
-		if newParentID == nil {
-			newGroup = newGroup.Where("parent_id IS NULL")
-		} else {
-			newGroup = newGroup.Where("parent_id = ?", *newParentID)
-		}
-		if err := newGroup.Where("sort >= ?", targetSort).Update("sort", gorm.Expr("sort + 1")).Error; err != nil {
-			return err
-		}
-
-		// 3) Move target to new parent and targetSort
-		if err := tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Updates(map[string]any{
-			"parent_id": newParentID,
-			"sort":      targetSort,
-		}).Error; err != nil {
-			return err
-		}
-
-		return nil
+		// Different group: move to new parent
+		return r.moveToNewParentInTransaction(tx, &b, id, newParentID, targetSort)
 	})
+}
+
+// reorderInTransaction reorders a block within its current parent group
+func (r *blockRepo) reorderInTransaction(tx *gorm.DB, b *model.Block, targetSort int64) error {
+	if targetSort < 0 {
+		targetSort = 0
+	}
+	if targetSort == b.Sort {
+		return nil
+	}
+
+	// Set sentinel value to avoid conflicts
+	if err := tx.Model(&model.Block{}).Where(&model.Block{ID: b.ID}).Update("sort", math.MinInt64).Error; err != nil {
+		return err
+	}
+
+	// Build group query
+	group := r.buildGroupQuery(tx, b.SpaceID, b.ParentID)
+
+	// Shift items based on direction
+	if targetSort < b.Sort {
+		// Moving up: shift items down
+		if err := group.Where("sort >= ? AND sort < ?", targetSort, b.Sort).Update("sort", gorm.Expr("sort + 1")).Error; err != nil {
+			return err
+		}
+	} else {
+		// Moving down: shift items up
+		if err := group.Where("sort <= ? AND sort > ?", targetSort, b.Sort).Update("sort", gorm.Expr("sort - 1")).Error; err != nil {
+			return err
+		}
+	}
+
+	// Set final position
+	return tx.Model(&model.Block{}).Where(&model.Block{ID: b.ID}).Update("sort", targetSort).Error
+}
+
+// moveToNewParentInTransaction moves a block to a new parent group at a specific position
+func (r *blockRepo) moveToNewParentInTransaction(tx *gorm.DB, b *model.Block, id uuid.UUID, newParentID *uuid.UUID, targetSort int64) error {
+	// Get max sort in target group to normalize targetSort
+	var maxSort int64
+	q := r.buildGroupQuery(tx, b.SpaceID, newParentID).Select("COALESCE(MAX(sort), -1)")
+	if err := q.Take(&maxSort).Error; err != nil {
+		return err
+	}
+
+	// Normalize targetSort
+	if targetSort < 0 {
+		targetSort = 0
+	}
+	if targetSort > maxSort+1 {
+		targetSort = maxSort + 1
+	}
+
+	// Set sentinel value to avoid conflicts
+	if err := tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Update("sort", math.MinInt64).Error; err != nil {
+		return err
+	}
+
+	// Close gap in old group
+	oldGroup := r.buildGroupQuery(tx, b.SpaceID, b.ParentID)
+	if err := oldGroup.Where("sort > ?", b.Sort).Update("sort", gorm.Expr("sort - 1")).Error; err != nil {
+		return err
+	}
+
+	// Make space in target group
+	newGroup := r.buildGroupQuery(tx, b.SpaceID, newParentID)
+	if err := newGroup.Where("sort >= ?", targetSort).Update("sort", gorm.Expr("sort + 1")).Error; err != nil {
+		return err
+	}
+
+	// Move to new position
+	return tx.Model(&model.Block{}).Where(&model.Block{ID: id}).Updates(map[string]any{
+		"parent_id": newParentID,
+		"sort":      targetSort,
+	}).Error
+}
+
+// buildGroupQuery builds a query for blocks in the same group (same space_id and parent_id)
+func (r *blockRepo) buildGroupQuery(tx *gorm.DB, spaceID uuid.UUID, parentID *uuid.UUID) *gorm.DB {
+	query := tx.Model(&model.Block{}).Where(&model.Block{SpaceID: spaceID})
+	if parentID == nil {
+		return query.Where("parent_id IS NULL")
+	}
+	return query.Where("parent_id = ?", *parentID)
 }

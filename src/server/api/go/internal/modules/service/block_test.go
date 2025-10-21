@@ -39,14 +39,6 @@ func (m *MockBlockRepo) Delete(ctx context.Context, spaceID, blockID uuid.UUID) 
 	return args.Error(0)
 }
 
-func (m *MockBlockRepo) ListChildren(ctx context.Context, parentID uuid.UUID) ([]model.Block, error) {
-	args := m.Called(ctx, parentID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]model.Block), args.Error(1)
-}
-
 func (m *MockBlockRepo) NextSort(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) (int64, error) {
 	args := m.Called(ctx, spaceID, parentID)
 	return args.Get(0).(int64), args.Error(1)
@@ -67,31 +59,8 @@ func (m *MockBlockRepo) ReorderWithinGroup(ctx context.Context, blockID uuid.UUI
 	return args.Error(0)
 }
 
-func (m *MockBlockRepo) BulkUpdateSort(ctx context.Context, items map[uuid.UUID]int64) error {
-	args := m.Called(ctx, items)
-	return args.Error(0)
-}
-
-func (m *MockBlockRepo) UpdateParent(ctx context.Context, id uuid.UUID, parentID *uuid.UUID) error {
-	args := m.Called(ctx, id, parentID)
-	return args.Error(0)
-}
-
-func (m *MockBlockRepo) UpdateSort(ctx context.Context, id uuid.UUID, sort int64) error {
-	args := m.Called(ctx, id, sort)
-	return args.Error(0)
-}
-
 func (m *MockBlockRepo) ListBySpace(ctx context.Context, spaceID uuid.UUID, blockType string, parentID *uuid.UUID) ([]model.Block, error) {
 	args := m.Called(ctx, spaceID, blockType, parentID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]model.Block), args.Error(1)
-}
-
-func (m *MockBlockRepo) ListBlocksExcludingPages(ctx context.Context, spaceID uuid.UUID, parentID uuid.UUID) ([]model.Block, error) {
-	args := m.Called(ctx, spaceID, parentID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
