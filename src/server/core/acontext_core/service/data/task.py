@@ -30,7 +30,6 @@ async def fetch_planning_task(
             session_id=planning.session_id,
             order=planning.order,
             status=planning.status,
-            task_description="",
             data=planning.data,
             space_digested=planning.space_digested,
             raw_message_ids=[
@@ -52,7 +51,6 @@ async def fetch_task(db_session: AsyncSession, task_id: asUUID) -> Result[TaskSc
             session_id=task.session_id,
             order=task.order,
             status=task.status,
-            task_description=task.data.get("task_description", ""),
             data=task.data,
             space_digested=task.space_digested,
             raw_message_ids=[
@@ -82,7 +80,6 @@ async def fetch_current_tasks(
             session_id=t.session_id,
             order=t.order,
             status=t.status,
-            task_description=t.data.get("task_description", ""),
             data=t.data,
             space_digested=t.space_digested,
             raw_message_ids=[
@@ -270,7 +267,7 @@ async def append_messages_to_planning_section(
             project_id=project_id,
             session_id=session_id,
             order=0,
-            data={},
+            data={"task_description": "collecting planning&requirments"},
             status="pending",
             is_planning=True,
         )

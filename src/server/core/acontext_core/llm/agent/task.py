@@ -73,7 +73,7 @@ async def build_task_ctx(
     if eil:
         return r
     LOG.debug(
-        f"Built task context {[(t.order, t.status.value, t.task_description) for t in current_tasks]}"
+        f"Built task context {[(t.order, t.status.value, t.data.task_description) for t in current_tasks]}"
     )
     use_ctx = TaskCtx(
         db_session=db_session,

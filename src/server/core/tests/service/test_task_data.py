@@ -43,19 +43,19 @@ class TestFetchCurrentTasks:
                 {
                     "session_id": test_session.id,
                     "order": 1,
-                    "data": {"name": "task1", "description": "First task"},
+                    "data": {"task_description": "First task"},
                     "status": "pending",
                 },
                 {
                     "session_id": test_session.id,
                     "order": 2,
-                    "data": {"name": "task2", "description": "Second task"},
+                    "data": {"task_description": "Second task"},
                     "status": "running",
                 },
                 {
                     "session_id": test_session.id,
                     "order": 3,
-                    "data": {"name": "task3", "description": "Third task"},
+                    "data": {"task_description": "Third task"},
                     "status": "success",
                 },
             ]
@@ -109,14 +109,14 @@ class TestFetchCurrentTasks:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "task1"},
+                data={"task_description": "Task 1"},
                 status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=2,
-                data={"name": "task2"},
+                data={"task_description": "Task 2"},
                 status="running",
             )
             session.add_all([task1, task2])
@@ -179,7 +179,7 @@ class TestUpdateTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"task_description": "Test task"},
                 status="pending",
             )
             session.add(task)
@@ -223,7 +223,7 @@ class TestUpdateTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"task_description": "Test task"},
                 status="pending",
             )
             session.add(task)
@@ -268,13 +268,13 @@ class TestUpdateTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "original_task"},
+                data={"task_description": "original_task"},
                 status="pending",
             )
             session.add(task)
             await session.flush()
 
-            new_data = {"name": "updated_task", "priority": "high"}
+            new_data = {"task_description": "updated_task"}
 
             result = await update_task(session, task.id, data=new_data)
 
@@ -311,7 +311,7 @@ class TestUpdateTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "original_task"},
+                data={"task_description": "Original task"},
                 status="pending",
             )
             session.add(task)
@@ -319,7 +319,10 @@ class TestUpdateTask:
 
             new_status = "running"
             new_order = 5
-            new_data = {"name": "multi_update", "stage": "testing"}
+            new_data = {
+                "task_description": "Multi update task",
+                "progresses": ["Started"],
+            }
 
             result = await update_task(
                 session, task.id, status=new_status, order=new_order, data=new_data
@@ -376,7 +379,7 @@ class TestUpdateTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"task_description": "Test task"},
                 status="pending",
             )
             session.add(task)
@@ -422,12 +425,10 @@ class TestUpdateTask:
             session.add(test_session)
             await session.flush()
 
-            # Create task with initial complex data
+            # Create task with initial data
             initial_data = {
-                "task_description": "original task",
-                "priority": "medium",
-                "metadata": {"tags": ["backend", "api"], "config": {"timeout": 300}},
-                "status_details": {"attempts": 0},
+                "task_description": "Original task",
+                "progresses": ["Step 1", "Step 2"],
             }
             task = Task(
                 session_id=test_session.id,
@@ -440,7 +441,7 @@ class TestUpdateTask:
             await session.flush()
 
             # Test 1: Simple patch_data update
-            patch_data = {"task_description": "updated task description"}
+            patch_data = {"task_description": "Updated task description"}
             result = await update_task(session, task.id, patch_data=patch_data)
 
             data, error = result.unpack()
@@ -448,51 +449,26 @@ class TestUpdateTask:
             assert data is not None
 
             # Verify the patched field is updated
-            assert data.data["task_description"] == "updated task description"
-            # Verify other fields remain unchanged
-            assert data.data["priority"] == "medium"
-            assert data.data["metadata"] == initial_data["metadata"]
-            assert data.data["status_details"] == initial_data["status_details"]
+            assert data.data["task_description"] == "Updated task description"
+            # Verify progresses remain unchanged
+            assert data.data["progresses"] == initial_data["progresses"]
 
-            # Test 2: Add new fields via patch_data
-            patch_data = {"new_field": "new_value", "assigned_to": "user123"}
+            # Test 2: Update progresses via patch_data
+            patch_data = {"progresses": ["Step 1", "Step 2", "Step 3"]}
             result = await update_task(session, task.id, patch_data=patch_data)
 
             data, error = result.unpack()
             assert error is None
             assert data is not None
 
-            # Verify new fields are added
-            assert data.data["new_field"] == "new_value"
-            assert data.data["assigned_to"] == "user123"
-            # Verify existing fields remain unchanged
-            assert data.data["task_description"] == "updated task description"
-            assert data.data["priority"] == "medium"
+            # Verify progresses updated
+            assert data.data["progresses"] == ["Step 1", "Step 2", "Step 3"]
+            # Verify task_description remains unchanged
+            assert data.data["task_description"] == "Updated task description"
 
-            # Test 3: Update multiple existing fields
-            patch_data = {
-                "priority": "high",
-                "status_details": {"attempts": 1, "last_error": None},
-            }
-            result = await update_task(session, task.id, patch_data=patch_data)
-
-            data, error = result.unpack()
-            assert error is None
-            assert data is not None
-
-            # Verify updated fields
-            assert data.data["priority"] == "high"
-            assert data.data["status_details"] == {
-                "attempts": 1,
-                "last_error": None,
-            }
-            # Verify other fields remain unchanged
-            assert data.data["task_description"] == "updated task description"
-            assert data.data["new_field"] == "new_value"
-
-            # Test 4: Verify data parameter takes precedence over patch_data
-            complete_new_data = {"completely": "new", "data": "structure"}
-            patch_data = {"should": "be_ignored"}
+            # Test 3: Verify data parameter takes precedence over patch_data
+            complete_new_data = {"task_description": "Completely new description"}
+            patch_data = {"task_description": "Should be ignored"}
 
             result = await update_task(
                 session, task.id, data=complete_new_data, patch_data=patch_data
@@ -504,7 +480,6 @@ class TestUpdateTask:
 
             # Verify data parameter took precedence
             assert data.data == complete_new_data
-            assert "should" not in data.data
 
             await session.delete(project)
 
@@ -535,7 +510,7 @@ class TestUpdateTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"task_description": "original", "step": "init"},
+                data={"task_description": "Original task", "progresses": ["Init"]},
                 status="pending",
             )
             session.add(task)
@@ -543,8 +518,8 @@ class TestUpdateTask:
 
             # Update multiple aspects of the task
             patch_data = {
-                "task_description": "patched description",
-                "step": "processing",
+                "task_description": "Patched description",
+                "progresses": ["Init", "Processing"],
             }
             result = await update_task(
                 session, task.id, status="running", order=5, patch_data=patch_data
@@ -557,8 +532,8 @@ class TestUpdateTask:
             # Verify all updates were applied
             assert data.status == "running"
             assert data.order == 5
-            assert data.data["task_description"] == "patched description"
-            assert data.data["step"] == "processing"
+            assert data.data["task_description"] == "Patched description"
+            assert data.data["progresses"] == ["Init", "Processing"]
 
             await session.delete(project)
 
@@ -586,7 +561,7 @@ class TestInsertTask:
             session.add(test_session)
             await session.flush()
 
-            data = {"name": "new_task", "description": "A new task"}
+            data = {"task_description": "A new task"}
             after_order = 0  # Insert after position 0 (will become position 1)
 
             result = await insert_task(
@@ -624,7 +599,7 @@ class TestInsertTask:
             session.add(test_session)
             await session.flush()
 
-            data = {"name": "custom_status_task"}
+            data = {"task_description": "Custom status task"}
             after_order = 1  # Insert after position 1 (will become position 2)
             custom_status = "running"
 
@@ -669,7 +644,7 @@ class TestInsertTask:
             session.add(test_session)
             await session.flush()
 
-            data = {"name": "default_status_task"}
+            data = {"task_description": "Default status task"}
             after_order = 2  # Insert after position 2 (will become position 3)
 
             result = await insert_task(
@@ -687,7 +662,7 @@ class TestInsertTask:
 
     @pytest.mark.asyncio
     async def test_insert_task_complex_data(self):
-        """Test inserting a task with complex JSON data"""
+        """Test inserting a task with complex JSON data including progresses"""
         db_client = DatabaseClient()
         await db_client.create_tables()
 
@@ -708,16 +683,8 @@ class TestInsertTask:
             await session.flush()
 
             complex_data = {
-                "name": "complex_task",
-                "metadata": {
-                    "priority": "high",
-                    "tags": ["urgent", "backend"],
-                    "config": {"timeout": 300, "retries": 3},
-                },
-                "steps": [
-                    {"action": "validate", "params": {"strict": True}},
-                    {"action": "process", "params": {"batch_size": 100}},
-                ],
+                "task_description": "Complex task with multiple progresses",
+                "progresses": ["Validate input", "Process data", "Generate output"],
             }
 
             result = await insert_task(
@@ -760,28 +727,28 @@ class TestInsertTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "task1"},
+                data={"task_description": "Task 1"},
                 status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=2,
-                data={"name": "task2"},
+                data={"task_description": "Task 2"},
                 status="pending",
             )
             task3 = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=3,
-                data={"name": "task3"},
+                data={"task_description": "Task 3"},
                 status="pending",
             )
             session.add_all([task1, task2, task3])
             await session.flush()
 
             # Insert a new task after position 1 (should become position 2)
-            new_data = {"name": "inserted_task"}
+            new_data = {"task_description": "Inserted task"}
             result = await insert_task(
                 session, project.id, test_session.id, 1, new_data
             )
@@ -797,16 +764,16 @@ class TestInsertTask:
             assert len(all_tasks) == 4
 
             # Verify the new order: task1(1), inserted_task(2), task2(3), task3(4)
-            assert all_tasks[0].data["name"] == "task1"
+            assert all_tasks[0].data.task_description == "Task 1"
             assert all_tasks[0].order == 1
 
-            assert all_tasks[1].data["name"] == "inserted_task"
+            assert all_tasks[1].data.task_description == "Inserted task"
             assert all_tasks[1].order == 2
 
-            assert all_tasks[2].data["name"] == "task2"
+            assert all_tasks[2].data.task_description == "Task 2"
             assert all_tasks[2].order == 3  # Was 2, now 3
 
-            assert all_tasks[3].data["name"] == "task3"
+            assert all_tasks[3].data.task_description == "Task 3"
             assert all_tasks[3].order == 4  # Was 3, now 4
 
             await session.delete(project)
@@ -839,7 +806,7 @@ class TestDeleteTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "task_to_delete"},
+                data={"task_description": "Task to delete"},
                 status="pending",
             )
             session.add(task)
@@ -904,21 +871,21 @@ class TestDeleteTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "task1"},
+                data={"task_description": "Task 1"},
                 status="pending",
             )
             task2 = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=2,
-                data={"name": "task2"},
+                data={"task_description": "Task 2"},
                 status="running",
             )
             task3 = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=3,
-                data={"name": "task3"},
+                data={"task_description": "Task 3"},
                 status="success",
             )
             session.add_all([task1, task2, task3])
@@ -968,7 +935,7 @@ class TestIntegrationScenarios:
             await session.flush()
 
             # 1. Create a task
-            initial_data = {"name": "lifecycle_task", "step": "created"}
+            initial_data = {"task_description": "Lifecycle task created"}
             create_result = await insert_task(
                 session, project.id, test_session.id, 0, initial_data
             )
@@ -977,7 +944,10 @@ class TestIntegrationScenarios:
             task_id = created_task.id
 
             # 2. Update the task
-            updated_data = {"name": "lifecycle_task", "step": "updated"}
+            updated_data = {
+                "task_description": "Lifecycle task updated",
+                "progresses": ["Step 1"],
+            }
             update_result = await update_task(
                 session, task_id, data=updated_data, status="running"
             )
@@ -990,7 +960,7 @@ class TestIntegrationScenarios:
             tasks, _ = fetch_result.unpack()
             assert len(tasks) == 1
             assert tasks[0].id == task_id
-            assert tasks[0].data == updated_data
+            assert tasks[0].data.task_description == "Lifecycle task updated"
 
             # 4. Delete the task
             delete_result = await delete_task(session, task_id)
@@ -1030,13 +1000,25 @@ class TestIntegrationScenarios:
 
             # Create tasks in each session
             await insert_task(
-                session, project.id, session1.id, 0, {"session": "1", "task": "A"}
+                session,
+                project.id,
+                session1.id,
+                0,
+                {"task_description": "Session 1 Task A"},
             )
             await insert_task(
-                session, project.id, session1.id, 1, {"session": "1", "task": "B"}
+                session,
+                project.id,
+                session1.id,
+                1,
+                {"task_description": "Session 1 Task B"},
             )
             await insert_task(
-                session, project.id, session2.id, 0, {"session": "2", "task": "A"}
+                session,
+                project.id,
+                session2.id,
+                0,
+                {"task_description": "Session 2 Task A"},
             )
 
             # Fetch tasks for each session
@@ -1082,21 +1064,21 @@ class TestIntegrationScenarios:
                 project.id,
                 test_session.id,
                 0,
-                {"name": "task1"},  # Insert after 0 -> position 1
+                {"task_description": "Task 1"},  # Insert after 0 -> position 1
             )
             task2_result = await insert_task(
                 session,
                 project.id,
                 test_session.id,
                 1,
-                {"name": "task2"},  # Insert after 1 -> position 2
+                {"task_description": "Task 2"},  # Insert after 1 -> position 2
             )
             task3_result = await insert_task(
                 session,
                 project.id,
                 test_session.id,
                 2,
-                {"name": "task3"},  # Insert after 2 -> position 3
+                {"task_description": "Task 3"},  # Insert after 2 -> position 3
             )
 
             task1, _ = task1_result.unpack()
@@ -1109,7 +1091,7 @@ class TestIntegrationScenarios:
                 project.id,
                 test_session.id,
                 1,
-                {"name": "middle_task"},  # Insert after 1 -> position 2
+                {"task_description": "Middle task"},  # Insert after 1 -> position 2
             )
             middle_task, _ = middle_task_result.unpack()
 
@@ -1176,7 +1158,7 @@ class TestAppendProgressToTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},  # No progresses field
+                data={"task_description": "Test task"},  # No progresses field
                 status="running",
             )
             session.add(task)
@@ -1228,7 +1210,10 @@ class TestAppendProgressToTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task", "progresses": initial_progresses.copy()},
+                data={
+                    "task_description": "Test task",
+                    "progresses": initial_progresses.copy(),
+                },
                 status="running",
             )
             session.add(task)
@@ -1281,7 +1266,7 @@ class TestAppendProgressToTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"task_description": "Test task"},
                 status="running",
             )
             session.add(task)
@@ -1338,7 +1323,7 @@ class TestAppendProgressToTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task", "progresses": []},
+                data={"task_description": "Test task", "progresses": []},
                 status="running",
             )
             session.add(task)
@@ -1387,7 +1372,7 @@ class TestAppendProgressToTask:
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"task_description": "Test task"},
                 status="running",
             )
             session.add(task)

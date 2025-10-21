@@ -1,5 +1,6 @@
 from enum import StrEnum
 from pydantic import BaseModel
+from typing import Optional
 from ..utils import asUUID
 
 
@@ -10,16 +11,22 @@ class TaskStatus(StrEnum):
     FAILED = "failed"
 
 
+class TaskData(BaseModel):
+    task_description: str
+    progresses: Optional[list[str]] = None
+
+
 class TaskSchema(BaseModel):
     id: asUUID
     session_id: asUUID
 
     order: int
-    task_description: str
     status: TaskStatus
-    data: dict
+    data: TaskData
     space_digested: bool
     raw_message_ids: list[asUUID]
 
     def to_string(self) -> str:
-        return f"Task {self.order}: {self.task_description} (Status: {self.status})"
+        return (
+            f"Task {self.order}: {self.data.task_description} (Status: {self.status})"
+        )

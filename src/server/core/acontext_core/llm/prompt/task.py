@@ -53,7 +53,7 @@ class TaskPrompt(BasePrompt):
     - Not need to repeat the detailed results, only what actions have been taken
     - You should include necessary infos/numbers that may help the following tasks
     - Narrate progress in the first person as the agent.
-    - Progress should be lean, concise and short
+    - Facts over General. Don't say "I encountered many errors", say "I encountered python syntax error then the compiling error."
 
 
 ## Update Task Status 
