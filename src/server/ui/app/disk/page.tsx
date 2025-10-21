@@ -33,6 +33,7 @@ import {
   Trash2,
   RefreshCw,
   Upload,
+  Edit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -43,6 +44,7 @@ import {
   deleteDisk,
   uploadArtifact,
   deleteArtifact,
+  updateArtifactMeta,
 } from "@/api/models/disk";
 import { Disk, ListArtifactsResp, Artifact as FileInfo } from "@/types";
 import ReactCodeMirror from "@uiw/react-codemirror";
@@ -356,6 +358,13 @@ export default function DiskPage() {
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(
     null
   );
+
+  // Edit meta dialog states
+  const [editMetaDialogOpen, setEditMetaDialogOpen] = useState(false);
+  const [editMetaValue, setEditMetaValue] = useState<string>("{}");
+  const [editMetaError, setEditMetaError] = useState<string>("");
+  const [isEditMetaValid, setIsEditMetaValid] = useState(true);
+  const [isUpdatingMeta, setIsUpdatingMeta] = useState(false);
 
   // Create disk states
   const [isCreating, setIsCreating] = useState(false);
@@ -708,6 +717,99 @@ export default function DiskPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  // Handle edit meta click
+  const handleEditMetaClick = () => {
+    if (!selectedFile || !selectedFile.fileInfo) return;
+
+    // Get current user meta (excluding system meta)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { __artifact_info__, ...userMeta } =
+      selectedFile.fileInfo.meta || {};
+
+    setEditMetaValue(JSON.stringify(userMeta, null, 2));
+    setEditMetaError("");
+    setIsEditMetaValid(true);
+    setEditMetaDialogOpen(true);
+  };
+
+  // Handle edit meta value change
+  const handleEditMetaChange = (value: string) => {
+    setEditMetaValue(value);
+    const isValid = validateJSON(value);
+    setIsEditMetaValid(isValid);
+    if (!isValid && value.trim()) {
+      try {
+        JSON.parse(value.trim());
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          setEditMetaError(t("invalidJson") + ": " + error.message);
+        }
+      }
+    } else {
+      setEditMetaError("");
+    }
+  };
+
+  // Handle edit meta confirm
+  const handleEditMetaConfirm = async () => {
+    if (!selectedFile || !selectedDisk || !selectedFile.fileInfo) return;
+
+    // Parse and validate JSON
+    let meta: Record<string, unknown>;
+    const trimmedMetaValue = editMetaValue.trim();
+
+    try {
+      meta = JSON.parse(trimmedMetaValue);
+      setEditMetaError("");
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        setEditMetaError(t("invalidJson") + ": " + error.message);
+      } else {
+        setEditMetaError(String(error));
+      }
+      return;
+    }
+
+    try {
+      setIsUpdatingMeta(true);
+      setEditMetaDialogOpen(false);
+
+      const fullPath = `${selectedFile.path}${selectedFile.fileInfo.filename}`;
+      const res = await updateArtifactMeta(selectedDisk.id, fullPath, meta);
+
+      if (res.code !== 0) {
+        console.error(res.message);
+        return;
+      }
+
+      // Refresh the file tree to reflect the updated metadata
+      setTreeData([]);
+      const filesRes = await getListArtifacts(selectedDisk.id, "/");
+      if (filesRes.code === 0 && filesRes.data) {
+        setTreeData(formatArtifacts("/", filesRes.data));
+      }
+
+      // Clear and reload the selected file to see the updated meta
+      setSelectedFile(null);
+      setImageUrl(null);
+      setFileContent(null);
+      setFileContentType(null);
+    } catch (error) {
+      console.error("Failed to update metadata:", error);
+    } finally {
+      setIsUpdatingMeta(false);
+      setEditMetaValue("{}");
+      setEditMetaError("");
+    }
+  };
+
+  // Handle cancel edit meta
+  const handleEditMetaCancel = () => {
+    setEditMetaDialogOpen(false);
+    setEditMetaValue("{}");
+    setEditMetaError("");
   };
 
   // Handle delete file click
@@ -1160,9 +1262,27 @@ export default function DiskPage() {
                   return null;
                 })()}
 
-                {/* Action buttons - Download and Delete side by side */}
+                {/* Action buttons - Edit Meta, Download and Delete */}
                 <div className="border-t pt-4">
                   <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleEditMetaClick}
+                      disabled={isUpdatingMeta}
+                    >
+                      {isUpdatingMeta ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          {t("updating")}
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          {t("editMeta")}
+                        </>
+                      )}
+                    </Button>
                     <Button
                       variant="outline"
                       className="flex-1"
@@ -1442,6 +1562,82 @@ export default function DiskPage() {
                 <>
                   <Upload className="h-4 w-4 mr-2" />
                   {t("upload")}
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit meta dialog */}
+      <AlertDialog
+        open={editMetaDialogOpen}
+        onOpenChange={setEditMetaDialogOpen}
+      >
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("editMetaTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("editMetaDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* File info */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                {t("selectedFile")}
+              </label>
+              <div className="text-sm bg-muted px-3 py-2 rounded-md font-mono">
+                {selectedFile?.fileInfo?.filename || t("noFileSelected")}
+              </div>
+            </div>
+
+            {/* Meta editor */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                {t("metaInformation")}
+              </label>
+              <ReactCodeMirror
+                value={editMetaValue}
+                height="300px"
+                theme={resolvedTheme === "dark" ? okaidia : "light"}
+                extensions={[json(), EditorView.lineWrapping]}
+                onChange={handleEditMetaChange}
+                placeholder='{"key": "value"}'
+                className="border rounded-md overflow-hidden"
+              />
+              {editMetaError && (
+                <p className="mt-2 text-sm text-destructive">
+                  {editMetaError}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("metaJsonHelp")}
+              </p>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleEditMetaCancel}
+              disabled={isUpdatingMeta}
+            >
+              {t("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEditMetaConfirm}
+              disabled={isUpdatingMeta || !isEditMetaValid}
+            >
+              {isUpdatingMeta ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t("updating")}
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t("update")}
                 </>
               )}
             </AlertDialogAction>

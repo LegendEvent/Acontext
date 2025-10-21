@@ -64,7 +64,13 @@
     "key": "键",
     "value": "值",
     "uploading": "上传中...",
-    "upload": "上传"
+    "upload": "上传",
+    "editMeta": "编辑元数据",
+    "editMetaTitle": "编辑工件元数据",
+    "editMetaDescription": "修改此工件的自定义元数据。系统元数据无法更改。",
+    "updating": "更新中...",
+    "update": "更新",
+    "metaUpdated": "元数据更新成功"
   },
   "space": {
     "title": "空间管理",

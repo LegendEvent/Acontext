@@ -64,3 +64,14 @@ export const deleteArtifact = async (
   );
 };
 
+export const updateArtifactMeta = async (
+  disk_id: string,
+  file_path: string,
+  meta: Record<string, unknown>
+): Promise<Res<null>> => {
+  return await service.put(`/api/disk/${disk_id}/artifact`, {
+    file_path,
+    meta: JSON.stringify(meta),
+  });
+};
+

@@ -64,7 +64,13 @@
     "key": "Key",
     "value": "Value",
     "uploading": "Uploading...",
-    "upload": "Upload"
+    "upload": "Upload",
+    "editMeta": "Edit Metadata",
+    "editMetaTitle": "Edit Artifact Metadata",
+    "editMetaDescription": "Modify custom metadata for this artifact. System metadata cannot be changed.",
+    "updating": "Updating...",
+    "update": "Update",
+    "metaUpdated": "Metadata updated successfully"
   },
   "space": {
     "title": "Space Management",

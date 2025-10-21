@@ -112,6 +112,56 @@ export async function POST(
   }
 }
 
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ disk_id: string }> }
+) {
+  const disk_id = (await params).disk_id;
+  if (!disk_id) {
+    return createApiError("disk_id is required");
+  }
+
+  try {
+    const body = await req.json();
+    const { file_path, meta } = body;
+
+    if (!file_path || typeof file_path !== "string") {
+      return createApiError("file_path is required");
+    }
+
+    if (!meta || typeof meta !== "string") {
+      return createApiError("meta is required");
+    }
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}/artifact`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer sk-ac-${process.env.ROOT_API_BEARER_TOKEN}`,
+        },
+        body: JSON.stringify({ file_path, meta }),
+      }
+    );
+
+    if (response.status !== 200) {
+      const result = await response.json();
+      return createApiError(result.message || "Failed to update artifact meta");
+    }
+
+    const result = await response.json();
+    if (result.code !== 0) {
+      return createApiError(result.message);
+    }
+
+    return createApiResponse(result.data || {});
+  } catch (error) {
+    console.error("Update meta error:", error);
+    return createApiError("Internal Server Error");
+  }
+}
+
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ disk_id: string }> }
