@@ -41,10 +41,10 @@ class Task(CommonMixin):
             "order",
             name="uq_session_id_order",
         ),
-        Index("ix_session_session_id", "session_id"),
-        Index("ix_session_session_id_task_id", "session_id", "id"),
-        Index("ix_session_session_id_status", "session_id", "status"),
-        Index("ix_session_project_id", "project_id"),
+        Index("ix_task_session_id", "session_id"),
+        Index("ix_task_session_id_task_id", "session_id", "id"),
+        Index("ix_task_session_id_status", "session_id", "status"),
+        Index("ix_task_project_id", "project_id"),
     )
 
     session_id: asUUID = field(

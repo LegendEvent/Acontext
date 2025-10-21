@@ -32,7 +32,7 @@ class CoreConfig(BaseModel):
     # MQ Configuration
     mq_url: str = "amqp://acontext:helloworld@127.0.0.1:15672/"
     mq_connection_name: str = "acontext_core"
-    mq_global_qos: int = 100
+    mq_global_qos: int = 32
     mq_consumer_handler_timeout: float = 96
     mq_default_message_ttl_seconds: int = 7 * 24 * 60 * 60
     mq_default_dlx_ttl_days: int = 7

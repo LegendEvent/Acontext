@@ -20,15 +20,18 @@ uv sync
 
 ```bash
 # current path: ./src/server/core
-sh launch.sh
+uv run -m fastapi dev
 ```
 
 - Launch Core in prod mode
 
 ```bash
 # current path: ./src/server/core
-sh launch.sh -m prod
-sh launch.sh -m prod -w 4 # 4 workers
+uv run -m gunicorn api:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000 \
+    --timeout 120
 ```
 
 - Test the core
