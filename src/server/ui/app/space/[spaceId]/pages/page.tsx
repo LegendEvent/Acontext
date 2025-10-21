@@ -36,17 +36,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getFolders,
-  getPages,
-  getBlocks,
-  createFolder,
-  createPage,
-  deleteFolder,
-  deletePage,
+  listBlocks,
   createBlock,
   deleteBlock,
   updateBlockProperties,
   updateBlockSort,
+  moveBlock,
   getSpaceConfigs,
 } from "@/api/models/space";
 import { Block } from "@/types";
@@ -84,11 +79,12 @@ function Node({
   const isLoading = loadingNodes.has(node.id);
   const [showButtons, setShowButtons] = useState(false);
 
-  const handleClick = () => {
-    if (isFolder) {
-      node.toggle();
-    } else if (isPage) {
+  const handleClick = async () => {
+    if (isPage) {
       node.select();
+    } else if (isFolder) {
+      // For folders, trigger toggle which will load and expand
+      node.toggle();
     }
   };
 
@@ -97,9 +93,10 @@ function Node({
       ref={dragHandle}
       style={style}
       className={cn(
-        "flex items-center cursor-pointer px-2 py-1.5 text-sm rounded-md transition-colors group",
+        "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors group",
         "hover:bg-accent hover:text-accent-foreground",
-        node.isSelected && "bg-accent text-accent-foreground"
+        node.isSelected && "bg-accent text-accent-foreground",
+        node.state.isDragging && "opacity-50"
       )}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
@@ -231,42 +228,28 @@ export default function PagesPage() {
     try {
       setIsInitialLoading(true);
 
-      // Load root-level folders
-      const foldersRes = await getFolders(spaceId);
-      if (foldersRes.code !== 0) {
-        console.error(foldersRes.message);
+      // Load root-level blocks (pages and folders)
+      const blocksRes = await listBlocks(spaceId);
+      if (blocksRes.code !== 0) {
+        console.error(blocksRes.message);
         return;
       }
 
-      // Load root-level pages (pages without parent)
-      const pagesRes = await getPages(spaceId);
-      if (pagesRes.code !== 0) {
-        console.error(pagesRes.message);
-        return;
-      }
+      const blocks: TreeNode[] = (blocksRes.data || []).map((block) => {
+        const isFolder = block.type === "folder";
+        return {
+          id: block.id,
+          name: block.title || (isFolder ? "Untitled Folder" : "Untitled Page"),
+          type: isFolder ? ("folder" as const) : ("page" as const),
+          blockType: block.type,
+          isLoaded: false,
+          blockData: block,
+        };
+      });
 
-      const folders: TreeNode[] = (foldersRes.data || []).map((block) => ({
-        id: block.id,
-        name: block.title || "Untitled Folder",
-        type: "folder" as const,
-        blockType: block.type,
-        isLoaded: false,
-        blockData: block,
-      }));
-
-      const pages: TreeNode[] = (pagesRes.data || []).map((block) => ({
-        id: block.id,
-        name: block.title || "Untitled Page",
-        type: "page" as const,
-        blockType: block.type,
-        isLoaded: false,
-        blockData: block,
-      }));
-
-      // Folders first, then pages
-      setTreeData([...folders, ...pages]);
+      setTreeData(blocks);
     } catch (error) {
-      console.error("Failed to load folders and pages:", error);
+      console.error("Failed to load blocks:", error);
     } finally {
       setIsInitialLoading(false);
     }
@@ -279,53 +262,33 @@ export default function PagesPage() {
     }
   }, [spaceId]);
 
-  const handleToggle = async (nodeId: string) => {
+  const loadFolderChildren = async (nodeId: string) => {
     const node = treeRef.current?.get(nodeId);
     if (!node || node.data.type !== "folder") return;
-
-    if (node.data.isLoaded) return;
 
     setLoadingNodes((prev) => new Set(prev).add(nodeId));
 
     try {
-      // Load child folders
-      const foldersRes = await getFolders(spaceId, node.data.id);
-      if (foldersRes.code !== 0) {
-        console.error(foldersRes.message);
+      // Load child blocks (both folders and pages under this folder)
+      const blocksRes = await listBlocks(spaceId, { parentId: node.data.id });
+      if (blocksRes.code !== 0) {
+        console.error(blocksRes.message);
         return;
       }
 
-      // Load child pages
-      const pagesRes = await getPages(spaceId, node.data.id);
-      if (pagesRes.code !== 0) {
-        console.error(pagesRes.message);
-        return;
-      }
-
-      const childFolders: TreeNode[] = (foldersRes.data || []).map(
-        (block: Block) => ({
-          id: block.id,
-          name: block.title || "Untitled Folder",
-          type: "folder" as const,
-          blockType: block.type,
-          isLoaded: false,
-          blockData: block,
-        })
+      const children: TreeNode[] = (blocksRes.data || []).map(
+        (block: Block) => {
+          const isFolder = block.type === "folder";
+          return {
+            id: block.id,
+            name: block.title || (isFolder ? "Untitled Folder" : "Untitled Page"),
+            type: isFolder ? ("folder" as const) : ("page" as const),
+            blockType: block.type,
+            isLoaded: false,
+            blockData: block,
+          };
+        }
       );
-
-      const childPages: TreeNode[] = (pagesRes.data || []).map(
-        (block: Block) => ({
-          id: block.id,
-          name: block.title || "Untitled Page",
-          type: "page" as const,
-          blockType: block.type,
-          isLoaded: false,
-          blockData: block,
-        })
-      );
-
-      // Folders first, then pages
-      const children = [...childFolders, ...childPages];
 
       setTreeData((prevData) => {
         const updateNode = (nodes: TreeNode[]): TreeNode[] => {
@@ -348,6 +311,11 @@ export default function PagesPage() {
         };
         return updateNode(prevData);
       });
+
+      // Auto-open the folder after loading
+      if (!node.isOpen) {
+        node.open();
+      }
     } catch (error) {
       console.error("Failed to load children:", error);
     } finally {
@@ -359,20 +327,129 @@ export default function PagesPage() {
     }
   };
 
+  const handleToggle = async (nodeId: string) => {
+    const node = treeRef.current?.get(nodeId);
+    if (!node || node.data.type !== "folder") return;
+
+    // If already loaded, Tree component will handle the toggle automatically
+    if (node.data.isLoaded) {
+      return;
+    }
+
+    // If opening (not loaded yet), load children
+    if (!node.isOpen) {
+      await loadFolderChildren(nodeId);
+    }
+  };
+
+  const handleMove = async (args: {
+    dragIds: string[];
+    parentId: string | null;
+    index: number;
+  }) => {
+    if (!args || args.dragIds.length === 0) return;
+
+    const dragId = args.dragIds[0]; // Handle single item move
+
+    try {
+      // Call move API
+      const res = await moveBlock(spaceId, dragId, {
+        parent_id: args.parentId,
+        sort: args.index,
+      });
+
+      if (res.code !== 0) {
+        console.error("Move failed:", res.message);
+        // Reload tree on error to restore original state
+        await reloadTreeData();
+        return;
+      }
+
+      // Update tree data to reflect the move
+      setTreeData((prevData) => {
+        // Helper function to find and remove a node
+        const removeNode = (nodes: TreeNode[], targetId: string): { remaining: TreeNode[], removed: TreeNode | null } => {
+          let removed: TreeNode | null = null;
+          const remaining = nodes.filter(node => {
+            if (node.id === targetId) {
+              removed = node;
+              return false;
+            }
+            return true;
+          }).map(node => {
+            if (node.children) {
+              const result = removeNode(node.children, targetId);
+              if (result.removed) {
+                removed = result.removed;
+              }
+              return { ...node, children: result.remaining };
+            }
+            return node;
+          });
+          return { remaining, removed };
+        };
+
+        // Helper function to insert a node at a specific position
+        const insertNode = (nodes: TreeNode[], nodeToInsert: TreeNode, targetParentId: string | null, position: number): TreeNode[] => {
+          if (targetParentId === null) {
+            // Insert at root level
+            const newNodes = [...nodes];
+            newNodes.splice(position, 0, nodeToInsert);
+            return newNodes;
+          } else {
+            // Insert under a parent
+            return nodes.map(node => {
+              if (node.id === targetParentId) {
+                const newChildren = [...(node.children || [])];
+                newChildren.splice(position, 0, nodeToInsert);
+                return { ...node, children: newChildren };
+              }
+              if (node.children) {
+                return { ...node, children: insertNode(node.children, nodeToInsert, targetParentId, position) };
+              }
+              return node;
+            });
+          }
+        };
+
+        // Remove the node from its current position
+        const { remaining, removed } = removeNode(prevData, dragId);
+
+        if (!removed) {
+          console.error("Could not find node to move");
+          return prevData;
+        }
+
+        // Update the node's blockData with new parent info
+        const updatedNode: TreeNode = {
+          ...removed,
+          blockData: removed.blockData ? {
+            ...removed.blockData,
+            parent_id: args.parentId || null,
+            sort: args.index,
+          } : undefined,
+        };
+
+        // Insert at the new position
+        return insertNode(remaining, updatedNode, args.parentId, args.index);
+      });
+    } catch (error) {
+      console.error("Failed to move block:", error);
+      // Reload tree on error to restore original state
+      await reloadTreeData();
+    }
+  };
+
   const loadPageContent = async (pageId: string) => {
     try {
       setIsLoadingContent(true);
-      const blocksRes = await getBlocks(spaceId, pageId);
+      const blocksRes = await listBlocks(spaceId, { parentId: pageId });
       if (blocksRes.code !== 0) {
         console.error(blocksRes.message);
         return;
       }
 
-      // Filter to only non-page blocks
-      const nonPageBlocks = (blocksRes.data || []).filter(
-        (block) => block.type !== "page"
-      );
-      setContentBlocks(nonPageBlocks);
+      setContentBlocks(blocksRes.data || []);
     } catch (error) {
       console.error("Failed to load blocks:", error);
     } finally {
@@ -400,33 +477,26 @@ export default function PagesPage() {
   // Reload tree data
   const reloadTreeData = async () => {
     try {
-      const foldersRes = await getFolders(spaceId);
-      const pagesRes = await getPages(spaceId);
+      const blocksRes = await listBlocks(spaceId);
 
-      if (foldersRes.code !== 0 || pagesRes.code !== 0) {
-        console.error(foldersRes.message || pagesRes.message);
+      if (blocksRes.code !== 0) {
+        console.error(blocksRes.message);
         return;
       }
 
-      const folders: TreeNode[] = (foldersRes.data || []).map((block) => ({
-        id: block.id,
-        name: block.title || "Untitled Folder",
-        type: "folder" as const,
-        blockType: block.type,
-        isLoaded: false,
-        blockData: block,
-      }));
+      const blocks: TreeNode[] = (blocksRes.data || []).map((block) => {
+        const isFolder = block.type === "folder";
+        return {
+          id: block.id,
+          name: block.title || (isFolder ? "Untitled Folder" : "Untitled Page"),
+          type: isFolder ? ("folder" as const) : ("page" as const),
+          blockType: block.type,
+          isLoaded: false,
+          blockData: block,
+        };
+      });
 
-      const pages: TreeNode[] = (pagesRes.data || []).map((block) => ({
-        id: block.id,
-        name: block.title || "Untitled Page",
-        type: "page" as const,
-        blockType: block.type,
-        isLoaded: false,
-        blockData: block,
-      }));
-
-      setTreeData([...folders, ...pages]);
+      setTreeData(blocks);
     } catch (error) {
       console.error("Failed to reload tree:", error);
     }
@@ -446,9 +516,7 @@ export default function PagesPage() {
     try {
       setIsDeleting(true);
 
-      const deleteFunc =
-        itemToDelete.type === "folder" ? deleteFolder : deletePage;
-      const res = await deleteFunc(spaceId, itemToDelete.id);
+      const res = await deleteBlock(spaceId, itemToDelete.id);
 
       if (res.code !== 0) {
         console.error(res.message);
@@ -491,13 +559,13 @@ export default function PagesPage() {
       setIsCreating(true);
 
       const data = {
+        type: createType,
         parent_id: createParentId || undefined,
         title: createTitle.trim(),
         props: {},
       };
 
-      const createFunc = createType === "folder" ? createFolder : createPage;
-      const res = await createFunc(spaceId, data);
+      const res = await createBlock(spaceId, data);
 
       if (res.code !== 0) {
         console.error(res.message);
@@ -577,8 +645,8 @@ export default function PagesPage() {
         if (isNewBlock) {
           // Create new block
           const res = await createBlock(spaceId, {
-            parent_id: selectedNode.id,
             type: block.type,
+            parent_id: selectedNode.id,
             title: block.title,
             props: block.props,
           });
@@ -721,6 +789,10 @@ export default function PagesPage() {
                         rowHeight={32}
                         onToggle={handleToggle}
                         onSelect={handleSelect}
+                        onMove={handleMove}
+                        disableDrag={false}
+                        disableDrop={false}
+                        idAccessor="id"
                       >
                         {(props) => (
                           <Node
@@ -841,11 +913,6 @@ export default function PagesPage() {
               placeholder={t("titlePlaceholder")}
               value={createTitle}
               onChange={(e) => setCreateTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && createTitle.trim()) {
-                  handleCreate();
-                }
-              }}
             />
           </div>
           <AlertDialogFooter>

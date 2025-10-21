@@ -7,16 +7,19 @@ export async function GET(
 ) {
   const { space_id } = await params;
   const { searchParams } = new URL(request.url);
+  const type = searchParams.get("type");
   const parent_id = searchParams.get("parent_id");
-
-  if (!parent_id) {
-    return createApiError("parent_id is required");
-  }
 
   const getBlocks = new Promise<Block[]>(async (resolve, reject) => {
     try {
+      // Build query string with optional type and parent_id
+      const queryParams = new URLSearchParams();
+      if (type) queryParams.append("type", type);
+      if (parent_id) queryParams.append("parent_id", parent_id);
+      const queryString = queryParams.toString();
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block?parent_id=${parent_id}`,
+        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block${queryString ? `?${queryString}` : ""}`,
         {
           method: "GET",
           headers: {

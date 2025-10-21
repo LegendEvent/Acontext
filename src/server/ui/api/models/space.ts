@@ -144,166 +144,42 @@ export const sendMessage = async (
   }
 };
 
-// Page & Block APIs
+// Block APIs - Unified API for page, folder, text, sop, etc.
 
-// Folder APIs
-export const getFolders = async (
+/**
+ * List blocks with optional type and parent_id filters
+ * - No params: returns top-level pages and folders
+ * - type only: returns all blocks of that type at root level (for page/folder) or with parent (for others)
+ * - parent_id only: returns all blocks under that parent
+ * - both: returns blocks of specific type under that parent
+ */
+export const listBlocks = async (
   spaceId: string,
-  parentId?: string
+  options?: {
+    type?: string;
+    parentId?: string;
+  }
 ): Promise<Res<Block[]>> => {
-  const params = parentId
-    ? new URLSearchParams({ parent_id: parentId })
-    : undefined;
-  const queryString = params ? `?${params.toString()}` : "";
-  return await service.get(`/api/space/${spaceId}/folder${queryString}`);
-};
+  const params = new URLSearchParams();
+  if (options?.type) params.append("type", options.type);
+  if (options?.parentId) params.append("parent_id", options.parentId);
 
-export const createFolder = async (
-  spaceId: string,
-  data: {
-    parent_id?: string;
-    title?: string;
-    props?: Record<string, unknown>;
-  }
-): Promise<Res<Block>> => {
-  return await service.post(`/api/space/${spaceId}/folder`, data);
-};
-
-export const deleteFolder = async (
-  spaceId: string,
-  folderId: string
-): Promise<Res<null>> => {
-  return await service.delete(`/api/space/${spaceId}/folder/${folderId}`);
-};
-
-export const getFolderProperties = async (
-  spaceId: string,
-  folderId: string
-): Promise<Res<Block>> => {
-  return await service.get(`/api/space/${spaceId}/folder/${folderId}/properties`);
-};
-
-export const updateFolderProperties = async (
-  spaceId: string,
-  folderId: string,
-  data: {
-    title?: string;
-    props?: Record<string, unknown>;
-  }
-): Promise<Res<null>> => {
-  return await service.put(
-    `/api/space/${spaceId}/folder/${folderId}/properties`,
-    data
+  const queryString = params.toString();
+  return await service.get(
+    `/api/space/${spaceId}/block${queryString ? `?${queryString}` : ""}`
   );
 };
 
-export const moveFolder = async (
-  spaceId: string,
-  folderId: string,
-  data: {
-    parent_id?: string | null;
-    sort?: number;
-  }
-): Promise<Res<null>> => {
-  return await service.put(`/api/space/${spaceId}/folder/${folderId}/move`, data);
-};
-
-export const updateFolderSort = async (
-  spaceId: string,
-  folderId: string,
-  sort: number
-): Promise<Res<null>> => {
-  return await service.put(`/api/space/${spaceId}/folder/${folderId}/sort`, {
-    sort,
-  });
-};
-
-// Page APIs
-export const getPages = async (
-  spaceId: string,
-  parentId?: string
-): Promise<Res<Block[]>> => {
-  const params = parentId
-    ? new URLSearchParams({ parent_id: parentId })
-    : undefined;
-  const queryString = params ? `?${params.toString()}` : "";
-  return await service.get(`/api/space/${spaceId}/page${queryString}`);
-};
-
-export const createPage = async (
-  spaceId: string,
-  data: {
-    parent_id?: string;
-    title?: string;
-    props?: Record<string, unknown>;
-  }
-): Promise<Res<Block>> => {
-  return await service.post(`/api/space/${spaceId}/page`, data);
-};
-
-export const deletePage = async (
-  spaceId: string,
-  pageId: string
-): Promise<Res<null>> => {
-  return await service.delete(`/api/space/${spaceId}/page/${pageId}`);
-};
-
-export const getPageProperties = async (
-  spaceId: string,
-  pageId: string
-): Promise<Res<Block>> => {
-  return await service.get(`/api/space/${spaceId}/page/${pageId}/properties`);
-};
-
-export const updatePageProperties = async (
-  spaceId: string,
-  pageId: string,
-  data: {
-    title?: string;
-    props?: Record<string, unknown>;
-  }
-): Promise<Res<null>> => {
-  return await service.put(
-    `/api/space/${spaceId}/page/${pageId}/properties`,
-    data
-  );
-};
-
-export const movePage = async (
-  spaceId: string,
-  pageId: string,
-  data: {
-    parent_id?: string | null;
-    sort?: number;
-  }
-): Promise<Res<null>> => {
-  return await service.put(`/api/space/${spaceId}/page/${pageId}/move`, data);
-};
-
-export const updatePageSort = async (
-  spaceId: string,
-  pageId: string,
-  sort: number
-): Promise<Res<null>> => {
-  return await service.put(`/api/space/${spaceId}/page/${pageId}/sort`, {
-    sort,
-  });
-};
-
-// Block APIs
-export const getBlocks = async (
-  spaceId: string,
-  parentId: string
-): Promise<Res<Block[]>> => {
-  const params = new URLSearchParams({ parent_id: parentId });
-  return await service.get(`/api/space/${spaceId}/block?${params.toString()}`);
-};
-
+/**
+ * Create a block (page, folder, text, sop, etc.)
+ * - For page and folder: parent_id is optional
+ * - For other types: parent_id is required
+ */
 export const createBlock = async (
   spaceId: string,
   data: {
-    parent_id: string;
     type: string;
+    parent_id?: string;
     title?: string;
     props?: Record<string, unknown>;
   }
@@ -311,6 +187,9 @@ export const createBlock = async (
   return await service.post(`/api/space/${spaceId}/block`, data);
 };
 
+/**
+ * Delete a block (works for all types: page, folder, text, sop, etc.)
+ */
 export const deleteBlock = async (
   spaceId: string,
   blockId: string
@@ -318,6 +197,9 @@ export const deleteBlock = async (
   return await service.delete(`/api/space/${spaceId}/block/${blockId}`);
 };
 
+/**
+ * Get block properties (works for all types)
+ */
 export const getBlockProperties = async (
   spaceId: string,
   blockId: string
@@ -327,6 +209,9 @@ export const getBlockProperties = async (
   );
 };
 
+/**
+ * Update block properties (works for all types)
+ */
 export const updateBlockProperties = async (
   spaceId: string,
   blockId: string,
@@ -341,11 +226,16 @@ export const updateBlockProperties = async (
   );
 };
 
+/**
+ * Move a block (works for all types)
+ * - For page and folder: parent_id can be null (move to root)
+ * - For other types: parent_id is required
+ */
 export const moveBlock = async (
   spaceId: string,
   blockId: string,
   data: {
-    parent_id: string;
+    parent_id?: string | null;
     sort?: number;
   }
 ): Promise<Res<null>> => {
@@ -355,6 +245,9 @@ export const moveBlock = async (
   );
 };
 
+/**
+ * Update block sort order (works for all types)
+ */
 export const updateBlockSort = async (
   spaceId: string,
   blockId: string,
