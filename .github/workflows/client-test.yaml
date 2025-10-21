@@ -17,16 +17,12 @@ on:
       - '.github/workflows/client-test.yaml'
 
 jobs:
-  test:
+  test:  
     runs-on: ubuntu-latest
-    permissions:
+    permissions: 
       contents: read
-    defaults:
-      run:
-        working-directory: src/client/acontext-py
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -34,11 +30,30 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
-      - name: Sync dependencies
-        run: uv sync
+      - name: Install dependencies
+        working-directory: src/client/acontext-py
+        run: |
+          uv sync 
 
-      - name: Run lint
-        run: uv run ruff check .
+      - name: Run lint and test
+        working-directory:  src/client/acontext-py
+        run: |
+          uv run ruff check .
+          uv run pytest tests/
 
-      - name: Run tests
-        run: uv run pytest tests/
+      - name: Start containers
+        working-directory: src/server
+        run: |
+          cp .env.example .env
+          cp core/config.yaml.example core/config.yaml
+          docker compose up -d
+      - name: e2e test
+        working-directory: src/client/acontext-py 
+        run: |
+          uv run examples/basic_usage.py
+
+      - name: Stop containers
+        working-directory: src/server
+        if: ${{ always() }}
+        run: |
+          docker compose down
