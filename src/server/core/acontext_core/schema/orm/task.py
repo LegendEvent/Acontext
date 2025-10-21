@@ -96,11 +96,6 @@ class Task(CommonMixin):
         },
     )
 
-    progresses: Optional[List[str]] = field(
-        default=None,
-        metadata={"db": Column(ARRAY(String), nullable=True)},
-    )
-
     # Relationships
     messages: List["Message"] = field(
         default_factory=list,

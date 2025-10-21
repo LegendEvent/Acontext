@@ -1171,14 +1171,13 @@ class TestAppendProgressToTask:
             session.add(test_session)
             await session.flush()
 
-            # Create task with NULL progresses
+            # Create task without progresses in data
             task = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"name": "test_task"},  # No progresses field
                 status="running",
-                progresses=None,  # Explicitly NULL
             )
             session.add(task)
             await session.flush()
@@ -1194,9 +1193,9 @@ class TestAppendProgressToTask:
 
             # Verify the progress was appended
             await session.refresh(task)
-            assert task.progresses is not None
-            assert len(task.progresses) == 1
-            assert task.progresses[0] == progress_message
+            assert "progresses" in task.data
+            assert len(task.data["progresses"]) == 1
+            assert task.data["progresses"][0] == progress_message
 
             await session.delete(project)
 
@@ -1223,15 +1222,14 @@ class TestAppendProgressToTask:
             session.add(test_session)
             await session.flush()
 
-            # Create task with initial progresses
+            # Create task with initial progresses in data
             initial_progresses = ["Started task", "Loading data"]
             task = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"name": "test_task", "progresses": initial_progresses.copy()},
                 status="running",
-                progresses=initial_progresses.copy(),
             )
             session.add(task)
             await session.flush()
@@ -1247,11 +1245,11 @@ class TestAppendProgressToTask:
 
             # Verify the progress was appended
             await session.refresh(task)
-            assert task.progresses is not None
-            assert len(task.progresses) == 3
-            assert task.progresses[0] == "Started task"
-            assert task.progresses[1] == "Loading data"
-            assert task.progresses[2] == "Processing data"
+            assert "progresses" in task.data
+            assert len(task.data["progresses"]) == 3
+            assert task.data["progresses"][0] == "Started task"
+            assert task.data["progresses"][1] == "Loading data"
+            assert task.data["progresses"][2] == "Processing data"
 
             await session.delete(project)
 
@@ -1278,14 +1276,13 @@ class TestAppendProgressToTask:
             session.add(test_session)
             await session.flush()
 
-            # Create task with NULL progresses
+            # Create task without progresses
             task = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
                 data={"name": "test_task"},
                 status="running",
-                progresses=None,
             )
             session.add(task)
             await session.flush()
@@ -1306,10 +1303,10 @@ class TestAppendProgressToTask:
 
             # Verify all progresses were appended in order
             await session.refresh(task)
-            assert task.progresses is not None
-            assert len(task.progresses) == len(progress_messages)
+            assert "progresses" in task.data
+            assert len(task.data["progresses"]) == len(progress_messages)
             for i, progress in enumerate(progress_messages):
-                assert task.progresses[i] == progress
+                assert task.data["progresses"][i] == progress
 
             await session.delete(project)
 
@@ -1336,14 +1333,13 @@ class TestAppendProgressToTask:
             session.add(test_session)
             await session.flush()
 
-            # Create task with empty progresses array
+            # Create task with empty progresses array in data
             task = Task(
                 session_id=test_session.id,
                 project_id=project.id,
                 order=1,
-                data={"name": "test_task"},
+                data={"name": "test_task", "progresses": []},
                 status="running",
-                progresses=[],  # Empty array
             )
             session.add(task)
             await session.flush()
@@ -1358,9 +1354,9 @@ class TestAppendProgressToTask:
 
             # Verify the progress was appended
             await session.refresh(task)
-            assert task.progresses is not None
-            assert len(task.progresses) == 1
-            assert task.progresses[0] == progress_message
+            assert "progresses" in task.data
+            assert len(task.data["progresses"]) == 1
+            assert task.data["progresses"][0] == progress_message
 
             await session.delete(project)
 
@@ -1393,7 +1389,6 @@ class TestAppendProgressToTask:
                 order=1,
                 data={"name": "test_task"},
                 status="running",
-                progresses=None,
             )
             session.add(task)
             await session.flush()
@@ -1413,9 +1408,28 @@ class TestAppendProgressToTask:
 
             # Verify all progresses were appended correctly
             await session.refresh(task)
-            assert task.progresses is not None
-            assert len(task.progresses) == len(special_progresses)
+            assert "progresses" in task.data
+            assert len(task.data["progresses"]) == len(special_progresses)
             for i, progress in enumerate(special_progresses):
-                assert task.progresses[i] == progress
+                assert task.data["progresses"][i] == progress
 
             await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_append_progress_task_not_found(self):
+        """Test appending progress to non-existent task"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Try to append progress to non-existent task
+            fake_task_id = "00000000-0000-0000-0000-000000000000"
+            result = await append_progress_to_task(
+                session, fake_task_id, "Some progress"
+            )
+
+            # Verify error
+            data, error = result.unpack()
+            assert data is None
+            assert error is not None
+            assert "not found" in error.errmsg

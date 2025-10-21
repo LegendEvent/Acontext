@@ -1,8 +1,9 @@
 from sqlalchemy import String
 from typing import List, Optional
-from sqlalchemy import select, delete, update, func, cast
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete, update
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import ARRAY
 from ...schema.orm import Task, Message
 from ...schema.result import Result
@@ -230,15 +231,21 @@ async def append_progress_to_task(
     # append the progress to the task
     # Use coalesce to handle NULL, then append to the array
     assert progress is not None
-    await db_session.execute(
-        update(Task)
-        .where(Task.id == task_id)
-        .values(
-            progresses=func.coalesce(Task.progresses, cast([], ARRAY(String))).concat(
-                [progress]
-            )
-        )
-    )
+
+    # Fetch the task
+    query = select(Task).where(Task.id == task_id)
+    result = await db_session.execute(query)
+    task = result.scalars().first()
+
+    if task is None:
+        return Result.reject(f"Task {task_id} not found")
+
+    # Get current data and append progress
+    if "progresses" not in task.data:
+        task.data["progresses"] = []
+    task.data["progresses"].append(progress)
+    flag_modified(task, "data")
+
     await db_session.flush()
     return Result.resolve(None)
 
