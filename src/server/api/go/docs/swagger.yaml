@@ -596,8 +596,8 @@ paths:
       - artifact
     put:
       consumes:
-      - multipart/form-data
-      description: Update an artifact by uploading a new file (path cannot be changed)
+      - application/json
+      description: Update an artifact's metadata (user-defined metadata only)
       parameters:
       - description: Disk ID
         example: 123e4567-e89b-12d3-a456-426614174000
@@ -607,15 +607,18 @@ paths:
         required: true
         type: string
       - description: File path including filename
-        in: formData
+        in: body
         name: file_path
         required: true
-        type: string
-      - description: New file to upload
-        in: formData
-        name: file
+        schema:
+          type: string
+      - description: Custom metadata as JSON string (system metadata '__artifact_info__'
+          cannot be modified)
+        in: body
+        name: meta
         required: true
-        type: file
+        schema:
+          type: string
       produces:
       - application/json
       responses:
@@ -630,7 +633,7 @@ paths:
               type: object
       security:
       - BearerAuth: []
-      summary: Update artifact
+      summary: Update artifact meta
       tags:
       - artifact
   /disk/{disk_id}/artifact/ls:

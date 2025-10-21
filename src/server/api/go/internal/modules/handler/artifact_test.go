@@ -81,6 +81,11 @@ func (m *MockArtifactService) UpdateArtifactByPath(ctx context.Context, diskID u
 	return args.Get(0).(*model.Artifact), args.Error(1)
 }
 
+func (m *MockArtifactService) UpdateArtifactMetaByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, userMeta map[string]interface{}) (*model.Artifact, error) {
+	args := m.Called(ctx, diskID, path, filename, userMeta)
+	return args.Get(0).(*model.Artifact), args.Error(1)
+}
+
 func (m *MockArtifactService) GetFileContent(ctx context.Context, artifact *model.Artifact) (*fileparser.FileContent, error) {
 	args := m.Called(ctx, artifact)
 	if args.Get(0) == nil {
@@ -259,17 +264,15 @@ func TestArtifactHandler_UpdateArtifact(t *testing.T) {
 		name           string
 		diskID         string
 		filePath       string
-		fileContent    string
-		fileName       string
+		meta           string
 		mockSetup      func(m *MockArtifactService, diskIDStr string)
 		expectedStatus int
 	}{
 		{
-			name:        "successful file update with same filename",
-			diskID:      uuid.New().String(),
-			filePath:    "/test/report.pdf",
-			fileContent: "updated content",
-			fileName:    "report.pdf", // Same filename as in filePath
+			name:     "successful meta update",
+			diskID:   uuid.New().String(),
+			filePath: "/test/report.pdf",
+			meta:     `{"description": "Updated report", "version": "2.0"}`,
 			mockSetup: func(m *MockArtifactService, diskIDStr string) {
 				diskID := uuid.MustParse(diskIDStr)
 				expectedFile := &model.Artifact{
@@ -282,8 +285,10 @@ func TestArtifactHandler_UpdateArtifact(t *testing.T) {
 							"path":     "/test/",
 							"filename": "report.pdf",
 							"mime":     "application/pdf",
-							"size":     15,
+							"size":     1024,
 						},
+						"description": "Updated report",
+						"version":     "2.0",
 					},
 					AssetMeta: datatypes.NewJSONType(model.Asset{
 						Bucket: "test-bucket",
@@ -291,67 +296,54 @@ func TestArtifactHandler_UpdateArtifact(t *testing.T) {
 						ETag:   "test-etag",
 						SHA256: "test-sha256",
 						MIME:   "application/pdf",
-						SizeB:  15,
+						SizeB:  1024,
 					}),
 				}
-				m.On("UpdateArtifactByPath", mock.Anything, diskID, "/test/", "report.pdf", mock.Anything, (*string)(nil), (*string)(nil)).Return(expectedFile, nil)
+				expectedMeta := map[string]interface{}{
+					"description": "Updated report",
+					"version":     "2.0",
+				}
+				m.On("UpdateArtifactMetaByPath", mock.Anything, diskID, "/test/", "report.pdf", expectedMeta).Return(expectedFile, nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:        "successful file update with different filename",
-			diskID:      uuid.New().String(),
-			filePath:    "/test/report.pdf",
-			fileContent: "updated content",
-			fileName:    "new-report.pdf", // Different filename
-			mockSetup: func(m *MockArtifactService, diskIDStr string) {
-				diskID := uuid.MustParse(diskIDStr)
-				expectedFile := &model.Artifact{
-					ID:       uuid.New(),
-					DiskID:   diskID,
-					Path:     "/test/",
-					Filename: "new-report.pdf",
-					Meta: map[string]interface{}{
-						model.ArtifactInfoKey: map[string]interface{}{
-							"path":     "/test/",
-							"filename": "new-report.pdf",
-							"mime":     "application/pdf",
-							"size":     15,
-						},
-					},
-					AssetMeta: datatypes.NewJSONType(model.Asset{
-						Bucket: "test-bucket",
-						S3Key:  "test-key",
-						ETag:   "test-etag",
-						SHA256: "test-sha256",
-						MIME:   "application/pdf",
-						SizeB:  15,
-					}),
-				}
-				newFilename := "new-report.pdf"
-				m.On("UpdateArtifactByPath", mock.Anything, diskID, "/test/", "report.pdf", mock.Anything, (*string)(nil), &newFilename).Return(expectedFile, nil)
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:        "file update with invalid artifact ID",
-			diskID:      "invalid-uuid",
-			filePath:    "/test/report.pdf",
-			fileContent: "updated content",
-			fileName:    "report.pdf",
+			name:     "meta update with invalid disk ID",
+			diskID:   "invalid-uuid",
+			filePath: "/test/report.pdf",
+			meta:     `{"description": "test"}`,
 			mockSetup: func(m *MockArtifactService, diskIDStr string) {
 				// No mock setup needed for invalid UUID
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:        "file update with invalid path",
-			diskID:      uuid.New().String(),
-			filePath:    "/test/../../../report.pdf", // Path traversal attempt
-			fileContent: "updated content",
-			fileName:    "report.pdf",
+			name:     "meta update with invalid path",
+			diskID:   uuid.New().String(),
+			filePath: "/test/../../../report.pdf", // Path traversal attempt
+			meta:     `{"description": "test"}`,
 			mockSetup: func(m *MockArtifactService, diskIDStr string) {
 				// No mock setup needed for invalid path
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:     "meta update with invalid JSON",
+			diskID:   uuid.New().String(),
+			filePath: "/test/report.pdf",
+			meta:     `{invalid json}`,
+			mockSetup: func(m *MockArtifactService, diskIDStr string) {
+				// No mock setup needed for invalid JSON
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:     "meta update with reserved key",
+			diskID:   uuid.New().String(),
+			filePath: "/test/report.pdf",
+			meta:     `{"__artifact_info__": {"test": "value"}}`,
+			mockSetup: func(m *MockArtifactService, diskIDStr string) {
+				// No mock setup needed for reserved key
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -364,26 +356,17 @@ func TestArtifactHandler_UpdateArtifact(t *testing.T) {
 
 			handler := NewArtifactHandler(mockService)
 
-			// Create multipart form data
-			body := &bytes.Buffer{}
-			writer := multipart.NewWriter(body)
-
-			// Add file
-			fileWriter, err := writer.CreateFormFile("file", tt.fileName)
-			assert.NoError(t, err)
-			_, err = fileWriter.Write([]byte(tt.fileContent))
-			assert.NoError(t, err)
-
-			// Add form fields
-			if tt.filePath != "" {
-				writer.WriteField("file_path", tt.filePath)
+			// Create JSON request body
+			requestBody := map[string]string{
+				"file_path": tt.filePath,
+				"meta":      tt.meta,
 			}
-
-			writer.Close()
+			bodyBytes, err := json.Marshal(requestBody)
+			assert.NoError(t, err)
 
 			// Create request
-			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/disk/%s/artifact", tt.diskID), body)
-			req.Header.Set("Content-Type", writer.FormDataContentType())
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/disk/%s/artifact", tt.diskID), bytes.NewReader(bodyBytes))
+			req.Header.Set("Content-Type", "application/json")
 
 			// Create response recorder
 			w := httptest.NewRecorder()

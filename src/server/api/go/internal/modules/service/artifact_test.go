@@ -389,6 +389,44 @@ func (s *testArtifactService) GetByDiskID(ctx context.Context, diskID uuid.UUID)
 	return s.r.GetByDiskID(ctx, diskID)
 }
 
+func (s *testArtifactService) UpdateArtifactMetaByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, userMeta map[string]interface{}) (*model.Artifact, error) {
+	// Get existing artifact
+	artifact, err := s.GetByPath(ctx, diskID, path, filename)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate that user meta doesn't contain system reserved keys
+	reservedKeys := model.GetReservedKeys()
+	for _, reservedKey := range reservedKeys {
+		if _, exists := userMeta[reservedKey]; exists {
+			return nil, errors.New("reserved key not allowed in user meta")
+		}
+	}
+
+	// Get current system meta
+	systemMeta, ok := artifact.Meta[model.ArtifactInfoKey].(map[string]interface{})
+	if !ok {
+		systemMeta = make(map[string]interface{})
+	}
+
+	// Create new meta combining system meta and user meta
+	newMeta := make(map[string]interface{})
+	newMeta[model.ArtifactInfoKey] = systemMeta
+	for k, v := range userMeta {
+		newMeta[k] = v
+	}
+
+	// Update artifact meta
+	artifact.Meta = newMeta
+
+	if err := s.r.Update(ctx, artifact); err != nil {
+		return nil, err
+	}
+
+	return artifact, nil
+}
+
 func (s *testArtifactService) GetFileContent(ctx context.Context, artifact *model.Artifact) (*fileparser.FileContent, error) {
 	// This is a test implementation that doesn't actually download from S3
 	// In real tests, you would mock the S3 download and file parsing
@@ -613,6 +651,129 @@ func TestArtifactService_GetByID(t *testing.T) {
 			if tt.errorMsg != "artifact id is empty" {
 				mockRepo.AssertExpectations(t)
 			}
+		})
+	}
+}
+
+// Test cases for UpdateArtifactMetaByPath method
+func TestArtifactService_UpdateArtifactMetaByPath(t *testing.T) {
+	diskID := uuid.New()
+	path := "/test/path/"
+	filename := "test.txt"
+	artifactID := uuid.New()
+
+	tests := []struct {
+		name        string
+		userMeta    map[string]interface{}
+		setup       func(*MockArtifactRepo)
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name: "successful meta update",
+			userMeta: map[string]interface{}{
+				"description": "Test artifact",
+				"version":     "1.0",
+			},
+			setup: func(repo *MockArtifactRepo) {
+				existingArtifact := createTestArtifact()
+				existingArtifact.ID = artifactID
+				existingArtifact.DiskID = diskID
+				existingArtifact.Path = path
+				existingArtifact.Filename = filename
+
+				repo.On("GetByPath", mock.Anything, diskID, path, filename).Return(existingArtifact, nil)
+				repo.On("Update", mock.Anything, mock.MatchedBy(func(f *model.Artifact) bool {
+					// Verify that meta contains both system meta and user meta
+					if _, hasSystemMeta := f.Meta[model.ArtifactInfoKey]; !hasSystemMeta {
+						return false
+					}
+					if f.Meta["description"] != "Test artifact" {
+						return false
+					}
+					if f.Meta["version"] != "1.0" {
+						return false
+					}
+					return true
+				})).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name: "artifact not found",
+			userMeta: map[string]interface{}{
+				"description": "Test artifact",
+			},
+			setup: func(repo *MockArtifactRepo) {
+				repo.On("GetByPath", mock.Anything, diskID, path, filename).Return(nil, errors.New("artifact not found"))
+			},
+			expectError: true,
+			errorMsg:    "artifact not found",
+		},
+		{
+			name: "reserved key in user meta",
+			userMeta: map[string]interface{}{
+				"__artifact_info__": map[string]interface{}{"test": "value"},
+			},
+			setup: func(repo *MockArtifactRepo) {
+				existingArtifact := createTestArtifact()
+				existingArtifact.ID = artifactID
+				existingArtifact.DiskID = diskID
+				existingArtifact.Path = path
+				existingArtifact.Filename = filename
+
+				repo.On("GetByPath", mock.Anything, diskID, path, filename).Return(existingArtifact, nil)
+			},
+			expectError: true,
+			errorMsg:    "reserved key not allowed",
+		},
+		{
+			name: "update record error",
+			userMeta: map[string]interface{}{
+				"description": "Test artifact",
+			},
+			setup: func(repo *MockArtifactRepo) {
+				existingArtifact := createTestArtifact()
+				existingArtifact.ID = artifactID
+				existingArtifact.DiskID = diskID
+				existingArtifact.Path = path
+				existingArtifact.Filename = filename
+
+				repo.On("GetByPath", mock.Anything, diskID, path, filename).Return(existingArtifact, nil)
+				repo.On("Update", mock.Anything, mock.Anything).Return(errors.New("update error"))
+			},
+			expectError: true,
+			errorMsg:    "update error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &MockArtifactRepo{}
+			tt.setup(mockRepo)
+
+			service := newTestArtifactService(mockRepo, &MockArtifactS3Deps{})
+
+			artifact, err := service.UpdateArtifactMetaByPath(context.Background(), diskID, path, filename, tt.userMeta)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, artifact)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, artifact)
+				assert.Equal(t, diskID, artifact.DiskID)
+				assert.Equal(t, path, artifact.Path)
+				assert.Equal(t, filename, artifact.Filename)
+				assert.Contains(t, artifact.Meta, model.ArtifactInfoKey)
+				// Verify user meta is present
+				for k, v := range tt.userMeta {
+					assert.Equal(t, v, artifact.Meta[k])
+				}
+			}
+
+			mockRepo.AssertExpectations(t)
 		})
 	}
 }

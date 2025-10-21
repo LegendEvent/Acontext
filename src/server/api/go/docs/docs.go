@@ -216,9 +216,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an artifact by uploading a new file (path cannot be changed)",
+                "description": "Update an artifact's metadata (user-defined metadata only)",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -226,7 +226,7 @@ const docTemplate = `{
                 "tags": [
                     "artifact"
                 ],
-                "summary": "Update artifact",
+                "summary": "Update artifact meta",
                 "parameters": [
                     {
                         "type": "string",
@@ -238,18 +238,22 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
                         "description": "File path including filename",
                         "name": "file_path",
-                        "in": "formData",
-                        "required": true
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     {
-                        "type": "file",
-                        "description": "New file to upload",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
+                        "description": "Custom metadata as JSON string (system metadata '__artifact_info__' cannot be modified)",
+                        "name": "meta",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {

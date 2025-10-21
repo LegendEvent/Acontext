@@ -230,6 +230,7 @@ func (h *ArtifactHandler) GetArtifact(c *gin.Context) {
 
 type UpdateArtifactReq struct {
 	FilePath string `form:"file_path" json:"file_path" binding:"required"` // File path including filename
+	Meta     string `form:"meta" json:"meta" binding:"required"`           // Custom metadata as JSON string
 }
 
 type UpdateArtifactResp struct {
@@ -238,14 +239,14 @@ type UpdateArtifactResp struct {
 
 // UpdateArtifact godoc
 //
-//	@Summary		Update artifact
-//	@Description	Update an artifact by uploading a new file (path cannot be changed)
+//	@Summary		Update artifact meta
+//	@Description	Update an artifact's metadata (user-defined metadata only)
 //	@Tags			artifact
-//	@Accept			multipart/form-data
+//	@Accept			json
 //	@Produce		json
-//	@Param			disk_id		path		string	true	"Disk ID"						Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			file_path	formData	string	true	"File path including filename"	example:"/documents/report.pdf"
-//	@Param			file		formData	file	true	"New file to upload"
+//	@Param			disk_id		path	string	true	"Disk ID"						Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Param			file_path	body	string	true	"File path including filename"	example:"/documents/report.pdf"
+//	@Param			meta		body	string	true	"Custom metadata as JSON string (system metadata '__artifact_info__' cannot be modified)"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=handler.UpdateArtifactResp}
 //	@Router			/disk/{disk_id}/artifact [put]
@@ -263,7 +264,7 @@ func (h *ArtifactHandler) UpdateArtifact(c *gin.Context) {
 	}
 
 	// Parse FilePath to extract path and filename
-	filePath, originalFilename := path.SplitFilePath(req.FilePath)
+	filePath, filename := path.SplitFilePath(req.FilePath)
 
 	// Validate the path parameter
 	if err := path.ValidatePath(filePath); err != nil {
@@ -271,22 +272,24 @@ func (h *ArtifactHandler) UpdateArtifact(c *gin.Context) {
 		return
 	}
 
-	file, err := c.FormFile("file")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, serializer.ParamErr("file is required", err))
+	// Parse user meta from JSON string
+	var userMeta map[string]interface{}
+	if err := sonic.Unmarshal([]byte(req.Meta), &userMeta); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("invalid meta JSON format", err))
 		return
 	}
 
-	// Check if the uploaded file has a different name than the original
-	uploadedFilename := file.Filename
-	var newFilename *string
-	if uploadedFilename != originalFilename {
-		// File name has changed, we need to check if the new name conflicts
-		newFilename = &uploadedFilename
+	// Validate that user meta doesn't contain system reserved keys
+	reservedKeys := model.GetReservedKeys()
+	for _, reservedKey := range reservedKeys {
+		if _, exists := userMeta[reservedKey]; exists {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("", fmt.Errorf("reserved key '%s' is not allowed in user meta", reservedKey)))
+			return
+		}
 	}
 
-	// Update artifact content, with potential filename change
-	artifactRecord, err := h.svc.UpdateArtifactByPath(c.Request.Context(), diskID, filePath, originalFilename, file, nil, newFilename)
+	// Update artifact meta
+	artifactRecord, err := h.svc.UpdateArtifactMetaByPath(c.Request.Context(), diskID, filePath, filename, userMeta)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("", err))
 		return

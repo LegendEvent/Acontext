@@ -73,6 +73,7 @@ type ArtifactService interface {
 	GetFileContent(ctx context.Context, artifact *model.Artifact) (*fileparser.FileContent, error)
 	UpdateArtifact(ctx context.Context, diskID uuid.UUID, artifactID uuid.UUID, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error)
 	UpdateArtifactByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, fileHeader *multipart.FileHeader, newPath *string, newFilename *string) (*model.Artifact, error)
+	UpdateArtifactMetaByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, userMeta map[string]interface{}) (*model.Artifact, error)
 	ListByPath(ctx context.Context, diskID uuid.UUID, path string) ([]*model.Artifact, error)
 	GetAllPaths(ctx context.Context, diskID uuid.UUID) ([]string, error)
 	GetByDiskID(ctx context.Context, diskID uuid.UUID) ([]*model.Artifact, error)
@@ -318,6 +319,44 @@ func (s *artifactService) UpdateArtifactByPath(ctx context.Context, diskID uuid.
 
 	if err := s.r.Update(ctx, artifact); err != nil {
 		return nil, fmt.Errorf("update artifact record: %w", err)
+	}
+
+	return artifact, nil
+}
+
+func (s *artifactService) UpdateArtifactMetaByPath(ctx context.Context, diskID uuid.UUID, path string, filename string, userMeta map[string]interface{}) (*model.Artifact, error) {
+	// Get existing artifact
+	artifact, err := s.GetByPath(ctx, diskID, path, filename)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate that user meta doesn't contain system reserved keys
+	reservedKeys := model.GetReservedKeys()
+	for _, reservedKey := range reservedKeys {
+		if _, exists := userMeta[reservedKey]; exists {
+			return nil, fmt.Errorf("reserved key '%s' is not allowed in user meta", reservedKey)
+		}
+	}
+
+	// Get current system meta
+	systemMeta, ok := artifact.Meta[model.ArtifactInfoKey].(map[string]interface{})
+	if !ok {
+		systemMeta = make(map[string]interface{})
+	}
+
+	// Create new meta combining system meta and user meta
+	newMeta := make(map[string]interface{})
+	newMeta[model.ArtifactInfoKey] = systemMeta
+	for k, v := range userMeta {
+		newMeta[k] = v
+	}
+
+	// Update artifact meta
+	artifact.Meta = newMeta
+
+	if err := s.r.Update(ctx, artifact); err != nil {
+		return nil, fmt.Errorf("update artifact meta: %w", err)
 	}
 
 	return artifact, nil
