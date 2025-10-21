@@ -85,8 +85,8 @@ type Block struct {
 	IsArchived bool  `gorm:"not null;default:false;index:idx_blocks_space_type_archived,priority:3;index" json:"is_archived"`
 
 	Children  []*Block  `gorm:"foreignKey:ParentID;constraint:fk_blocks_children,OnUpdate:CASCADE,OnDelete:CASCADE;" json:"children,omitempty"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt time.Time `gorm:"autoCreateTime;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 func (Block) TableName() string { return "blocks" }
