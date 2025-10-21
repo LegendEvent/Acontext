@@ -10,10 +10,8 @@ from ._constants import DEFAULT_BASE_URL, DEFAULT_USER_AGENT
 from .errors import APIError, TransportError
 from .messages import MessagePart as MessagePart
 from .uploads import FileUpload as FileUpload
-from .resources.artifacts import ArtifactsAPI as ArtifactsAPI
+from .resources.disks import DisksAPI as DisksAPI
 from .resources.blocks import BlocksAPI as BlocksAPI
-from .resources.pages import PagesAPI as PagesAPI
-from .resources.folders import FoldersAPI as FoldersAPI
 from .resources.sessions import SessionsAPI as SessionsAPI
 from .resources.spaces import SpacesAPI as SpacesAPI
 
@@ -72,10 +70,9 @@ class AcontextClient:
 
         self.spaces = SpacesAPI(self)
         self.sessions = SessionsAPI(self)
-        self.artifacts = ArtifactsAPI(self)
-        self.pages = PagesAPI(self)
+        self.disks = DisksAPI(self)
+        self.artifacts = self.disks.artifacts
         self.blocks = BlocksAPI(self)
-        self.folders = FoldersAPI(self)
 
     @property
     def base_url(self) -> str:

@@ -37,10 +37,10 @@ def main() -> None:
             ],
         )
 
-        # Upload a file to the artifact store for later reuse
-        artifact = client.artifacts.create()
-        client.artifacts.files.upload(
-            artifact["id"],
+        # Upload a file to a disk-backed artifact store for later reuse
+        disk = client.disks.create()
+        client.disks.artifacts.upsert(
+            disk["id"],
             file=FileUpload(
                 filename="retro_notes.md",
                 content=b"# Retro Notes\nWe shipped file uploads successfully!\n",
@@ -50,9 +50,9 @@ def main() -> None:
             meta={"source": "basic_usage.py"},
         )
 
-        # Organize space content: create a folder, a page within it, then add a block to that page
-        folder = client.folders.create(space_id, title="Product Plans")
-        page = client.pages.create(space_id, parent_id=folder["id"], title="Sprint Kick-off")
+        # Organize space content: create a folder (block type), a page within it, then add a text block
+        folder = client.blocks.create(space_id, block_type="folder", title="Product Plans")
+        page = client.blocks.create(space_id, parent_id=folder["id"], block_type="page", title="Sprint Kick-off")
         client.blocks.create(
             space_id,
             parent_id=page["id"],

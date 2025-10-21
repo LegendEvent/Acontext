@@ -5,25 +5,15 @@ Python SDK for the Acontext API.
 from importlib import metadata as _metadata
 
 from .client import AcontextClient, FileUpload, MessagePart
-from .resources import (
-    ArtifactFilesAPI,
-    ArtifactsAPI,
-    BlocksAPI,
-    FoldersAPI,
-    PagesAPI,
-    SessionsAPI,
-    SpacesAPI,
-)
+from .resources import BlocksAPI, DiskArtifactsAPI, DisksAPI, SessionsAPI, SpacesAPI
 
 __all__ = [
     "AcontextClient",
     "FileUpload",
     "MessagePart",
-    "ArtifactsAPI",
-    "ArtifactFilesAPI",
+    "DisksAPI",
+    "DiskArtifactsAPI",
     "BlocksAPI",
-    "FoldersAPI",
-    "PagesAPI",
     "SessionsAPI",
     "SpacesAPI",
     "__version__",

@@ -115,52 +115,6 @@ def test_send_message_can_include_format(mock_request, client: AcontextClient) -
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_pages_create_builds_payload(mock_request, client: AcontextClient) -> None:
-    mock_request.return_value = {"id": "page"}
-
-    client.pages.create(
-        "space-id",
-        parent_id="parent-id",
-        title="Title",
-        props={"foo": "bar"},
-    )
-
-    mock_request.assert_called_once()
-    args, kwargs = mock_request.call_args
-    method, path = args
-    assert method == "POST"
-    assert path == "/space/space-id/page"
-    assert kwargs["json_data"] == {"parent_id": "parent-id", "title": "Title", "props": {"foo": "bar"}}
-
-
-@patch("acontext.client.AcontextClient.request")
-def test_pages_move_requires_payload(mock_request, client: AcontextClient) -> None:
-    with pytest.raises(ValueError):
-        client.pages.move("space-id", "page-id")
-
-    mock_request.assert_not_called()
-
-
-@patch("acontext.client.AcontextClient.request")
-def test_folders_create_builds_payload(mock_request, client: AcontextClient) -> None:
-    mock_request.return_value = {"id": "folder"}
-
-    client.folders.create(
-        "space-id",
-        parent_id="parent-id",
-        title="Folder Title",
-        props={"foo": "bar"},
-    )
-
-    mock_request.assert_called_once()
-    args, kwargs = mock_request.call_args
-    method, path = args
-    assert method == "POST"
-    assert path == "/space/space-id/folder"
-    assert kwargs["json_data"] == {"parent_id": "parent-id", "title": "Folder Title", "props": {"foo": "bar"}}
-
-
-@patch("acontext.client.AcontextClient.request")
 def test_spaces_semantic_queries_require_query_param(mock_request, client: AcontextClient) -> None:
     mock_request.return_value = {"result": "ok"}
 
@@ -189,15 +143,56 @@ def test_sessions_get_messages_forwards_format(mock_request, client: AcontextCli
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_blocks_list_requires_parent(mock_request, client: AcontextClient) -> None:
-    with pytest.raises(ValueError):
-        client.blocks.list("space-id", parent_id="")
+def test_blocks_list_without_filters(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"items": []}
 
-    mock_request.assert_not_called()
+    client.blocks.list("space-id")
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/space/space-id/block"
+    assert kwargs["params"] is None
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_blocks_create_builds_payload(mock_request, client: AcontextClient) -> None:
+def test_blocks_list_with_filters(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"items": []}
+
+    client.blocks.list("space-id", parent_id="parent-id", block_type="page")
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/space/space-id/block"
+    assert kwargs["params"] == {"parent_id": "parent-id", "type": "page"}
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_blocks_create_root_payload(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"id": "block"}
+
+    client.blocks.create(
+        "space-id",
+        block_type="folder",
+        title="Folder Title",
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "POST"
+    assert path == "/space/space-id/block"
+    assert kwargs["json_data"] == {
+        "type": "folder",
+        "title": "Folder Title",
+    }
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_blocks_create_with_parent_payload(mock_request, client: AcontextClient) -> None:
     mock_request.return_value = {"id": "block"}
 
     client.blocks.create(
@@ -221,9 +216,119 @@ def test_blocks_create_builds_payload(mock_request, client: AcontextClient) -> N
     }
 
 
+def test_blocks_create_requires_type(client: AcontextClient) -> None:
+    with pytest.raises(ValueError):
+        client.blocks.create("space-id", block_type="")
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_blocks_move_requires_payload(mock_request, client: AcontextClient) -> None:
+    with pytest.raises(ValueError):
+        client.blocks.move("space-id", "block-id")
+
+    mock_request.assert_not_called()
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_blocks_move_with_parent(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"status": "ok"}
+
+    client.blocks.move("space-id", "block-id", parent_id="parent-id")
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "PUT"
+    assert path == "/space/space-id/block/block-id/move"
+    assert kwargs["json_data"] == {"parent_id": "parent-id"}
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_blocks_move_with_sort(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"status": "ok"}
+
+    client.blocks.move("space-id", "block-id", sort=42)
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "PUT"
+    assert path == "/space/space-id/block/block-id/move"
+    assert kwargs["json_data"] == {"sort": 42}
+
+
 @patch("acontext.client.AcontextClient.request")
 def test_blocks_update_properties_requires_payload(mock_request, client: AcontextClient) -> None:
     with pytest.raises(ValueError):
         client.blocks.update_properties("space-id", "block-id")
 
     mock_request.assert_not_called()
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_disks_create_hits_disk_endpoint(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"id": "disk"}
+
+    client.disks.create()
+
+    mock_request.assert_called_once()
+    args, _ = mock_request.call_args
+    method, path = args
+    assert method == "POST"
+    assert path == "/disk"
+
+
+def test_artifacts_aliases_disk_artifacts(client: AcontextClient) -> None:
+    assert client.artifacts is client.disks.artifacts
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_disk_artifacts_upsert_uses_multipart_payload(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"id": "artifact"}
+
+    client.disks.artifacts.upsert(
+        "disk-id",
+        file=FileUpload(filename="file.txt", content=b"data", content_type="text/plain"),
+        file_path="/folder/file.txt",
+        meta={"source": "unit-test"},
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "POST"
+    assert path == "/disk/disk-id/artifact"
+    assert "files" in kwargs
+    assert "data" in kwargs
+    assert kwargs["data"]["file_path"] == "/folder/file.txt"
+    meta = json.loads(kwargs["data"]["meta"])
+    assert meta["source"] == "unit-test"
+    filename, stream, content_type = kwargs["files"]["file"]
+    assert filename == "file.txt"
+    assert content_type == "text/plain"
+    assert stream.read() == b"data"
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_disk_artifacts_get_translates_query_params(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"artifact": {}}
+
+    client.disks.artifacts.get(
+        "disk-id",
+        file_path="/folder/file.txt",
+        with_public_url=False,
+        with_content=True,
+        expire=900,
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/disk/disk-id/artifact"
+    assert kwargs["params"] == {
+        "file_path": "/folder/file.txt",
+        "with_public_url": "false",
+        "with_content": "true",
+        "expire": 900,
+    }

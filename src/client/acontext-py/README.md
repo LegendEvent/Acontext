@@ -8,7 +8,7 @@ Python SDK for interacting with the Acontext REST API.
 pip install acontext
 ```
 
-> Requires Python 3.13 or newer.
+> Requires Python 3.10 or newer.
 
 ### Quickstart
 
@@ -30,9 +30,33 @@ with AcontextClient(api_key="sk_project_token") as client:
     )
 ```
 
-See the inline docstrings for the full list of helpers covering sessions, spaces, artifacts and file uploads.
+See the inline docstrings for the full list of helpers covering sessions, spaces, disks, and artifact uploads.
 
-### Working with pages and blocks
+### Managing disks and artifacts
+
+Artifacts now live under project disks. Create a disk first, then upload files through the disk-scoped helper:
+
+```python
+from acontext import AcontextClient, FileUpload
+
+client = AcontextClient(api_key="sk_project_token")
+try:
+    disk = client.disks.create()
+    client.disks.artifacts.upsert(
+        disk["id"],
+        file=FileUpload(
+            filename="retro_notes.md",
+            content=b"# Retro Notes\nWe shipped file uploads successfully!\n",
+            content_type="text/markdown",
+        ),
+        file_path="notes/retro.md",
+        meta={"source": "readme-demo"},
+    )
+finally:
+    client.close()
+```
+
+### Working with blocks
 
 ```python
 from acontext import AcontextClient
@@ -41,7 +65,7 @@ client = AcontextClient(api_key="sk_project_token")
 
 space = client.spaces.create()
 try:
-    page = client.pages.create(space["id"], title="Kick-off Notes")
+    page = client.blocks.create(space["id"], block_type="page", title="Kick-off Notes")
     client.blocks.create(
         space["id"],
         parent_id=page["id"],
