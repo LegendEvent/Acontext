@@ -2,7 +2,7 @@
 
 ## Local Development
 
-- Start infras
+- Start Deps using docker compose
 
 ```bash
 # current path: ./src/server
@@ -15,6 +15,16 @@ sh scripts/local_dev_deps.sh
 # current path: ./src/server/core
 uv sync
 ```
+
+- Set necessary configs
+```
+cp config.yaml.example config.yaml
+# or
+cp .env.example .env
+```
+> Using `config.yaml` or `.env` to pass configs are identical, choose the one you like. 
+> If an var is both in `config.yaml` and `.env`, the value of `config.yaml` will be used.
+
 
 - Launch Core in dev mode (with hot reload)
 
@@ -34,9 +44,13 @@ uv run -m gunicorn api:app \
     --timeout 120
 ```
 
-- Test the core
+- Service Healthcheck
+```bash
+curl http://localhost:8000/health
+```
+
+- Run Test
 ```bash
 # current path: ./src/server/core
-cp config.yaml.example config.yaml
 uv run -m pytest
 ```
