@@ -117,6 +117,9 @@ func BuildContainer() *do.Injector {
 	do.Provide(inj, func(i *do.Injector) (repo.ArtifactRepo, error) {
 		return repo.NewArtifactRepo(do.MustInvoke[*gorm.DB](i)), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (repo.TaskRepo, error) {
+		return repo.NewTaskRepo(do.MustInvoke[*gorm.DB](i)), nil
+	})
 
 	// Service
 	do.Provide(inj, func(i *do.Injector) (service.SpaceService, error) {
@@ -146,6 +149,12 @@ func BuildContainer() *do.Injector {
 			do.MustInvoke[*blob.S3Deps](i),
 		), nil
 	})
+	do.Provide(inj, func(i *do.Injector) (service.TaskService, error) {
+		return service.NewTaskService(
+			do.MustInvoke[repo.TaskRepo](i),
+			do.MustInvoke[*zap.Logger](i),
+		), nil
+	})
 
 	// Handler
 	do.Provide(inj, func(i *do.Injector) (*handler.SpaceHandler, error) {
@@ -162,6 +171,9 @@ func BuildContainer() *do.Injector {
 	})
 	do.Provide(inj, func(i *do.Injector) (*handler.ArtifactHandler, error) {
 		return handler.NewArtifactHandler(do.MustInvoke[service.ArtifactService](i)), nil
+	})
+	do.Provide(inj, func(i *do.Injector) (*handler.TaskHandler, error) {
+		return handler.NewTaskHandler(do.MustInvoke[service.TaskService](i)), nil
 	})
 
 	return inj

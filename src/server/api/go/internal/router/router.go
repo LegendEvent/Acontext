@@ -85,6 +85,7 @@ type RouterDeps struct {
 	SessionHandler  *handler.SessionHandler
 	DiskHandler     *handler.DiskHandler
 	ArtifactHandler *handler.ArtifactHandler
+	TaskHandler     *handler.TaskHandler
 }
 
 func NewRouter(d RouterDeps) *gin.Engine {
@@ -149,6 +150,11 @@ func NewRouter(d RouterDeps) *gin.Engine {
 
 			session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
 			session.GET("/:session_id/messages", d.SessionHandler.GetMessages)
+
+			task := session.Group("/:session_id/task")
+			{
+				task.GET("", d.TaskHandler.GetTasks)
+			}
 		}
 
 		disk := v1.Group("/disk")

@@ -884,6 +884,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/session/{session_id}/task": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get tasks from session with cursor-based pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Get tasks from session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit of tasks to return, default 20. Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.GetTasksOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/space": {
             "get": {
                 "security": [
@@ -2255,6 +2317,23 @@ const docTemplate = `{
                     "additionalProperties": {
                         "$ref": "#/definitions/service.PublicURL"
                     }
+                }
+            }
+        },
+        "service.GetTasksOutput": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Task"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
                 }
             }
         },

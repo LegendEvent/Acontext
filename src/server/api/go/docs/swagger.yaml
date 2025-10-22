@@ -391,6 +391,17 @@ definitions:
         description: file_name -> url
         type: object
     type: object
+  service.GetTasksOutput:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   service.PublicURL:
     properties:
       expire_at:
@@ -945,6 +956,44 @@ paths:
       summary: Send message to session
       tags:
       - session
+  /session/{session_id}/task:
+    get:
+      consumes:
+      - application/json
+      description: Get tasks from session with cursor-based pagination
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      - description: Limit of tasks to return, default 20. Max 200.
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination. Use the cursor from the previous response
+          to get the next page.
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.GetTasksOutput'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get tasks from session
+      tags:
+      - task
   /space:
     get:
       consumes:
