@@ -1,5 +1,5 @@
 import service, { Res } from "../http";
-import { Space, Session, GetMessagesResp, Block, MessageRole, PartType } from "@/types";
+import { Space, Session, GetMessagesResp, GetTasksResp, Block, MessageRole, PartType } from "@/types";
 
 // Space APIs
 export const getSpaces = async (): Promise<Res<Space[]>> => {
@@ -256,5 +256,22 @@ export const updateBlockSort = async (
   return await service.put(`/api/space/${spaceId}/block/${blockId}/sort`, {
     sort,
   });
+};
+
+// Task APIs
+export const getTasks = async (
+  session_id: string,
+  limit: number = 20,
+  cursor?: string
+): Promise<Res<GetTasksResp>> => {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+  });
+  if (cursor) {
+    params.append("cursor", cursor);
+  }
+  return await service.get(
+    `/api/session/${session_id}/task?${params.toString()}`
+  );
 };
 
