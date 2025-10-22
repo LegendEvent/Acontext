@@ -88,6 +88,25 @@ export interface GetMessagesResp {
   public_urls?: Record<string, { url: string; expire_at: string }>;
 }
 
+export interface Task {
+  id: string;
+  session_id: string;
+  project_id: string;
+  order: number;
+  data: Record<string, unknown>;
+  status: "pending" | "running" | "success" | "failed";
+  is_planning: boolean;
+  space_digested: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GetTasksResp {
+  items: Task[];
+  next_cursor?: string;
+  has_more: boolean;
+}
+
 export interface Block {
   id: string;
   space_id: string;

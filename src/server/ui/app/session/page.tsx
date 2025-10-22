@@ -344,6 +344,11 @@ export default function SessionsPage() {
     router.push(`/session/${sessionId}/messages`);
   };
 
+  const handleGoToTasks = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/session/${sessionId}/task`);
+  };
+
   return (
     <div className="h-full bg-background p-6">
       <div className="space-y-4">
@@ -459,6 +464,13 @@ export default function SessionsPage() {
                           onClick={(e) => handleGoToMessages(session.id, e)}
                         >
                           {t("messages") || "Messages"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={(e) => handleGoToTasks(session.id, e)}
+                        >
+                          {t("tasks") || "Tasks"}
                         </Button>
                         <Button
                           variant="secondary"
