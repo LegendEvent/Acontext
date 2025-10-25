@@ -16,7 +16,7 @@ type SessionRepo interface {
 	Get(ctx context.Context, s *model.Session) (*model.Session, error)
 	List(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool) ([]model.Session, error)
 	CreateMessageWithAssets(ctx context.Context, msg *model.Message) error
-	ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int) ([]model.Message, error)
+	ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Message, error)
 }
 
 type sessionRepo struct{ db *gorm.DB }
@@ -74,17 +74,28 @@ func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Me
 	})
 }
 
-func (r *sessionRepo) ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int) ([]model.Message, error) {
+func (r *sessionRepo) ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Message, error) {
 	q := r.db.WithContext(ctx).Where("session_id = ?", sessionID)
 
-	// Use the (created_at, id) composite cursor; an empty cursor indicates starting from "latest"
+	// Apply cursor-based pagination filter if cursor is provided
 	if !afterCreatedAt.IsZero() && afterID != uuid.Nil {
-		// Retrieve strictly "older" records (reverse pagination)
-		// (created_at, id) < (afterCreatedAt, afterID)
-		q = q.Where("(created_at < ?) OR (created_at = ? AND id < ?)", afterCreatedAt, afterCreatedAt, afterID)
+		// Determine comparison operator based on sort direction
+		comparisonOp := ">"
+		if timeDesc {
+			comparisonOp = "<"
+		}
+		q = q.Where(
+			"(created_at "+comparisonOp+" ?) OR (created_at = ? AND id "+comparisonOp+" ?)",
+			afterCreatedAt, afterCreatedAt, afterID,
+		)
+	}
+
+	// Apply ordering based on sort direction
+	orderBy := "created_at ASC, id ASC"
+	if timeDesc {
+		orderBy = "created_at DESC, id DESC"
 	}
 
 	var items []model.Message
-
-	return items, q.Order("created_at DESC, id DESC").Limit(limit).Find(&items).Error
+	return items, q.Order(orderBy).Limit(limit).Find(&items).Error
 }

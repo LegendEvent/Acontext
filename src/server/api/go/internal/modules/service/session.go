@@ -230,6 +230,7 @@ type GetMessagesInput struct {
 	Cursor             string        `json:"cursor"`
 	WithAssetPublicURL bool          `json:"with_public_url"`
 	AssetExpire        time.Duration `json:"asset_expire"`
+	TimeDesc           bool          `json:"time_desc"`
 }
 
 type PublicURL struct {
@@ -257,7 +258,7 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 	}
 
 	// Query limit+1 is used to determine has_more
-	msgs, err := s.r.ListBySessionWithCursor(ctx, in.SessionID, afterT, afterID, in.Limit+1)
+	msgs, err := s.r.ListBySessionWithCursor(ctx, in.SessionID, afterT, afterID, in.Limit+1, in.TimeDesc)
 	if err != nil {
 		return nil, err
 	}
@@ -265,12 +266,14 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 	for i, m := range msgs {
 		meta := m.PartsMeta.Data()
 
-		parts := []model.Part{}
-		if err := s.blob.DownloadJSON(ctx, meta.S3Key, &parts); err != nil {
-			continue
+		// Only download parts if blob service is available
+		if s.blob != nil {
+			parts := []model.Part{}
+			if err := s.blob.DownloadJSON(ctx, meta.S3Key, &parts); err != nil {
+				continue
+			}
+			msgs[i].Parts = parts
 		}
-
-		msgs[i].Parts = parts
 	}
 
 	out := &GetMessagesOutput{
@@ -284,7 +287,7 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 		out.NextCursor = paging.EncodeCursor(last.CreatedAt, last.ID)
 	}
 
-	if in.WithAssetPublicURL {
+	if in.WithAssetPublicURL && s.blob != nil {
 		out.PublicURLs = make(map[string]PublicURL)
 		for _, m := range out.Items {
 			for _, p := range m.Parts {

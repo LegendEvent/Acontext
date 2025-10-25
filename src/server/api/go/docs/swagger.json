@@ -787,6 +787,12 @@
                         "description": "Format to convert messages to: acontext (original), openai (default), anthropic.",
                         "name": "format",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by created_at descending if true, ascending if false (default false)",
+                        "name": "time_desc",
+                        "in": "query"
                     }
                 ],
                 "responses": {

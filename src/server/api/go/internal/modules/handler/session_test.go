@@ -1470,6 +1470,100 @@ func TestSessionHandler_GetMessages(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 		},
+		{
+			name:           "time_desc=false (default)",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&time_desc=false",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.TimeDesc == false
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "time_desc=true",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&time_desc=true",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.TimeDesc == true
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "time_desc with cursor",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&cursor=eyJjcmVhdGVkX2F0IjoiMjAyNC0wMS0wMVQwMDowMDowMFoiLCJpZCI6IjEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCJ9&time_desc=false",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore:    true,
+					NextCursor: "eyJjcmVhdGVkX2F0IjoiMjAyNC0wMS0wMVQwMDowMDowMFoiLCJpZCI6IjEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMSJ9",
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.TimeDesc == false && in.Cursor != ""
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "time_desc with format conversion",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&time_desc=true&format=acontext",
+			setup: func(svc *MockSessionService) {
+				expectedOutput := &service.GetMessagesOutput{
+					Items: []model.Message{
+						{
+							ID:        uuid.New(),
+							SessionID: sessionID,
+							Role:      "user",
+						},
+					},
+					HasMore: false,
+				}
+				svc.On("GetMessages", mock.Anything, mock.MatchedBy(func(in service.GetMessagesInput) bool {
+					return in.SessionID == sessionID && in.Limit == 20 && in.TimeDesc == true
+				})).Return(expectedOutput, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid time_desc parameter",
+			sessionIDParam: sessionID.String(),
+			queryParams:    "?limit=20&time_desc=invalid",
+			setup: func(svc *MockSessionService) {
+				// No service call expected
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {

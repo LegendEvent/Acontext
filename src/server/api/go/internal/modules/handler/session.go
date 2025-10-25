@@ -471,6 +471,7 @@ type GetMessagesReq struct {
 	Cursor             string `form:"cursor" json:"cursor" example:"cHJvdGVjdGVkIHZlcnNpb24gdG8gYmUgZXhjbHVkZWQgaW4gcGFyc2luZyB0aGUgY3Vyc29y"`
 	WithAssetPublicURL bool   `form:"with_asset_public_url,default=true" json:"with_asset_public_url" example:"true"`
 	Format             string `form:"format,default=openai" json:"format" binding:"omitempty,oneof=acontext openai anthropic" example:"openai" enums:"acontext,openai,anthropic"`
+	TimeDesc           bool   `form:"time_desc,default=false" json:"time_desc" example:"false"`
 }
 
 // GetMessages godoc
@@ -485,6 +486,7 @@ type GetMessagesReq struct {
 //	@Param			cursor					query	string	false	"Cursor for pagination. Use the cursor from the previous response to get the next page."
 //	@Param			with_asset_public_url	query	string	false	"Whether to return asset public url, default is true"								example:"true"
 //	@Param			format					query	string	false	"Format to convert messages to: acontext (original), openai (default), anthropic."	enums(acontext,openai,anthropic)
+//	@Param			time_desc				query	string	false	"Order by created_at descending if true, ascending if false (default false)"		example:"false"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=service.GetMessagesOutput}
 //	@Router			/session/{session_id}/messages [get]
@@ -506,6 +508,7 @@ func (h *SessionHandler) GetMessages(c *gin.Context) {
 		Cursor:             req.Cursor,
 		WithAssetPublicURL: req.WithAssetPublicURL,
 		AssetExpire:        time.Hour * 24,
+		TimeDesc:           req.TimeDesc,
 	})
 	if err != nil {
 		c.JSON(http.StatusBadRequest, serializer.DBErr("", err))
