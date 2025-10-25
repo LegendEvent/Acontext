@@ -222,7 +222,7 @@ export default function TasksPage() {
                         <TableCell className="font-mono text-xs">
                           {task.id}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell>
                           <span className="inline-flex items-center justify-center rounded-md bg-secondary px-2 py-1 text-xs font-medium">
                             {task.order}
                           </span>
@@ -236,7 +236,7 @@ export default function TasksPage() {
                             {task.status}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell>
                           {task.is_planning ? (
                             <span className="inline-flex items-center rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20 px-2 py-1 text-xs font-medium">
                               Yes
