@@ -9,6 +9,9 @@ from ...schema.result import ResultError
 from ...env import LOG, DEFAULT_CORE_CONFIG
 from ...schema.config import ProjectConfig
 from ...schema.session.task import TaskSchema
+from ...infra.async_mq import MQ_CLIENT
+from ...schema.mq.sop import SOPComplete
+from ...service.constants import EX, RK
 
 
 async def process_space_task(
@@ -48,4 +51,41 @@ async def process_space_task(
     )
 
     # 3. Create block and trigger space_agent to save it
-    ...
+    # TODO: Implement Block creation logic
+    # Mock SOP data for construct_agent testing
+    mock_sop_data = {
+        "use_when": "Testing construct agent functionality",
+        "notes": "This is a mock SOP for testing purposes",
+        "sop": [
+            {
+                "tool_name": "web_search",
+                "argument_template": {
+                    "query": "test query",
+                    "website": "example.com"
+                }
+            },
+            {
+                "tool_name": "extract_data",
+                "argument_template": {
+                    "selector": ".content",
+                    "fields": ["title", "description"]
+                }
+            }
+        ]
+    }
+    
+    # 4. Publish MQ message to trigger construct_agent after SOP completion
+    sop_complete_message = SOPComplete(
+        project_id=project_id,
+        space_id=space_id,
+        task_id=task.id,
+        sop_data=mock_sop_data
+    )
+    
+    await MQ_CLIENT.publish(
+        exchange_name=EX.space_task,
+        routing_key=RK.space_task_sop_complete,
+        body=sop_complete_message.model_dump_json(),
+    )
+    
+    LOG.info(f"Published SOP complete message for task {task.id}")
