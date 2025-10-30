@@ -49,8 +49,6 @@ async def construct_agent_curd(
 
         # 3. Print processing result
         LOG.info(f"Processed result: {sop_data}")
-        print(f"✅ SOP Processing Complete!")
-        print(f"📊 Result: {sop_data}")
 
         # 4. Mark completion
         completion_status = {
@@ -60,10 +58,6 @@ async def construct_agent_curd(
             "processed_sop": sop_data,
             "timestamp": "2025-01-28T00:00:00Z",
         }
-
-        LOG.info(f"Construct agent completed successfully: {completion_status}")
-        print(f"🎯 Construct Agent - COMPLETED!")
-        print(f"📈 Final Status: {completion_status}")
 
         return Result.resolve(completion_status)
 

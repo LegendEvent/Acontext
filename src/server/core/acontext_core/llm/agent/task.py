@@ -165,7 +165,8 @@ async def task_agent_curd(
                     t, eil = r.unpack()
                     if eil:
                         return r
-                LOG.info(f"Tool Call: {tool_name} - {tool_arguments} -> {t}")
+                if tool_name != "report_thinking":
+                    LOG.info(f"Tool Call: {tool_name} - {tool_arguments} -> {t}")
                 tool_response.append(
                     {
                         "role": "tool",
