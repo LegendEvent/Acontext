@@ -24,6 +24,12 @@ class CoreConfig(BaseModel):
 
     llm_simple_model: str = "gpt-4.1"
 
+    block_embedding_provider: Literal["openai"] = "openai"
+    block_embedding_model: str = "text-embedding-3-small"
+    block_embedding_dim: int = 1536
+    block_embedding_api_key: Optional[str] = None
+    block_embedding_base_url: Optional[str] = None
+
     # Core Configuration
     logging_format: str = "text"
     session_message_session_lock_wait_seconds: int = 1
@@ -97,3 +103,8 @@ def filter_value_from_json(
             continue
         json_already_keys[key] = value
     return json_already_keys
+
+
+def post_validate_core_config_sanity(config: CoreConfig):
+    # TODO: add cross-params validation
+    pass

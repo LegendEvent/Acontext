@@ -19,6 +19,7 @@ from ..utils import asUUID
 if TYPE_CHECKING:
     from .space import Space
     from .tool_sop import ToolSOP
+    from .block_embedding import BlockEmbedding
 
 
 # Block type configuration matching Go version
@@ -213,6 +214,19 @@ class Block(CommonMixin):
         metadata={
             "db": relationship(
                 "ToolSOP", back_populates="sop_block", cascade="all, delete-orphan"
+            )
+        },
+    )
+
+    embeddings: List["BlockEmbedding"] = field(
+        default_factory=list,
+        init=False,
+        metadata={
+            "db": relationship(
+                "BlockEmbedding",
+                back_populates="block",
+                cascade="all, delete-orphan",
+                lazy="select",
             )
         },
     )

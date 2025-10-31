@@ -13,7 +13,8 @@ from sqlalchemy import event, text
 from sqlalchemy.exc import DisconnectionError, OperationalError
 
 # from ..schema.orm import Base
-from ..schema.orm import ORM_BASE
+from ..schema.orm import ORM_BASE, BlockEmbedding
+from ..schema.orm.block_embedding import check_legal_embedding_dim
 from ..env import LOG as logger
 from ..env import DEFAULT_CORE_CONFIG
 
@@ -205,9 +206,18 @@ DB_CLIENT = DatabaseClient()
 # Convenience functions
 async def init_database() -> None:
     """Initialize the database (create tables)."""
+    async with DB_CLIENT.get_session_context() as db_session:
+        await db_session.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+    logger.info("pgvector extension init")
+
     await DB_CLIENT.create_tables()
     assert await DB_CLIENT.health_check(), "Database health check failed"
     logger.info(f"Database created successfully {DB_CLIENT.get_pool_status()}")
+
+    async with DB_CLIENT.get_session_context() as db_session:
+        await check_legal_embedding_dim(
+            BlockEmbedding, db_session, DEFAULT_CORE_CONFIG.block_embedding_dim
+        )
 
 
 async def close_database() -> None:

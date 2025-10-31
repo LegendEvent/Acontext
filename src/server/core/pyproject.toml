@@ -12,6 +12,7 @@ dependencies = [
     "fastapi[standard]>=0.116.1",
     "gunicorn>=23.0.0",
     "openai>=1.95.1",
+    "pgvector>=0.4.1",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.2",
