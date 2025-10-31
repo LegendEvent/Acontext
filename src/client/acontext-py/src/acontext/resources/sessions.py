@@ -1,13 +1,18 @@
-"""
-Sessions endpoints.
-"""
+"""Sessions endpoints."""
 
 import json
-from typing import Any, Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, MutableMapping
+from dataclasses import asdict
+from typing import Any, BinaryIO, Literal
 
-from .._constants import SUPPORTED_ROLES
-from ..messages import MessagePart, build_message_payload
 from ..client_types import RequesterProtocol
+from ..messages import AcontextMessage
+from ..uploads import FileUpload
+from openai.types.chat import ChatCompletionMessageParam
+from anthropic.types import MessageParam
+
+UploadPayload = FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str | None]
+MessageBlob = AcontextMessage | ChatCompletionMessageParam | MessageParam
 
 
 class SessionsAPI:
@@ -59,33 +64,60 @@ class SessionsAPI:
         payload = {"space_id": space_id}
         self._requester.request("POST", f"/session/{session_id}/connect_to_space", json_data=payload)
 
+    def get_tasks(
+        self,
+        session_id: str,
+        *,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> Any:
+        params: dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if cursor is not None:
+            params["cursor"] = cursor
+        return self._requester.request(
+            "GET",
+            f"/session/{session_id}/task",
+            params=params or None,
+        )
+
     def send_message(
         self,
         session_id: str,
         *,
-        role: str,
-        parts: Sequence[MessagePart | str | Mapping[str, Any]],
-        format: str | None = None,
+        blob: MessageBlob,
+        format: Literal["acontext", "openai", "anthropic"] = "acontext",
+        file_field: str | None = "",
+        file: FileUpload | None = None
     ) -> Any:
-        if role not in SUPPORTED_ROLES:
-            raise ValueError(f"role must be one of {SUPPORTED_ROLES!r}")
-        if not parts:
-            raise ValueError("parts must contain at least one entry")
+        if format not in {"acontext", "openai", "anthropic"}:
+            raise ValueError("format must be one of {'acontext', 'openai', 'anthropic'}")
 
-        payload_parts, files = build_message_payload(parts)
-        payload = {"role": role, "parts": payload_parts}
-        if format is not None:
-            payload["format"] = format
+        payload = {
+            "format": format,
+        }
+        if format == "acontext":
+           payload["blob"] = asdict(blob)
+        else:
+           payload["blob"] = blob
 
-        if files:
+
+        file_payload: dict[str, tuple[str, BinaryIO, str | None]] | None = None
+        if file:
+            # only support upload one file now
+            file_payload = {
+                file_field: file.as_httpx()
+            }
+
+        if file_payload:
             form_data = {"payload": json.dumps(payload)}
             return self._requester.request(
                 "POST",
                 f"/session/{session_id}/messages",
                 data=form_data,
-                files=files,
+                files=file_payload,
             )
-
         return self._requester.request(
             "POST",
             f"/session/{session_id}/messages",
@@ -99,7 +131,8 @@ class SessionsAPI:
         limit: int | None = None,
         cursor: str | None = None,
         with_asset_public_url: bool | None = None,
-        format: str | None = None,
+        format: Literal["acontext", "openai", "anthropic"] = "acontext",
+        time_desc: bool | None = None,
     ) -> Any:
         params: dict[str, Any] = {}
         if limit is not None:
@@ -110,4 +143,6 @@ class SessionsAPI:
             params["with_asset_public_url"] = "true" if with_asset_public_url else "false"
         if format is not None:
             params["format"] = format
+        if time_desc is not None:
+            params["time_desc"] = "true" if time_desc else "false"
         return self._requester.request("GET", f"/session/{session_id}/messages", params=params or None)

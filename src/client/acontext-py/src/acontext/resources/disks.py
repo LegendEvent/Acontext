@@ -3,7 +3,8 @@ Disk and artifact endpoints.
 """
 
 import json
-from typing import Any, BinaryIO, Mapping, MutableMapping, cast
+from collections.abc import Mapping, MutableMapping
+from typing import Any, BinaryIO, cast
 
 from ..client_types import RequesterProtocol
 from ..uploads import FileUpload, normalize_file_upload

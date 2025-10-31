@@ -2,7 +2,8 @@
 Common typing helpers used by resource modules to avoid circular imports.
 """
 
-from typing import Any, BinaryIO, Mapping, MutableMapping, Protocol
+from collections.abc import Mapping, MutableMapping
+from typing import Any, BinaryIO, Protocol
 
 
 class RequesterProtocol(Protocol):

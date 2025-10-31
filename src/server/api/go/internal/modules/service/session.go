@@ -165,6 +165,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			}
 
 			// upload asset to S3
+
 			asset, err := s.s3.UploadFormFile(ctx, "assets/"+in.ProjectID.String(), fh)
 			if err != nil {
 				return nil, fmt.Errorf("upload %s failed: %w", p.FileField, err)
@@ -186,6 +187,7 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 	}
 
 	// upload parts to S3 as JSON file
+
 	asset, err := s.s3.UploadJSON(ctx, "parts/"+in.ProjectID.String(), parts)
 	if err != nil {
 		return nil, fmt.Errorf("upload parts to S3 failed: %w", err)

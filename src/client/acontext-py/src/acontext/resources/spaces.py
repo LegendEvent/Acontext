@@ -2,7 +2,8 @@
 Spaces endpoints.
 """
 
-from typing import Any, Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping
+from typing import Any
 
 from ..client_types import RequesterProtocol
 
