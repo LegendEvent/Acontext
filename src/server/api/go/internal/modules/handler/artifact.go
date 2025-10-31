@@ -353,6 +353,12 @@ func (h *ArtifactHandler) ListArtifacts(c *gin.Context) {
 	// Set default path to root directory if not provided
 	if pathQuery == "" {
 		pathQuery = "/"
+	} else {
+		// Validate that path does not contain filename
+		if path, _ := path.SplitFilePath(pathQuery); path != pathQuery {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("path cannot contain filename", errors.New("path cannot contain filename")))
+			return
+		}
 	}
 
 	// Validate the path parameter
