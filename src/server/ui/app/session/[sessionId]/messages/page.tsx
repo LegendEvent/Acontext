@@ -216,8 +216,8 @@ export default function MessagesPage() {
       ...prev,
       {
         id: generateTempId("tool_call"),
-        tool_name: "",
-        tool_call_id: "",
+        name: "",
+        call_id: "",
         parameters: "{}",
       },
     ]);
@@ -225,7 +225,7 @@ export default function MessagesPage() {
 
   const handleUpdateToolCall = (
     id: string,
-    field: "tool_name" | "tool_call_id" | "parameters",
+    field: "name" | "call_id" | "parameters",
     value: string
   ) => {
     setToolCalls((prev) =>
@@ -661,11 +661,11 @@ export default function MessagesPage() {
                         <input
                           type="text"
                           placeholder="Tool Name"
-                          value={tc.tool_name}
+                          value={tc.name}
                           onChange={(e) =>
                             handleUpdateToolCall(
                               tc.id,
-                              "tool_name",
+                              "name",
                               e.target.value
                             )
                           }
@@ -675,11 +675,11 @@ export default function MessagesPage() {
                         <input
                           type="text"
                           placeholder="Tool Call ID"
-                          value={tc.tool_call_id}
+                          value={tc.call_id}
                           onChange={(e) =>
                             handleUpdateToolCall(
                               tc.id,
-                              "tool_call_id",
+                              "call_id",
                               e.target.value
                             )
                           }
@@ -900,7 +900,7 @@ export default function MessagesPage() {
                                   Tool Name
                                 </p>
                                 <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                  {part.meta.tool_name as string}
+                                  {part.meta.name as string}
                                 </p>
                               </div>
                               <div>
@@ -908,7 +908,7 @@ export default function MessagesPage() {
                                   Tool Call ID
                                 </p>
                                 <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                  {part.meta.tool_call_id as string}
+                                  {part.meta.id as string}
                                 </p>
                               </div>
                               <div>
@@ -916,7 +916,9 @@ export default function MessagesPage() {
                                   Parameters
                                 </p>
                                 <pre className="text-sm font-mono bg-muted px-2 py-1 rounded overflow-x-auto">
-                                  {JSON.stringify(part.meta.arguments, null, 2)}
+                                  {typeof part.meta.arguments === 'string'
+                                    ? part.meta.arguments
+                                    : JSON.stringify(part.meta.arguments, null, 2)}
                                 </pre>
                               </div>
                             </div>
@@ -941,9 +943,9 @@ export default function MessagesPage() {
                                   Result
                                 </p>
                                 <pre className="text-sm font-mono bg-muted px-2 py-1 rounded overflow-x-auto whitespace-pre-wrap">
-                                  {typeof part.meta.result === "string"
+                                  {part.text || (typeof part.meta.result === "string"
                                     ? part.meta.result
-                                    : JSON.stringify(part.meta.result, null, 2)}
+                                    : JSON.stringify(part.meta.result, null, 2))}
                                 </pre>
                               </div>
                             </div>

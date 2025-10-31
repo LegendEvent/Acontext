@@ -121,10 +121,13 @@ export const sendMessage = async (
     const formData = new FormData();
 
     // Add payload field (JSON string)
+    // Wrap in blob field as expected by the Go API
     // Note: format parameter will be added by the Next.js API route
     formData.append("payload", JSON.stringify({
-      role,
-      parts
+      blob: {
+        role,
+        parts
+      }
     }));
 
     // Add files
@@ -136,10 +139,13 @@ export const sendMessage = async (
     return await service.post(`/api/session/${session_id}/messages`, formData);
   } else {
     // Use JSON format
+    // Wrap in blob field as expected by the Go API
     // Note: format parameter will be added by the Next.js API route
     return await service.post(`/api/session/${session_id}/messages`, {
-      role,
-      parts,
+      blob: {
+        role,
+        parts
+      }
     });
   }
 };

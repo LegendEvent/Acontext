@@ -75,6 +75,7 @@ export interface Message {
   session_id: string;
   parent_id: string | null;
   role: string;
+  meta?: Record<string, unknown>;
   parts: Part[];
   session_task_process_status: string;
   created_at: string;
@@ -139,15 +140,17 @@ export interface UploadedFile {
   type: PartType;
 }
 
+// UI-only type for creating tool-call parts
 export interface ToolCall {
-  id: string;
-  tool_name: string;
-  tool_call_id: string;
-  parameters: string;
+  id: string; // Temporary ID for UI list management
+  name: string; // Unified field name (maps to part.meta.name)
+  call_id: string; // The actual tool call ID (maps to part.meta.id)
+  parameters: string; // JSON string (maps to part.meta.arguments)
 }
 
+// UI-only type for creating tool-result parts
 export interface ToolResult {
-  id: string;
-  tool_call_id: string;
-  result: string;
+  id: string; // Temporary ID for UI list management
+  tool_call_id: string; // Reference to tool call (maps to part.meta.tool_call_id)
+  result: string; // Tool result content (stored in part.text or part.meta.result)
 }
