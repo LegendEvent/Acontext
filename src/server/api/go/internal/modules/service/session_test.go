@@ -496,7 +496,7 @@ func TestPartIn_Validate(t *testing.T) {
 			part: PartIn{
 				Type: "tool-call",
 				Meta: map[string]interface{}{
-					"tool_name": "calculator",
+					"name": "calculator", // UNIFIED FORMAT: was "tool_name", now "name"
 					"arguments": map[string]interface{}{
 						"expression": "2 + 2",
 					},
@@ -505,7 +505,7 @@ func TestPartIn_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "tool-call part missing tool_name",
+			name: "tool-call part missing name",
 			part: PartIn{
 				Type: "tool-call",
 				Meta: map[string]interface{}{
@@ -515,18 +515,18 @@ func TestPartIn_Validate(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "tool-call/tool-use part requires 'tool_name' or 'name' in meta",
+			errMsg:  "tool-call part requires 'name' in meta", // UNIFIED FORMAT
 		},
 		{
 			name: "tool-call part missing arguments",
 			part: PartIn{
 				Type: "tool-call",
 				Meta: map[string]interface{}{
-					"tool_name": "calculator",
+					"name": "calculator", // UNIFIED FORMAT
 				},
 			},
 			wantErr: true,
-			errMsg:  "tool-call/tool-use part requires 'arguments' or 'input' in meta",
+			errMsg:  "tool-call part requires 'arguments' in meta", // UNIFIED FORMAT
 		},
 		{
 			name: "valid tool-result part",
@@ -548,7 +548,7 @@ func TestPartIn_Validate(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "tool-result part requires 'tool_call_id' or 'tool_use_id' in meta",
+			errMsg:  "tool-result part requires 'tool_call_id' in meta", // UNIFIED FORMAT
 		},
 		{
 			name: "valid data part",

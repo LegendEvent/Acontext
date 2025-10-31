@@ -7,6 +7,15 @@ import (
 	"gorm.io/datatypes"
 )
 
+// MessageFormat represents the format for message input/output conversion
+type MessageFormat string
+
+const (
+	FormatAcontext  MessageFormat = "acontext"
+	FormatOpenAI    MessageFormat = "openai"
+	FormatAnthropic MessageFormat = "anthropic"
+)
+
 type Message struct {
 	ID        uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	SessionID uuid.UUID  `gorm:"type:uuid;not null;index;index:idx_session_created,priority:1" json:"session_id"`
@@ -15,6 +24,8 @@ type Message struct {
 	Children  []Message  `gorm:"foreignKey:ParentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"children"`
 
 	Role string `gorm:"type:text;not null;check:role IN ('user','assistant','system')" json:"role"`
+
+	Meta datatypes.JSONType[map[string]any] `gorm:"type:jsonb;not null;default:'{}'" swaggertype:"object" json:"meta"`
 
 	PartsMeta datatypes.JSONType[Asset] `gorm:"type:jsonb;not null" swaggertype:"-" json:"-"`
 	Parts     []Part                    `gorm:"-" swaggertype:"array,object" json:"parts"`
@@ -48,13 +59,4 @@ type Part struct {
 
 	// embedding、ocr、asr、caption...
 	Meta map[string]any `json:"meta,omitempty"`
-}
-
-type Asset struct {
-	Bucket string `json:"bucket"`
-	S3Key  string `json:"s3_key"`
-	ETag   string `json:"etag"`
-	SHA256 string `json:"sha256"`
-	MIME   string `json:"mime"`
-	SizeB  int64  `json:"size_b"`
 }

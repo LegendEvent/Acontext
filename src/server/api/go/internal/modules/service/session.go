@@ -74,11 +74,12 @@ func (s *sessionService) List(ctx context.Context, projectID uuid.UUID, spaceID 
 }
 
 type SendMessageInput struct {
-	ProjectID uuid.UUID
-	SessionID uuid.UUID
-	Role      string
-	Parts     []PartIn
-	Files     map[string]*multipart.FileHeader
+	ProjectID   uuid.UUID
+	SessionID   uuid.UUID
+	Role        string
+	Parts       []PartIn
+	MessageMeta map[string]interface{} // Message-level metadata (e.g., name, source_format)
+	Files       map[string]*multipart.FileHeader
 }
 
 type SendMQPublishJSON struct {
@@ -88,10 +89,10 @@ type SendMQPublishJSON struct {
 }
 
 type PartIn struct {
-	Type      string                 `json:"type" validate:"required,oneof=text image audio video file tool-call tool-use tool-result data"` // "text" | "image" | ...
-	Text      string                 `json:"text,omitempty"`                                                                                 // Text sharding
-	FileField string                 `json:"file_field,omitempty"`                                                                           // File field name in the form
-	Meta      map[string]interface{} `json:"meta,omitempty"`                                                                                 // [Optional] metadata
+	Type      string                 `json:"type" validate:"required,oneof=text image audio video file tool-call tool-result data"` // "text" | "image" | ...
+	Text      string                 `json:"text,omitempty"`                                                                        // Text sharding
+	FileField string                 `json:"file_field,omitempty"`                                                                  // File field name in the form
+	Meta      map[string]interface{} `json:"meta,omitempty"`                                                                        // [Optional] metadata
 }
 
 func (p *PartIn) Validate() error {
@@ -108,31 +109,26 @@ func (p *PartIn) Validate() error {
 		if p.Text == "" {
 			return errors.New("text part requires non-empty text field")
 		}
-	case "tool-call", "tool-use":
+	case "tool-call":
+		// UNIFIED FORMAT: only "tool-call" is accepted (no more "tool-use")
 		if p.Meta == nil {
-			return errors.New("tool-call/tool-use part requires meta field")
+			return errors.New("tool-call part requires meta field")
 		}
-		// tool-call uses 'tool_name', tool-use uses 'name'
-		if _, hasToolName := p.Meta["tool_name"]; !hasToolName {
-			if _, hasName := p.Meta["name"]; !hasName {
-				return errors.New("tool-call/tool-use part requires 'tool_name' or 'name' in meta")
-			}
+		// Unified format requires 'name' field
+		if _, hasName := p.Meta["name"]; !hasName {
+			return errors.New("tool-call part requires 'name' in meta")
 		}
-		// tool-call uses 'arguments', tool-use uses 'input'
+		// Unified format requires 'arguments' field
 		if _, hasArguments := p.Meta["arguments"]; !hasArguments {
-			if _, hasInput := p.Meta["input"]; !hasInput {
-				return errors.New("tool-call/tool-use part requires 'arguments' or 'input' in meta")
-			}
+			return errors.New("tool-call part requires 'arguments' in meta")
 		}
 	case "tool-result":
 		if p.Meta == nil {
 			return errors.New("tool-result part requires meta field")
 		}
-		// OpenAI uses 'tool_call_id', Anthropic uses 'tool_use_id'
+		// Unified format requires 'tool_call_id'
 		if _, hasToolCallID := p.Meta["tool_call_id"]; !hasToolCallID {
-			if _, hasToolUseID := p.Meta["tool_use_id"]; !hasToolUseID {
-				return errors.New("tool-result part requires 'tool_call_id' or 'tool_use_id' in meta")
-			}
+			return errors.New("tool-result part requires 'tool_call_id' in meta")
 		}
 	case "data":
 		if p.Meta == nil {
@@ -162,18 +158,9 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 			}
 
 			// upload asset to S3
-			umeta, err := s.blob.UploadFormFile(ctx, "assets/"+in.ProjectID.String(), fh)
+			asset, err := s.blob.UploadFormFile(ctx, "assets/"+in.ProjectID.String(), fh)
 			if err != nil {
 				return nil, fmt.Errorf("upload %s failed: %w", p.FileField, err)
-			}
-
-			asset := &model.Asset{
-				Bucket: umeta.Bucket,
-				S3Key:  umeta.Key,
-				ETag:   umeta.ETag,
-				SHA256: umeta.SHA256,
-				MIME:   umeta.MIME,
-				SizeB:  umeta.SizeB,
 			}
 
 			part.Asset = asset
@@ -188,23 +175,23 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 	}
 
 	// upload parts to S3 as JSON file
-	partsUmeta, err := s.blob.UploadJSON(ctx, "parts/"+in.ProjectID.String(), parts)
+	asset, err := s.blob.UploadJSON(ctx, "parts/"+in.ProjectID.String(), parts)
 	if err != nil {
 		return nil, fmt.Errorf("upload parts to S3 failed: %w", err)
+	}
+
+	// Prepare message metadata
+	messageMeta := in.MessageMeta
+	if messageMeta == nil {
+		messageMeta = make(map[string]interface{})
 	}
 
 	msg := model.Message{
 		SessionID: in.SessionID,
 		Role:      in.Role,
-		PartsMeta: datatypes.NewJSONType(model.Asset{
-			Bucket: partsUmeta.Bucket,
-			S3Key:  partsUmeta.Key,
-			ETag:   partsUmeta.ETag,
-			SHA256: partsUmeta.SHA256,
-			MIME:   partsUmeta.MIME,
-			SizeB:  partsUmeta.SizeB,
-		}),
-		Parts: parts,
+		Meta:      datatypes.NewJSONType(messageMeta), // Store message-level metadata
+		PartsMeta: datatypes.NewJSONType(*asset),
+		Parts:     parts,
 	}
 
 	if err := s.r.CreateMessageWithAssets(ctx, &msg); err != nil {

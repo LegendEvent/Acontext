@@ -55,9 +55,9 @@ export function buildMessageParts(
       parts.push({
         type: "tool-call",
         meta: {
-          tool_name: tc.tool_name,
-          tool_call_id: tc.tool_call_id,
-          arguments: params,
+          id: tc.call_id,        // Unified: tool call ID
+          name: tc.name,          // Unified: tool name
+          arguments: tc.parameters, // Unified: JSON string format
         },
       });
     } catch (e) {
@@ -69,9 +69,9 @@ export function buildMessageParts(
   toolResults.forEach((tr) => {
     parts.push({
       type: "tool-result",
+      text: tr.result,           // Store result in text field
       meta: {
-        tool_call_id: tr.tool_call_id,
-        result: tr.result,
+        tool_call_id: tr.tool_call_id, // Unified: reference to tool call
       },
     });
   });

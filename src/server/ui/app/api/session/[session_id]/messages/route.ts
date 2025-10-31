@@ -85,10 +85,11 @@ export async function POST(
         // Handle file upload
         const formData = await request.formData();
 
-        // If there's JSON in payload, add format parameter
+        // If there's JSON in payload, add format parameter at the top level
         const payloadStr = formData.get("payload") as string | null;
         if (payloadStr) {
           const payload = JSON.parse(payloadStr);
+          // Add format parameter at the same level as blob
           payload.format = MESSAGE_FORMAT;
           formData.set("payload", JSON.stringify(payload));
         }
@@ -106,7 +107,8 @@ export async function POST(
         // Handle JSON data
         const body = await request.json();
 
-        // Add format parameter
+        // Add format parameter at the same level as blob
+        // Expected format: { blob: { role, parts }, format: "acontext" }
         const bodyWithFormat = {
           ...body,
           format: MESSAGE_FORMAT,
