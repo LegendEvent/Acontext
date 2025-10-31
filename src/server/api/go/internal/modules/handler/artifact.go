@@ -356,7 +356,7 @@ func (h *ArtifactHandler) ListArtifacts(c *gin.Context) {
 	} else {
 		// Validate that path does not contain filename
 		if path, _ := path.SplitFilePath(pathQuery); path != pathQuery {
-			c.JSON(http.StatusBadRequest, serializer.ParamErr("path cannot contain filename", errors.New("path cannot contain filename")))
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("both ends of the path must be '/'", errors.New("both ends of the path must be '/'")))
 			return
 		}
 	}
