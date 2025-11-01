@@ -108,6 +108,12 @@ export interface GetTasksResp {
   has_more: boolean;
 }
 
+export interface GetSpacesResp {
+  items: Space[];
+  next_cursor?: string;
+  has_more: boolean;
+}
+
 export interface Block {
   id: string;
   space_id: string;

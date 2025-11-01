@@ -128,12 +128,22 @@ export default function SessionsPage() {
 
   const loadSpaces = async () => {
     try {
-      const res = await getSpaces();
-      if (res.code !== 0) {
-        console.error(res.message);
-        return;
+      const allSpcs: Space[] = [];
+      let cursor: string | undefined = undefined;
+      let hasMore = true;
+
+      while (hasMore) {
+        const res = await getSpaces(50, cursor, false);
+        if (res.code !== 0) {
+          console.error(res.message);
+          break;
+        }
+        allSpcs.push(...(res.data?.items || []));
+        cursor = res.data?.next_cursor;
+        hasMore = res.data?.has_more || false;
       }
-      setSpaces(res.data || []);
+
+      setSpaces(allSpcs);
     } catch (error) {
       console.error("Failed to load spaces:", error);
     }

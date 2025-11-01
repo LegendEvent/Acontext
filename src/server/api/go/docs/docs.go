@@ -970,6 +970,26 @@ const docTemplate = `{
                     "space"
                 ],
                 "summary": "Get spaces",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit of spaces to return, default 20. Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by created_at descending if true, ascending if false (default false)",
+                        "name": "time_desc",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -982,10 +1002,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.Space"
-                                            }
+                                            "$ref": "#/definitions/service.ListSpacesOutput"
                                         }
                                     }
                                 }
@@ -2334,6 +2351,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.Task"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.ListSpacesOutput": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Space"
                     }
                 },
                 "next_cursor": {
