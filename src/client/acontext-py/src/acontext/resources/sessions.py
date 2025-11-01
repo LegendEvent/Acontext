@@ -11,7 +11,9 @@ from ..uploads import FileUpload
 from openai.types.chat import ChatCompletionMessageParam
 from anthropic.types import MessageParam
 
-UploadPayload = FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str | None]
+UploadPayload = (
+    FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str | None]
+)
 MessageBlob = AcontextMessage | ChatCompletionMessageParam | MessageParam
 
 
@@ -55,14 +57,18 @@ class SessionsAPI:
         configs: Mapping[str, Any] | MutableMapping[str, Any],
     ) -> None:
         payload = {"configs": configs}
-        self._requester.request("PUT", f"/session/{session_id}/configs", json_data=payload)
+        self._requester.request(
+            "PUT", f"/session/{session_id}/configs", json_data=payload
+        )
 
     def get_configs(self, session_id: str) -> Any:
         return self._requester.request("GET", f"/session/{session_id}/configs")
 
     def connect_to_space(self, session_id: str, *, space_id: str) -> None:
         payload = {"space_id": space_id}
-        self._requester.request("POST", f"/session/{session_id}/connect_to_space", json_data=payload)
+        self._requester.request(
+            "POST", f"/session/{session_id}/connect_to_space", json_data=payload
+        )
 
     def get_tasks(
         self,
@@ -87,28 +93,27 @@ class SessionsAPI:
         session_id: str,
         *,
         blob: MessageBlob,
-        format: Literal["acontext", "openai", "anthropic"] = "acontext",
+        format: Literal["acontext", "openai", "anthropic"] = "openai",
         file_field: str | None = "",
-        file: FileUpload | None = None
+        file: FileUpload | None = None,
     ) -> Any:
         if format not in {"acontext", "openai", "anthropic"}:
-            raise ValueError("format must be one of {'acontext', 'openai', 'anthropic'}")
+            raise ValueError(
+                "format must be one of {'acontext', 'openai', 'anthropic'}"
+            )
 
         payload = {
             "format": format,
         }
         if format == "acontext":
-           payload["blob"] = asdict(blob)
+            payload["blob"] = asdict(blob)
         else:
-           payload["blob"] = blob
-
+            payload["blob"] = blob
 
         file_payload: dict[str, tuple[str, BinaryIO, str | None]] | None = None
         if file:
             # only support upload one file now
-            file_payload = {
-                file_field: file.as_httpx()
-            }
+            file_payload = {file_field: file.as_httpx()}
 
         if file_payload:
             form_data = {"payload": json.dumps(payload)}
@@ -140,9 +145,13 @@ class SessionsAPI:
         if cursor is not None:
             params["cursor"] = cursor
         if with_asset_public_url is not None:
-            params["with_asset_public_url"] = "true" if with_asset_public_url else "false"
+            params["with_asset_public_url"] = (
+                "true" if with_asset_public_url else "false"
+            )
         if format is not None:
             params["format"] = format
         if time_desc is not None:
             params["time_desc"] = "true" if time_desc else "false"
-        return self._requester.request("GET", f"/session/{session_id}/messages", params=params or None)
+        return self._requester.request(
+            "GET", f"/session/{session_id}/messages", params=params or None
+        )
