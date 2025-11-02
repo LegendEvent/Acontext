@@ -13,7 +13,6 @@ from .ctx import SOPCtx
 
 async def submit_sop_handler(ctx: SOPCtx, llm_arguments: dict) -> Result[str]:
 
-    print(llm_arguments)
     try:
         sop_data = SOPData.model_validate(llm_arguments)
     except ValidationError as e:

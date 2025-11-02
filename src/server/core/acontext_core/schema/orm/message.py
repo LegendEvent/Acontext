@@ -25,7 +25,7 @@ class Asset(BaseModel):
 
 
 class ToolCallMeta(BaseModel):
-    tool_name: str
+    name: str
     arguments: dict
 
 

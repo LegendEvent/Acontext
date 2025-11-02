@@ -20,7 +20,7 @@ def pack_part_line(role: str, part: Part, truncate_chars: int = None) -> str:
         tool_call_meta = ToolCallMeta(**part.meta)
         tool_data = json.dumps(
             {
-                "tool_name": tool_call_meta.tool_name,
+                "tool_name": tool_call_meta.name,
                 "arguments": tool_call_meta.arguments,
             }
         )
