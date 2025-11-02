@@ -1,0 +1,727 @@
+import pytest
+import uuid
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from acontext_core.schema.orm import Block, Project, Space, ToolReference, ToolSOP
+from acontext_core.schema.result import Result
+from acontext_core.schema.error_code import Code
+from acontext_core.schema.block.sop_block import SOPData, SOPStep
+from acontext_core.schema.orm.block import (
+    BLOCK_TYPE_FOLDER,
+    BLOCK_TYPE_PAGE,
+    BLOCK_TYPE_SOP,
+)
+from acontext_core.infra.db import DatabaseClient
+from acontext_core.service.data.block import (
+    create_new_path_block,
+    write_sop_block_to_parent,
+    _find_block_sort,
+)
+
+
+class TestPageBlock:
+    @pytest.mark.asyncio
+    async def test_create_new_page_success(self):
+        """Test creating a new page block"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Create test data
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create multiple pages to test sort ordering
+            page_ids = []
+            for i in range(3):
+                r = await create_new_path_block(session, space.id, f"Test Page {i}")
+                assert r.ok(), f"Failed to create new page: {r.error}"
+                page_id = r.unpack()[0]
+                assert page_id is not None
+                page_ids.append(page_id)
+
+            # Verify pages were created with correct sort order
+            for i, page_id in enumerate(page_ids):
+                page = await session.get(Block, page_id)
+                assert page is not None
+                assert page.title == f"Test Page {i}"
+                assert page.type == BLOCK_TYPE_PAGE
+                assert page.sort == i
+                assert page.parent_id is None
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_create_new_page_with_props(self):
+        """Test creating a new page block with custom props"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            props = {"custom_field": "custom_value", "count": 42}
+            r = await create_new_path_block(
+                session, space.id, "Page with Props", props=props
+            )
+            assert r.ok()
+            page_id = r.unpack()[0]
+
+            page = await session.get(Block, page_id)
+            assert page.props == props
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_create_new_page_with_parent(self):
+        """Test creating a new page block with a parent"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page
+            r = await create_new_path_block(
+                session, space.id, "Parent Page", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            # Create child pages
+            child_ids = []
+            for i in range(2):
+                r = await create_new_path_block(
+                    session, space.id, f"Child Page {i}", par_block_id=parent_id
+                )
+                assert r.ok()
+                child_ids.append(r.unpack()[0])
+
+            # Verify children
+            for i, child_id in enumerate(child_ids):
+                child = await session.get(Block, child_id)
+                assert child.parent_id == parent_id
+                assert child.sort == i
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_create_new_page_invalid_parent(self):
+        """Test creating a page with non-existent parent fails"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            fake_parent_id = uuid.uuid4()
+            r = await create_new_path_block(
+                session, space.id, "Test Page", par_block_id=fake_parent_id
+            )
+            assert not r.ok()
+            assert "not found" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+
+class TestSOPBlock:
+    @pytest.mark.asyncio
+    async def test_write_sop_with_tool_sops(self):
+        """Test creating SOP block with tool SOPs"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page for SOP
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            # Create SOP data
+            sop_data = SOPData(
+                use_when="Testing SOP creation",
+                preferences="Use best practices",
+                tool_sops=[
+                    SOPStep(tool_name="test_tool", action="run with debug=true"),
+                    SOPStep(tool_name="another_tool", action="execute with retries=3"),
+                ],
+            )
+
+            r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data)
+            assert r.ok(), f"Failed to write SOP: {r.error if not r.ok() else ''}"
+            sop_block_id = r.data
+
+            # Verify SOP block
+            sop_block = await session.get(Block, sop_block_id)
+            assert sop_block is not None
+            assert sop_block.type == BLOCK_TYPE_SOP
+            assert sop_block.title == "Testing SOP creation"
+            assert sop_block.props["preferences"] == "Use best practices"
+            assert sop_block.parent_id == parent_id
+
+            # Verify tool references were created
+            query = select(ToolReference).where(ToolReference.project_id == project.id)
+            result = await session.execute(query)
+            tool_refs = result.scalars().all()
+            assert len(tool_refs) == 2
+            tool_names = {tr.name for tr in tool_refs}
+            assert tool_names == {"test_tool", "another_tool"}
+
+            # Verify ToolSOP entries
+            query = select(ToolSOP).where(ToolSOP.sop_block_id == sop_block_id)
+            result = await session.execute(query)
+            tool_sops = result.scalars().all()
+            assert len(tool_sops) == 2
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_write_sop_preferences_only(self):
+        """Test creating SOP block with only preferences (no tool SOPs)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            sop_data = SOPData(
+                use_when="Preferences only SOP",
+                preferences="Always use strict mode",
+                tool_sops=[],
+            )
+
+            r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data)
+            assert r.ok()
+            sop_block_id = r.data
+
+            sop_block = await session.get(Block, sop_block_id)
+            assert sop_block.props["preferences"] == "Always use strict mode"
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_write_sop_reuses_existing_tool_reference(self):
+        """Test that SOP creation reuses existing ToolReference"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create existing tool reference
+            existing_tool = ToolReference(name="existing_tool", project_id=project.id)
+            session.add(existing_tool)
+            await session.flush()
+            existing_tool_id = existing_tool.id
+
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            # Create SOP using the existing tool
+            sop_data = SOPData(
+                use_when="Reuse tool test",
+                preferences="",
+                tool_sops=[
+                    SOPStep(tool_name="existing_tool", action="run with param=value")
+                ],
+            )
+
+            r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data)
+            assert r.ok()
+
+            # Verify no new ToolReference was created
+            query = select(func.count(ToolReference.id)).where(
+                ToolReference.project_id == project.id
+            )
+            result = await session.execute(query)
+            count = result.scalar()
+            assert count == 1  # Still only one tool reference
+
+            # Verify ToolSOP uses existing reference
+            query = (
+                select(ToolSOP)
+                .join(ToolReference)
+                .where(ToolReference.name == "existing_tool")
+            )
+            result = await session.execute(query)
+            tool_sop = result.scalar()
+            assert tool_sop.tool_reference_id == existing_tool_id
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_write_sop_multiple_with_sort(self):
+        """Test creating multiple SOPs under same parent with correct sort order"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            # Create multiple SOPs
+            sop_ids = []
+            for i in range(3):
+                sop_data = SOPData(
+                    use_when=f"SOP {i}",
+                    preferences=f"Preference {i}",
+                    tool_sops=[],
+                )
+                r = await write_sop_block_to_parent(
+                    session, space.id, parent_id, sop_data
+                )
+                assert r.ok()
+                sop_ids.append(r.data)
+
+            # Verify sort order
+            for i, sop_id in enumerate(sop_ids):
+                sop = await session.get(Block, sop_id)
+                assert sop is not None
+                assert sop.sort == i
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_write_sop_empty_data_fails(self):
+        """Test that empty SOP data (no tool_sops and empty preferences) fails"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            sop_data = SOPData(
+                use_when="Empty SOP", preferences="   ", tool_sops=[]  # Only whitespace
+            )
+
+            r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data)
+            assert not r.ok()
+            assert "empty" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_write_sop_empty_tool_name_fails(self):
+        """Test that empty tool name fails"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            sop_data = SOPData(
+                use_when="Invalid tool",
+                preferences="Test",
+                tool_sops=[SOPStep(tool_name="  ", action="some action")],
+            )
+
+            r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data)
+            assert not r.ok()
+            assert "empty" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_write_sop_tool_name_case_insensitive(self):
+        """Test that tool names are normalized to lowercase"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            r = await create_new_path_block(session, space.id, "Parent Page")
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            sop_data = SOPData(
+                use_when="Case test",
+                preferences="Test",
+                tool_sops=[SOPStep(tool_name="TestTool", action="run")],
+            )
+
+            r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data)
+            assert r.ok()
+
+            # Verify tool name is lowercase
+            query = select(ToolReference).where(ToolReference.project_id == project.id)
+            result = await session.execute(query)
+            tool_ref = result.scalar()
+            assert tool_ref.name == "testtool"
+
+            await session.delete(project)
+
+
+class TestFindBlockSort:
+    @pytest.mark.asyncio
+    async def test_find_block_sort_no_parent(self):
+        """Test _find_block_sort with no parent (root level)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # First call should return 0
+            r = await _find_block_sort(
+                session, space.id, None, block_type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            assert r.unpack()[0] == 0
+
+            # Create a page
+            await create_new_path_block(session, space.id, "Page 1")
+
+            # Second call should return 1
+            r = await _find_block_sort(
+                session, space.id, None, block_type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            assert r.unpack()[0] == 1
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_find_block_sort_with_parent(self):
+        """Test _find_block_sort with a parent block"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent
+            r = await create_new_path_block(
+                session, space.id, "Parent", type=BLOCK_TYPE_FOLDER
+            )
+            parent_id = r.unpack()[0]
+
+            # First child should get sort 0
+            r = await _find_block_sort(session, space.id, parent_id, BLOCK_TYPE_PAGE)
+            assert r.ok()
+            assert r.unpack()[0] == 0
+
+            # Create a child
+            await create_new_path_block(
+                session,
+                space.id,
+                "Child 1",
+                par_block_id=parent_id,
+                type=BLOCK_TYPE_PAGE,
+            )
+
+            # Second child should get sort 1
+            r = await _find_block_sort(session, space.id, parent_id, BLOCK_TYPE_PAGE)
+            assert r.ok()
+            assert r.unpack()[0] == 1
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_find_block_sort_invalid_parent(self):
+        """Test _find_block_sort with invalid parent ID"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            fake_parent_id = uuid.uuid4()
+            r = await _find_block_sort(
+                session, space.id, fake_parent_id, BLOCK_TYPE_PAGE
+            )
+            assert not r.ok()
+            assert "not found" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+
+class TestFolderBlock:
+    @pytest.mark.asyncio
+    async def test_create_new_folder_success(self):
+        """Test creating a new folder block"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create folders to test sort ordering
+            folder_ids = []
+            for i in range(3):
+                r = await create_new_path_block(
+                    session, space.id, f"Test Folder {i}", type=BLOCK_TYPE_FOLDER
+                )
+                assert r.ok(), f"Failed to create new folder: {r.error}"
+                folder_id = r.unpack()[0]
+                assert folder_id is not None
+                folder_ids.append(folder_id)
+
+            # Verify folders were created with correct sort order
+            for i, folder_id in enumerate(folder_ids):
+                folder = await session.get(Block, folder_id)
+                assert folder is not None
+                assert folder.title == f"Test Folder {i}"
+                assert folder.type == BLOCK_TYPE_FOLDER
+                assert folder.sort == i
+                assert folder.parent_id is None
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_create_nested_folders(self):
+        """Test creating nested folder structure"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent folder
+            r = await create_new_path_block(
+                session, space.id, "Parent Folder", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            parent_id = r.unpack()[0]
+
+            # Create child folders
+            child_ids = []
+            for i in range(2):
+                r = await create_new_path_block(
+                    session,
+                    space.id,
+                    f"Child Folder {i}",
+                    par_block_id=parent_id,
+                    type=BLOCK_TYPE_FOLDER,
+                )
+                assert r.ok()
+                child_ids.append(r.unpack()[0])
+
+            # Verify children
+            for i, child_id in enumerate(child_ids):
+                child = await session.get(Block, child_id)
+                assert child.parent_id == parent_id
+                assert child.type == BLOCK_TYPE_FOLDER
+                assert child.sort == i
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_create_page_in_folder(self):
+        """Test creating a page inside a folder"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create folder
+            r = await create_new_path_block(
+                session, space.id, "Documents", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            folder_id = r.unpack()[0]
+
+            # Create pages inside the folder
+            page_ids = []
+            for i in range(2):
+                r = await create_new_path_block(
+                    session,
+                    space.id,
+                    f"Document {i}",
+                    par_block_id=folder_id,
+                    type=BLOCK_TYPE_PAGE,
+                )
+                assert r.ok()
+                page_ids.append(r.unpack()[0])
+
+            # Verify pages are in the folder
+            for i, page_id in enumerate(page_ids):
+                page = await session.get(Block, page_id)
+                assert page.parent_id == folder_id
+                assert page.type == BLOCK_TYPE_PAGE
+                assert page.title == f"Document {i}"
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_create_folder_with_props(self):
+        """Test creating a folder with custom props"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            props = {"color": "blue", "icon": "folder"}
+            r = await create_new_path_block(
+                session, space.id, "Special Folder", props=props, type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            folder_id = r.unpack()[0]
+
+            folder = await session.get(Block, folder_id)
+            assert folder.props == props
+
+            await session.delete(project)
