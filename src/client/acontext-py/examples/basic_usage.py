@@ -43,18 +43,14 @@ def exercise_spaces(client: AcontextClient) -> tuple[str, dict[str, Any]]:
     summary: dict[str, Any] = {}
 
     summary["initial_list"] = client.spaces.list()
-    summary["status"] = client.spaces.status()
     space = client.spaces.create(configs={"name": SPACE_CONFIG_NAME})
-    space_id = space["id"]
+    space_id = space.id
     summary["created_space"] = space
 
-    configs = client.spaces.get_configs(space_id) or {}
+    configs = client.spaces.get_configs(space_id).configs or {}
     client.spaces.update_configs(space_id, configs={**configs, "sdk_e2e": True})
     summary["updated_configs"] = client.spaces.get_configs(space_id)
 
-    summary["semantic_answer"] = client.spaces.get_semantic_answer(space_id, query="hello there")
-    summary["semantic_global"] = client.spaces.get_semantic_global(space_id, query="hello there")
-    summary["semantic_grep"] = client.spaces.get_semantic_grep(space_id, query="hello there")
     summary["list_after_create"] = client.spaces.list()
 
     return space_id, summary
@@ -65,33 +61,33 @@ def exercise_blocks(client: AcontextClient, space_id: str) -> dict[str, Any]:
     summary["initial_blocks"] = client.blocks.list(space_id)
 
     folder = client.blocks.create(space_id, block_type="folder", title="SDK E2E Folder")
-    page_a = client.blocks.create(space_id, parent_id=folder["id"], block_type="page", title="SDK E2E Page A")
-    page_b = client.blocks.create(space_id, parent_id=folder["id"], block_type="page", title="SDK E2E Page B")
+    page_a = client.blocks.create(space_id, parent_id=folder.id, block_type="page", title="SDK E2E Page A")
+    page_b = client.blocks.create(space_id, parent_id=folder.id, block_type="page", title="SDK E2E Page B")
     text_block = client.blocks.create(
         space_id,
-        parent_id=page_a["id"],
+        parent_id=page_a.id,
         block_type="text",
         title="Initial Block",
         props={"text": "Plan the sprint goals"},
     )
 
-    summary["text_block_properties"] = client.blocks.get_properties(space_id, text_block["id"])
+    summary["text_block_properties"] = client.blocks.get_properties(space_id, text_block.id)
     client.blocks.update_properties(
         space_id,
-        text_block["id"],
+        text_block.id,
         title="Updated Block",
         props={"text": "Updated block contents"},
     )
 
-    client.blocks.move(space_id, text_block["id"], parent_id=page_b["id"])
-    client.blocks.update_sort(space_id, text_block["id"], sort=0)
+    client.blocks.move(space_id, text_block.id, parent_id=page_b.id)
+    client.blocks.update_sort(space_id, text_block.id, sort=0)
 
     summary["blocks_after_updates"] = client.blocks.list(space_id)
 
-    client.blocks.delete(space_id, text_block["id"])
-    client.blocks.delete(space_id, page_b["id"])
-    client.blocks.delete(space_id, page_a["id"])
-    client.blocks.delete(space_id, folder["id"])
+    client.blocks.delete(space_id, text_block.id)
+    client.blocks.delete(space_id, page_b.id)
+    client.blocks.delete(space_id, page_a.id)
+    client.blocks.delete(space_id, folder.id)
     summary["final_blocks"] = client.blocks.list(space_id)
 
     return summary
@@ -110,7 +106,7 @@ def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
 
     summary["initial_sessions"] = client.sessions.list(space_id=space_id, not_connected=False)
     session = client.sessions.create(space_id=space_id, configs={"mode": "sdk-e2e"})
-    session_id = session["id"]
+    session_id = session.id
     summary["session_created"] = session
 
     client.sessions.update_configs(session_id, configs={"mode": "sdk-e2e-updated"})
@@ -217,20 +213,21 @@ def exercise_disks(client: AcontextClient) -> dict[str, Any]:
 
     summary["initial_disks"] = client.disks.list()
     disk = client.disks.create()
-    disk_id = disk["id"]
+    disk_id = disk.id
     summary["disk_created"] = disk
 
     upload = build_file_upload()
     client.disks.artifacts.upsert(
         disk_id,
         file=upload,
-        file_path=f"notes/{upload.filename}",
+        file_path="/notes/",
         meta={"source": "sdk-e2e"},
     )
 
     summary["artifact_get"] = client.disks.artifacts.get(
         disk_id,
-        file_path=f"notes/{upload.filename}",
+        file_path="/notes/",
+        filename=upload.filename,
         with_public_url=True,
         with_content=True,
         expire=60,
@@ -238,13 +235,14 @@ def exercise_disks(client: AcontextClient) -> dict[str, Any]:
 
     client.disks.artifacts.update(
         disk_id,
-        file_path=f"notes/{upload.filename}",
+        file_path="/notes/",
+        filename=upload.filename,
         meta={"source": "sdk-e2e", "reviewed": True},
     )
 
     summary["artifact_list"] = client.disks.artifacts.list(disk_id, path="/notes/")
 
-    client.disks.artifacts.delete(disk_id, file_path=f"notes/{upload.filename}")
+    client.disks.artifacts.delete(disk_id, file_path="notes", filename=upload.filename)
     client.disks.delete(disk_id)
     summary["disks_after_delete"] = client.disks.list()
 
@@ -282,6 +280,7 @@ def main() -> None:
         raise
     else:
         print(json.dumps(report, indent=2, default=str))
+        pass
 
 
 if __name__ == "__main__":
