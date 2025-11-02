@@ -155,7 +155,10 @@
     "size": "Size",
     "preview": "Preview",
     "backToSpaces": "Back to Spaces",
-    "backToSessions": "Back to Sessions"
+    "backToSessions": "Back to Sessions",
+    "task": "Task",
+    "noTaskAssociated": "No task associated",
+    "viewTask": "View Task"
   },
   "pages": {
     "spaces": "Spaces",

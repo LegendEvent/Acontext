@@ -77,6 +77,7 @@ export interface Message {
   role: string;
   meta?: Record<string, unknown>;
   parts: Part[];
+  task_id?: string | null;
   session_task_process_status: string;
   created_at: string;
   updated_at: string;

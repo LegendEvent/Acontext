@@ -155,7 +155,10 @@
     "size": "大小",
     "preview": "预览",
     "backToSpaces": "返回空间列表",
-    "backToSessions": "返回会话列表"
+    "backToSessions": "返回会话列表",
+    "task": "任务",
+    "noTaskAssociated": "无关联任务",
+    "viewTask": "查看任务"
   },
   "pages": {
     "spaces": "空间",
