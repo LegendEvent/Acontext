@@ -114,6 +114,12 @@ export interface GetSpacesResp {
   has_more: boolean;
 }
 
+export interface GetSessionsResp {
+  items: Session[];
+  next_cursor?: string;
+  has_more: boolean;
+}
+
 export interface Block {
   id: string;
   space_id: string;

@@ -17,7 +17,7 @@ type SessionRepo interface {
 	Delete(ctx context.Context, projectID uuid.UUID, sessionID uuid.UUID) error
 	Update(ctx context.Context, s *model.Session) error
 	Get(ctx context.Context, s *model.Session) (*model.Session, error)
-	List(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool) ([]model.Session, error)
+	ListWithCursor(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Session, error)
 	CreateMessageWithAssets(ctx context.Context, msg *model.Message) error
 	ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Message, error)
 	ListAllMessagesBySession(ctx context.Context, sessionID uuid.UUID) ([]model.Message, error)
@@ -111,18 +111,36 @@ func (r *sessionRepo) Get(ctx context.Context, s *model.Session) (*model.Session
 	return s, r.db.WithContext(ctx).Where(&model.Session{ID: s.ID}).First(s).Error
 }
 
-func (r *sessionRepo) List(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool) ([]model.Session, error) {
-	var sessions []model.Session
-	query := r.db.WithContext(ctx).Where(&model.Session{ProjectID: projectID})
+func (r *sessionRepo) ListWithCursor(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Session, error) {
+	q := r.db.WithContext(ctx).Where("project_id = ?", projectID)
 
 	if notConnected {
-		query = query.Where("space_id IS NULL")
+		q = q.Where("space_id IS NULL")
 	} else if spaceID != nil {
-		query = query.Where("space_id = ?", spaceID)
+		q = q.Where("space_id = ?", spaceID)
 	}
 
-	err := query.Order("created_at DESC").Find(&sessions).Error
-	return sessions, err
+	// Apply cursor-based pagination filter if cursor is provided
+	if !afterCreatedAt.IsZero() && afterID != uuid.Nil {
+		// Determine comparison operator based on sort direction
+		comparisonOp := ">"
+		if timeDesc {
+			comparisonOp = "<"
+		}
+		q = q.Where(
+			"(created_at "+comparisonOp+" ?) OR (created_at = ? AND id "+comparisonOp+" ?)",
+			afterCreatedAt, afterCreatedAt, afterID,
+		)
+	}
+
+	// Apply ordering based on sort direction
+	orderBy := "created_at ASC, id ASC"
+	if timeDesc {
+		orderBy = "created_at DESC, id DESC"
+	}
+
+	var sessions []model.Session
+	return sessions, q.Order(orderBy).Limit(limit).Find(&sessions).Error
 }
 
 func (r *sessionRepo) CreateMessageWithAssets(ctx context.Context, msg *model.Message) error {

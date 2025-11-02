@@ -474,10 +474,28 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "example": "true",
-                        "description": "Filter sessions not connected to any space (true/false)",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Filter sessions not connected to any space (default false)",
                         "name": "not_connected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit of sessions to return, default 20. Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by created_at descending if true, ascending if false (default false)",
+                        "name": "time_desc",
                         "in": "query"
                     }
                 ],
@@ -493,10 +511,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.Session"
-                                            }
+                                            "$ref": "#/definitions/service.ListSessionsOutput"
                                         }
                                     }
                                 }
@@ -2351,6 +2366,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.Task"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.ListSessionsOutput": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Session"
                     }
                 },
                 "next_cursor": {

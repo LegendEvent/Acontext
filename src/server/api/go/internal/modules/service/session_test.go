@@ -55,8 +55,8 @@ func (m *MockSessionRepo) ListBySessionWithCursor(ctx context.Context, sessionID
 	return args.Get(0).([]model.Message), args.Error(1)
 }
 
-func (m *MockSessionRepo) List(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool) ([]model.Session, error) {
-	args := m.Called(ctx, projectID, spaceID, notConnected)
+func (m *MockSessionRepo) ListWithCursor(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Session, error) {
+	args := m.Called(ctx, projectID, spaceID, notConnected, afterCreatedAt, afterID, limit, timeDesc)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -440,16 +440,19 @@ func TestSessionService_List(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		spaceID      *uuid.UUID
-		notConnected bool
+		input        ListSessionsInput
 		setup        func(*MockSessionRepo)
 		wantErr      bool
 		errMsg       string
 	}{
 		{
-			name:         "successful sessions retrieval - all sessions",
-			spaceID:      nil,
-			notConnected: false,
+			name: "successful sessions retrieval - all sessions",
+			input: ListSessionsInput{
+				ProjectID:    projectID,
+				SpaceID:      nil,
+				NotConnected: false,
+				Limit:        10,
+			},
 			setup: func(repo *MockSessionRepo) {
 				expectedSessions := []model.Session{
 					{
@@ -461,14 +464,18 @@ func TestSessionService_List(t *testing.T) {
 						ProjectID: projectID,
 					},
 				}
-				repo.On("List", ctx, projectID, (*uuid.UUID)(nil), false).Return(expectedSessions, nil)
+				repo.On("ListWithCursor", ctx, projectID, (*uuid.UUID)(nil), false, time.Time{}, uuid.UUID{}, 11, false).Return(expectedSessions, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:         "successful sessions retrieval - filter by space_id",
-			spaceID:      &spaceID,
-			notConnected: false,
+			name: "successful sessions retrieval - filter by space_id",
+			input: ListSessionsInput{
+				ProjectID:    projectID,
+				SpaceID:      &spaceID,
+				NotConnected: false,
+				Limit:        10,
+			},
 			setup: func(repo *MockSessionRepo) {
 				expectedSessions := []model.Session{
 					{
@@ -477,14 +484,18 @@ func TestSessionService_List(t *testing.T) {
 						SpaceID:   &spaceID,
 					},
 				}
-				repo.On("List", ctx, projectID, &spaceID, false).Return(expectedSessions, nil)
+				repo.On("ListWithCursor", ctx, projectID, &spaceID, false, time.Time{}, uuid.UUID{}, 11, false).Return(expectedSessions, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:         "successful sessions retrieval - not connected",
-			spaceID:      nil,
-			notConnected: true,
+			name: "successful sessions retrieval - not connected",
+			input: ListSessionsInput{
+				ProjectID:    projectID,
+				SpaceID:      nil,
+				NotConnected: true,
+				Limit:        10,
+			},
 			setup: func(repo *MockSessionRepo) {
 				expectedSessions := []model.Session{
 					{
@@ -493,25 +504,33 @@ func TestSessionService_List(t *testing.T) {
 						SpaceID:   nil,
 					},
 				}
-				repo.On("List", ctx, projectID, (*uuid.UUID)(nil), true).Return(expectedSessions, nil)
+				repo.On("ListWithCursor", ctx, projectID, (*uuid.UUID)(nil), true, time.Time{}, uuid.UUID{}, 11, false).Return(expectedSessions, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:         "empty sessions list",
-			spaceID:      nil,
-			notConnected: false,
+			name: "empty sessions list",
+			input: ListSessionsInput{
+				ProjectID:    projectID,
+				SpaceID:      nil,
+				NotConnected: false,
+				Limit:        10,
+			},
 			setup: func(repo *MockSessionRepo) {
-				repo.On("List", ctx, projectID, (*uuid.UUID)(nil), false).Return([]model.Session{}, nil)
+				repo.On("ListWithCursor", ctx, projectID, (*uuid.UUID)(nil), false, time.Time{}, uuid.UUID{}, 11, false).Return([]model.Session{}, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:         "list failure",
-			spaceID:      nil,
-			notConnected: false,
+			name: "list failure",
+			input: ListSessionsInput{
+				ProjectID:    projectID,
+				SpaceID:      nil,
+				NotConnected: false,
+				Limit:        10,
+			},
 			setup: func(repo *MockSessionRepo) {
-				repo.On("List", ctx, projectID, (*uuid.UUID)(nil), false).Return(nil, errors.New("database error"))
+				repo.On("ListWithCursor", ctx, projectID, (*uuid.UUID)(nil), false, time.Time{}, uuid.UUID{}, 11, false).Return(nil, errors.New("database error"))
 			},
 			wantErr: true,
 		},
@@ -536,7 +555,7 @@ func TestSessionService_List(t *testing.T) {
 			}
 			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
 
-			result, err := service.List(ctx, projectID, tt.spaceID, tt.notConnected)
+			result, err := service.List(ctx, tt.input)
 
 			if tt.wantErr {
 				assert.Error(t, err)

@@ -400,6 +400,17 @@ definitions:
       next_cursor:
         type: string
     type: object
+  service.ListSessionsOutput:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/model.Session'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   service.ListSpacesOutput:
     properties:
       has_more:
@@ -701,10 +712,24 @@ paths:
         in: query
         name: space_id
         type: string
-      - description: Filter sessions not connected to any space (true/false)
-        example: "true"
+      - description: Filter sessions not connected to any space (default false)
+        example: false
         in: query
         name: not_connected
+        type: boolean
+      - description: Limit of sessions to return, default 20. Max 200.
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination. Use the cursor from the previous response
+          to get the next page.
+        in: query
+        name: cursor
+        type: string
+      - description: Order by created_at descending if true, ascending if false (default
+          false)
+        in: query
+        name: time_desc
         type: string
       produces:
       - application/json
@@ -716,9 +741,7 @@ paths:
             - $ref: '#/definitions/serializer.Response'
             - properties:
                 data:
-                  items:
-                    $ref: '#/definitions/model.Session'
-                  type: array
+                  $ref: '#/definitions/service.ListSessionsOutput'
               type: object
       security:
       - BearerAuth: []

@@ -24,7 +24,7 @@ type SessionService interface {
 	Delete(ctx context.Context, projectID uuid.UUID, sessionID uuid.UUID) error
 	UpdateByID(ctx context.Context, ss *model.Session) error
 	GetByID(ctx context.Context, ss *model.Session) (*model.Session, error)
-	List(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool) ([]model.Session, error)
+	List(ctx context.Context, in ListSessionsInput) (*ListSessionsOutput, error)
 	SendMessage(ctx context.Context, in SendMessageInput) (*model.Message, error)
 	GetMessages(ctx context.Context, in GetMessagesInput) (*GetMessagesOutput, error)
 }
@@ -76,8 +76,51 @@ func (s *sessionService) GetByID(ctx context.Context, ss *model.Session) (*model
 	return s.sessionRepo.Get(ctx, ss)
 }
 
-func (s *sessionService) List(ctx context.Context, projectID uuid.UUID, spaceID *uuid.UUID, notConnected bool) ([]model.Session, error) {
-	return s.sessionRepo.List(ctx, projectID, spaceID, notConnected)
+type ListSessionsInput struct {
+	ProjectID    uuid.UUID  `json:"project_id"`
+	SpaceID      *uuid.UUID `json:"space_id,omitempty"`
+	NotConnected bool       `json:"not_connected"`
+	Limit        int        `json:"limit"`
+	Cursor       string     `json:"cursor"`
+	TimeDesc     bool       `json:"time_desc"`
+}
+
+type ListSessionsOutput struct {
+	Items      []model.Session `json:"items"`
+	NextCursor string          `json:"next_cursor,omitempty"`
+	HasMore    bool            `json:"has_more"`
+}
+
+func (s *sessionService) List(ctx context.Context, in ListSessionsInput) (*ListSessionsOutput, error) {
+	// Parse cursor (createdAt, id); an empty cursor indicates starting from the latest
+	var afterT time.Time
+	var afterID uuid.UUID
+	var err error
+	if in.Cursor != "" {
+		afterT, afterID, err = paging.DecodeCursor(in.Cursor)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Query limit+1 is used to determine has_more
+	sessions, err := s.sessionRepo.ListWithCursor(ctx, in.ProjectID, in.SpaceID, in.NotConnected, afterT, afterID, in.Limit+1, in.TimeDesc)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &ListSessionsOutput{
+		Items:   sessions,
+		HasMore: false,
+	}
+	if len(sessions) > in.Limit {
+		out.HasMore = true
+		out.Items = sessions[:in.Limit]
+		last := out.Items[len(out.Items)-1]
+		out.NextCursor = paging.EncodeCursor(last.CreatedAt, last.ID)
+	}
+
+	return out, nil
 }
 
 type SendMessageInput struct {
