@@ -16,7 +16,6 @@ RUN uv sync --frozen --no-dev --no-cache-dir
 # Copy the application code
 COPY ./acontext_core /app/acontext_core
 COPY ./api.py /app
-COPY ./config.yaml /app
 
 
 # Expose port 8029 (FastAPI default)

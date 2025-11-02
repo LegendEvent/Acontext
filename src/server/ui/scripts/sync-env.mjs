@@ -23,6 +23,7 @@ try {
   const defaultEnvContent = `NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 NEXT_PUBLIC_BASE_PATH=""
 NEXT_PUBLIC_API_SERVER_URL="http://localhost:8029"
+ROOT_API_BEARER_TOKEN="your-root-api-bearer-token"
 `;
 
   fs.writeFileSync(envFilePath, defaultEnvContent, 'utf8');
