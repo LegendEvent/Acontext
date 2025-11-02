@@ -725,3 +725,412 @@ class TestFolderBlock:
             assert folder.props == props
 
             await session.delete(project)
+
+
+class TestBlockParentChildRelationships:
+    """Test various parent-child relationship constraints between blocks"""
+
+    @pytest.mark.asyncio
+    async def test_sop_with_folder_parent_fails(self):
+        """Test that SOP cannot have a folder as parent (must be page)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create folder
+            r = await create_new_path_block(
+                session, space.id, "Parent Folder", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            folder_id = r.unpack()[0]
+
+            # Try to create SOP under folder (should fail)
+            sop_data = SOPData(
+                use_when="Testing invalid parent",
+                preferences="Should fail",
+                tool_sops=[],
+            )
+            r = await write_sop_block_to_parent(session, space.id, folder_id, sop_data)
+            assert not r.ok()
+            assert "not allowed" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_sop_with_root_parent_fails(self):
+        """Test that SOP cannot be created at root level (must have page parent)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Try to create SOP at root level (should fail)
+            sop_data = SOPData(
+                use_when="Root level SOP",
+                preferences="Should fail",
+                tool_sops=[],
+            )
+            r = await write_sop_block_to_parent(session, space.id, None, sop_data)
+            assert not r.ok()
+            # Should fail because SOP requires a page parent
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_page_with_page_parent_fails(self):
+        """Test that page cannot have another page as parent"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page
+            r = await create_new_path_block(
+                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            page_id = r.unpack()[0]
+
+            # Try to create child page under page (should fail)
+            r = await create_new_path_block(
+                session,
+                space.id,
+                "Child Page",
+                par_block_id=page_id,
+                type=BLOCK_TYPE_PAGE,
+            )
+            assert not r.ok()
+            assert "not allowed" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_folder_with_page_parent_fails(self):
+        """Test that folder cannot have a page as parent"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page
+            r = await create_new_path_block(
+                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            page_id = r.unpack()[0]
+
+            # Try to create folder under page (should fail)
+            r = await create_new_path_block(
+                session,
+                space.id,
+                "Child Folder",
+                par_block_id=page_id,
+                type=BLOCK_TYPE_FOLDER,
+            )
+            assert not r.ok()
+            assert "not allowed" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_text_block_with_page_parent_success(self):
+        """Test creating a text block under a page (valid relationship)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page
+            r = await create_new_path_block(
+                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            page_id = r.unpack()[0]
+
+            # Create text block under page (should succeed)
+            from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
+
+            props = {"preferences": "Use proper grammar"}
+            r = await create_new_path_block(
+                session,
+                space.id,
+                "Text Block",
+                par_block_id=page_id,
+                type=BLOCK_TYPE_TEXT,
+                props=props,
+            )
+            assert r.ok()
+            text_id = r.unpack()[0]
+
+            # Verify the text block
+            text_block = await session.get(Block, text_id)
+            assert text_block is not None
+            assert text_block.type == BLOCK_TYPE_TEXT
+            assert text_block.parent_id == page_id
+            assert text_block.props["preferences"] == "Use proper grammar"
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_text_block_with_folder_parent_fails(self):
+        """Test that text block cannot have a folder as parent (must be page)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create folder
+            r = await create_new_path_block(
+                session, space.id, "Parent Folder", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            folder_id = r.unpack()[0]
+
+            # Try to create text block under folder (should fail)
+            from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
+
+            r = await create_new_path_block(
+                session,
+                space.id,
+                "Text Block",
+                par_block_id=folder_id,
+                type=BLOCK_TYPE_TEXT,
+            )
+            assert not r.ok()
+            assert "not allowed" in r.error.errmsg.lower()
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_text_block_with_root_parent_fails(self):
+        """Test that text block cannot be created at root level (must have page parent)"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Try to create text block at root level (should fail)
+            from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
+
+            r = await create_new_path_block(
+                session, space.id, "Root Text Block", type=BLOCK_TYPE_TEXT
+            )
+            assert not r.ok()
+            # Should fail because TEXT requires a page parent
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_multiple_text_blocks_under_page(self):
+        """Test creating multiple text blocks under the same page with proper sorting"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page
+            r = await create_new_path_block(
+                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            page_id = r.unpack()[0]
+
+            # Create multiple text blocks
+            from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
+
+            text_ids = []
+            for i in range(3):
+                r = await create_new_path_block(
+                    session,
+                    space.id,
+                    f"Text Block {i}",
+                    par_block_id=page_id,
+                    type=BLOCK_TYPE_TEXT,
+                    props={"preferences": f"Preference {i}"},
+                )
+                assert r.ok()
+                text_ids.append(r.unpack()[0])
+
+            # Verify sort order
+            for i, text_id in enumerate(text_ids):
+                text_block = await session.get(Block, text_id)
+                assert text_block is not None
+                assert text_block.sort == i
+                assert text_block.parent_id == page_id
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_mixed_children_under_page(self):
+        """Test that a page can have both SOP and TEXT children with proper sorting"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create parent page
+            r = await create_new_path_block(
+                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            page_id = r.unpack()[0]
+
+            # Create text block
+            from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
+
+            r = await create_new_path_block(
+                session,
+                space.id,
+                "Text Block",
+                par_block_id=page_id,
+                type=BLOCK_TYPE_TEXT,
+                props={"preferences": "Test"},
+            )
+            assert r.ok()
+            text_id = r.unpack()[0]
+
+            # Create SOP block
+            sop_data = SOPData(
+                use_when="Mixed content test",
+                preferences="SOP preferences",
+                tool_sops=[],
+            )
+            r = await write_sop_block_to_parent(session, space.id, page_id, sop_data)
+            assert r.ok()
+            sop_id = r.data
+
+            # Verify both children exist with proper sort
+            text_block = await session.get(Block, text_id)
+            assert text_block.parent_id == page_id
+            assert text_block.sort == 0
+
+            sop_block = await session.get(Block, sop_id)
+            assert sop_block.parent_id == page_id
+            assert sop_block.sort == 1
+
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_deep_folder_nesting(self):
+        """Test creating deeply nested folder structure"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create nested folders: Root -> Folder1 -> Folder2 -> Folder3
+            parent_id = None
+            folder_ids = []
+            for i in range(4):
+                r = await create_new_path_block(
+                    session,
+                    space.id,
+                    f"Folder Level {i}",
+                    par_block_id=parent_id,
+                    type=BLOCK_TYPE_FOLDER,
+                )
+                assert r.ok()
+                folder_id = r.unpack()[0]
+                folder_ids.append(folder_id)
+                parent_id = folder_id  # Next folder will be child of this one
+
+            # Verify the hierarchy
+            for i, folder_id in enumerate(folder_ids):
+                folder = await session.get(Block, folder_id)
+                if i == 0:
+                    assert folder.parent_id is None  # First folder is at root
+                else:
+                    assert folder.parent_id == folder_ids[i - 1]  # Child of previous
+
+            await session.delete(project)

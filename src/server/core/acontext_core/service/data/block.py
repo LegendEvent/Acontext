@@ -34,7 +34,6 @@ async def _find_block_sort(
 
     if block_type not in BLOCK_PARENT_ALLOW:
         return Result.reject(f"Block type {block_type} is not supported")
-    print("!!!!", parent_type, block_type)
     if parent_type not in BLOCK_PARENT_ALLOW[block_type]:
         return Result.reject(
             f"Parent block {par_block_id}(type {parent_type}) is not allowed to have children of type {block_type}"
