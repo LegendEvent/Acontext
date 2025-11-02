@@ -27,8 +27,8 @@ func (m *MockDiskRepo) Delete(ctx context.Context, projectID uuid.UUID, diskID u
 	return args.Error(0)
 }
 
-func (m *MockDiskRepo) List(ctx context.Context, projectID uuid.UUID) ([]*model.Disk, error) {
-	args := m.Called(ctx, projectID)
+func (m *MockDiskRepo) ListWithCursor(ctx context.Context, projectID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]*model.Disk, error) {
+	args := m.Called(ctx, projectID, afterCreatedAt, afterID, limit, timeDesc)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -83,8 +83,12 @@ func (s *testDiskService) Delete(ctx context.Context, projectID uuid.UUID, diskI
 	return s.r.Delete(ctx, projectID, diskID)
 }
 
-func (s *testDiskService) List(ctx context.Context, projectID uuid.UUID) ([]*model.Disk, error) {
-	return s.r.List(ctx, projectID)
+func (s *testDiskService) List(ctx context.Context, in ListDisksInput) (*ListDisksOutput, error) {
+	disks, err := s.r.ListWithCursor(ctx, in.ProjectID, time.Time{}, uuid.UUID{}, in.Limit, in.TimeDesc)
+	if err != nil {
+		return nil, err
+	}
+	return &ListDisksOutput{Items: disks, HasMore: false}, nil
 }
 
 func createTestDisk() *model.Disk {
@@ -161,6 +165,7 @@ func TestDiskService_List(t *testing.T) {
 
 	tests := []struct {
 		name        string
+		input       ListDisksInput
 		setup       func(*MockDiskRepo)
 		expectError bool
 		errorMsg    string
@@ -168,24 +173,36 @@ func TestDiskService_List(t *testing.T) {
 	}{
 		{
 			name: "successful list with disks",
+			input: ListDisksInput{
+				ProjectID: projectID,
+				Limit:     10,
+			},
 			setup: func(repo *MockDiskRepo) {
-				repo.On("List", mock.Anything, projectID).Return([]*model.Disk{disk1, disk2}, nil)
+				repo.On("ListWithCursor", mock.Anything, projectID, time.Time{}, uuid.UUID{}, 10, false).Return([]*model.Disk{disk1, disk2}, nil)
 			},
 			expectError: false,
 			expectCount: 2,
 		},
 		{
 			name: "successful list with empty result",
+			input: ListDisksInput{
+				ProjectID: projectID,
+				Limit:     10,
+			},
 			setup: func(repo *MockDiskRepo) {
-				repo.On("List", mock.Anything, projectID).Return([]*model.Disk{}, nil)
+				repo.On("ListWithCursor", mock.Anything, projectID, time.Time{}, uuid.UUID{}, 10, false).Return([]*model.Disk{}, nil)
 			},
 			expectError: false,
 			expectCount: 0,
 		},
 		{
 			name: "repo error",
+			input: ListDisksInput{
+				ProjectID: projectID,
+				Limit:     10,
+			},
 			setup: func(repo *MockDiskRepo) {
-				repo.On("List", mock.Anything, projectID).Return(nil, errors.New("list error"))
+				repo.On("ListWithCursor", mock.Anything, projectID, time.Time{}, uuid.UUID{}, 10, false).Return(nil, errors.New("list error"))
 			},
 			expectError: true,
 			errorMsg:    "list error",
@@ -199,17 +216,17 @@ func TestDiskService_List(t *testing.T) {
 
 			service := newTestDiskService(mockRepo, &MockS3Deps{})
 
-			disks, err := service.List(context.Background(), projectID)
+			result, err := service.List(context.Background(), tt.input)
 
 			if tt.expectError {
 				assert.Error(t, err)
-				assert.Nil(t, disks)
+				assert.Nil(t, result)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 			} else {
 				assert.NoError(t, err)
-				assert.NotNil(t, disks)
-				assert.Len(t, disks, tt.expectCount)
-				for _, disk := range disks {
+				assert.NotNil(t, result)
+				assert.Len(t, result.Items, tt.expectCount)
+				for _, disk := range result.Items {
 					assert.Equal(t, projectID, disk.ProjectID)
 				}
 			}

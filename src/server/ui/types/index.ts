@@ -120,6 +120,12 @@ export interface GetSessionsResp {
   has_more: boolean;
 }
 
+export interface GetDisksResp {
+  items: Disk[];
+  next_cursor?: string;
+  has_more: boolean;
+}
+
 export interface Block {
   id: string;
   space_id: string;

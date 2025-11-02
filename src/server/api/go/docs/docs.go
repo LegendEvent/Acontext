@@ -33,6 +33,27 @@ const docTemplate = `{
                     "disk"
                 ],
                 "summary": "List disks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit of disks to return, default 20. Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Order by created_at descending if true, ascending if false (default false)",
+                        "name": "time_desc",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -45,10 +66,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.Disk"
-                                            }
+                                            "$ref": "#/definitions/service.ListDisksOutput"
                                         }
                                     }
                                 }
@@ -2366,6 +2384,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.Task"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.ListDisksOutput": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Disk"
                     }
                 },
                 "next_cursor": {
