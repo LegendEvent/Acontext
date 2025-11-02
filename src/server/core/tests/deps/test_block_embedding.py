@@ -6,7 +6,7 @@ from acontext_core.infra.db import DatabaseClient
 from acontext_core.schema.orm import BlockEmbedding, Block, Space, Project
 
 
-FAKE_KEY = "a" * 32
+FAKE_KEY = "c" * 32
 
 
 @pytest.mark.asyncio
@@ -19,92 +19,94 @@ async def test_block_embedding_create_and_basic_queries():
         # Enable pgvector extension
         await session.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
 
-        # Create test project and space
-        project = Project(secret_key_hmac=FAKE_KEY, secret_key_hash_phc=FAKE_KEY)
-        session.add(project)
-        await session.flush()
+        try:
+            # Create test project and space
+            project = Project(secret_key_hmac=FAKE_KEY, secret_key_hash_phc=FAKE_KEY)
 
-        space = Space(project_id=project.id)
-        session.add(space)
-        await session.flush()
+            session.add(project)
+            await session.flush()
 
-        # Create test blocks
-        page_block = Block(
-            space_id=space.id,
-            type="page",
-            title="Test Page",
-            props={"description": "A test page"},
-            sort=0,
-        )
-        session.add(page_block)
-        await session.flush()
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
 
-        text_block = Block(
-            space_id=space.id,
-            type="text",
-            parent_id=page_block.id,
-            title="Test Text",
-            props={"content": "Machine learning algorithms"},
-            sort=1,
-        )
-        session.add(text_block)
-        await session.flush()
-
-        # Create embeddings for blocks
-        # Using 1536-dimensional vectors (OpenAI text-embedding-3-small dimension)
-        page_embedding = BlockEmbedding(
-            block_id=page_block.id,
-            space_id=space.id,
-            block_type=page_block.type,
-            embedding=[0.1] * 1536,  # Simple test vector
-            configs={"model": "text-embedding-3-small", "provider": "openai"},
-        )
-        session.add(page_embedding)
-
-        text_embedding = BlockEmbedding(
-            block_id=text_block.id,
-            space_id=space.id,
-            block_type=text_block.type,
-            embedding=[0.2] * 1536,  # Different test vector
-            configs={"model": "text-embedding-3-small", "provider": "openai"},
-        )
-        session.add(text_embedding)
-        await session.commit()
-
-        # Test 1: Query embeddings by block_id
-        result = await session.execute(
-            select(BlockEmbedding).where(BlockEmbedding.block_id == page_block.id)
-        )
-        embedding = result.scalar_one()
-        assert embedding.block_id == page_block.id
-        assert embedding.space_id == space.id
-        assert embedding.block_type == "page"
-        assert len(embedding.embedding) == 1536
-        assert embedding.configs["model"] == "text-embedding-3-small"
-
-        # Test 2: Query embeddings by space_id
-        result = await session.execute(
-            select(BlockEmbedding).where(BlockEmbedding.space_id == space.id)
-        )
-        embeddings = result.scalars().all()
-        assert len(embeddings) == 2
-
-        # Test 3: Query embeddings by space_id and block_type
-        result = await session.execute(
-            select(BlockEmbedding).where(
-                BlockEmbedding.space_id == space.id,
-                BlockEmbedding.block_type == "text",
+            # Create test blocks
+            page_block = Block(
+                space_id=space.id,
+                type="page",
+                title="Test Page",
+                props={"description": "A test page"},
+                sort=0,
             )
-        )
-        text_embeddings = result.scalars().all()
-        assert len(text_embeddings) == 1
-        assert text_embeddings[0].block_type == "text"
+            session.add(page_block)
+            await session.flush()
 
-        print(f"✓ Basic CRUD tests passed: {len(embeddings)} embeddings created")
+            text_block = Block(
+                space_id=space.id,
+                type="text",
+                parent_id=page_block.id,
+                title="Test Text",
+                props={"content": "Machine learning algorithms"},
+                sort=1,
+            )
+            session.add(text_block)
+            await session.flush()
+
+            # Create embeddings for blocks
+            # Using 1536-dimensional vectors (OpenAI text-embedding-3-small dimension)
+            page_embedding = BlockEmbedding(
+                block_id=page_block.id,
+                space_id=space.id,
+                block_type=page_block.type,
+                embedding=[0.1] * 1536,  # Simple test vector
+                configs={"model": "text-embedding-3-small", "provider": "openai"},
+            )
+            session.add(page_embedding)
+
+            text_embedding = BlockEmbedding(
+                block_id=text_block.id,
+                space_id=space.id,
+                block_type=text_block.type,
+                embedding=[0.2] * 1536,  # Different test vector
+                configs={"model": "text-embedding-3-small", "provider": "openai"},
+            )
+            session.add(text_embedding)
+            await session.commit()
+
+            # Test 1: Query embeddings by block_id
+            result = await session.execute(
+                select(BlockEmbedding).where(BlockEmbedding.block_id == page_block.id)
+            )
+            embedding = result.scalar_one()
+            assert embedding.block_id == page_block.id
+            assert embedding.space_id == space.id
+            assert embedding.block_type == "page"
+            assert len(embedding.embedding) == 1536
+            assert embedding.configs["model"] == "text-embedding-3-small"
+
+            # Test 2: Query embeddings by space_id
+            result = await session.execute(
+                select(BlockEmbedding).where(BlockEmbedding.space_id == space.id)
+            )
+            embeddings = result.scalars().all()
+            assert len(embeddings) == 2
+
+            # Test 3: Query embeddings by space_id and block_type
+            result = await session.execute(
+                select(BlockEmbedding).where(
+                    BlockEmbedding.space_id == space.id,
+                    BlockEmbedding.block_type == "text",
+                )
+            )
+            text_embeddings = result.scalars().all()
+            assert len(text_embeddings) == 1
+            assert text_embeddings[0].block_type == "text"
+
+            print(f"✓ Basic CRUD tests passed: {len(embeddings)} embeddings created")
 
         # Cleanup
-        await session.delete(project)
-        await session.commit()
+        finally:
+            await session.delete(project)
 
 
 @pytest.mark.asyncio

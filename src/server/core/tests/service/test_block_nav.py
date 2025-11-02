@@ -60,19 +60,19 @@ class TestListPathsUnderBlock:
                 session, space.id, "Page1", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page1_id = r.unpack()[0]
+            page1_id = r.data.id
 
             r = await create_new_path_block(
                 session, space.id, "Folder1", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            folder1_id = r.unpack()[0]
+            folder1_id = r.data.id
 
             r = await create_new_path_block(
                 session, space.id, "Page2", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page2_id = r.unpack()[0]
+            page2_id = r.data.id
 
             # List paths at root
             r = await list_paths_under_block(session, space.id, depth=0)
@@ -108,20 +108,20 @@ class TestListPathsUnderBlock:
                 session, space.id, "Docs", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            docs_id = r.unpack()[0]
+            docs_id = r.data.id
 
             # Create pages inside Docs folder
             r = await create_new_path_block(
                 session, space.id, "README", par_block_id=docs_id, type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            readme_id = r.unpack()[0]
+            readme_id = r.data.id
 
             r = await create_new_path_block(
                 session, space.id, "Guide", par_block_id=docs_id, type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            guide_id = r.unpack()[0]
+            guide_id = r.data.id
 
             # List paths with depth=1
             r = await list_paths_under_block(session, space.id, depth=1)
@@ -157,7 +157,7 @@ class TestListPathsUnderBlock:
                 session, space.id, "Root", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            root_id = r.unpack()[0]
+            root_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -167,7 +167,7 @@ class TestListPathsUnderBlock:
                 type=BLOCK_TYPE_FOLDER,
             )
             assert r.ok()
-            level1_id = r.unpack()[0]
+            level1_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -177,7 +177,7 @@ class TestListPathsUnderBlock:
                 type=BLOCK_TYPE_FOLDER,
             )
             assert r.ok()
-            level2_id = r.unpack()[0]
+            level2_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -187,7 +187,7 @@ class TestListPathsUnderBlock:
                 type=BLOCK_TYPE_PAGE,
             )
             assert r.ok()
-            deep_page_id = r.unpack()[0]
+            deep_page_id = r.data.id
 
             # Test with depth=0 (only root level)
             r = await list_paths_under_block(session, space.id, depth=0)
@@ -239,12 +239,12 @@ class TestListPathsUnderBlock:
             r = await create_new_path_block(
                 session, space.id, "Folder1", type=BLOCK_TYPE_FOLDER
             )
-            folder1_id = r.unpack()[0]
+            folder1_id = r.data.id
 
             r = await create_new_path_block(
                 session, space.id, "Folder2", type=BLOCK_TYPE_FOLDER
             )
-            folder2_id = r.unpack()[0]
+            folder2_id = r.data.id
 
             # Add content to Folder1
             r = await create_new_path_block(
@@ -254,7 +254,7 @@ class TestListPathsUnderBlock:
                 par_block_id=folder1_id,
                 type=BLOCK_TYPE_PAGE,
             )
-            page_a_id = r.unpack()[0]
+            page_a_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -263,7 +263,7 @@ class TestListPathsUnderBlock:
                 par_block_id=folder1_id,
                 type=BLOCK_TYPE_PAGE,
             )
-            page_b_id = r.unpack()[0]
+            page_b_id = r.data.id
 
             # Add content to Folder2
             r = await create_new_path_block(
@@ -273,7 +273,7 @@ class TestListPathsUnderBlock:
                 par_block_id=folder2_id,
                 type=BLOCK_TYPE_PAGE,
             )
-            page_c_id = r.unpack()[0]
+            page_c_id = r.data.id
 
             # List paths under Folder1 only
             r = await list_paths_under_block(
@@ -312,7 +312,7 @@ class TestListPathsUnderBlock:
                 session, space.id, "TestPage", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Create text block under page
             r = await create_new_path_block(
@@ -383,7 +383,7 @@ class TestListPathsUnderBlock:
                 session, space.id, "TestPage", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Try to list paths under a page (should fail)
             r = await list_paths_under_block(
@@ -421,7 +421,7 @@ class TestListPathsUnderBlock:
             r = await create_new_path_block(
                 session, space.id, "Projects", type=BLOCK_TYPE_FOLDER
             )
-            projects_id = r.unpack()[0]
+            projects_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -430,7 +430,7 @@ class TestListPathsUnderBlock:
                 par_block_id=projects_id,
                 type=BLOCK_TYPE_FOLDER,
             )
-            project1_id = r.unpack()[0]
+            project1_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -439,7 +439,7 @@ class TestListPathsUnderBlock:
                 par_block_id=project1_id,
                 type=BLOCK_TYPE_PAGE,
             )
-            readme_id = r.unpack()[0]
+            readme_id = r.data.id
 
             r = await create_new_path_block(
                 session,
@@ -448,12 +448,12 @@ class TestListPathsUnderBlock:
                 par_block_id=projects_id,
                 type=BLOCK_TYPE_PAGE,
             )
-            project2_id = r.unpack()[0]
+            project2_id = r.data.id
 
             r = await create_new_path_block(
                 session, space.id, "Notes", type=BLOCK_TYPE_PAGE
             )
-            notes_id = r.unpack()[0]
+            notes_id = r.data.id
 
             # List all paths with depth=2
             r = await list_paths_under_block(session, space.id, depth=2)
@@ -490,16 +490,16 @@ class TestListPathsUnderBlock:
             r = await create_new_path_block(
                 session, space.id, "Folder-With-Dashes", type=BLOCK_TYPE_FOLDER
             )
-            folder_id = r.unpack()[0]
+            folder_id = r.data.id
 
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Page With Spaces",
+                "Page_With_Spaces",
                 par_block_id=folder_id,
                 type=BLOCK_TYPE_PAGE,
             )
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # List paths
             r = await list_paths_under_block(session, space.id, depth=1)
@@ -507,7 +507,7 @@ class TestListPathsUnderBlock:
             paths = r.data
 
             assert "Folder-With-Dashes" in paths
-            assert "Folder-With-Dashes/Page With Spaces" in paths
-            assert paths["Folder-With-Dashes/Page With Spaces"] == page_id
+            assert "Folder-With-Dashes/Page_With_Spaces" in paths
+            assert paths["Folder-With-Dashes/Page_With_Spaces"] == page_id
 
             await session.delete(project)

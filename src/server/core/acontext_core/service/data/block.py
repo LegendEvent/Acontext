@@ -18,6 +18,12 @@ from ...schema.result import Result
 from ...schema.block.sop_block import SOPData
 
 
+def _normalize_path_block_title(title: str) -> str:
+    title = title.replace("/", "_")
+    title = title.replace(" ", "_")
+    return title
+
+
 async def _find_block_sort(
     db_session: AsyncSession,
     space_id: asUUID,
@@ -57,11 +63,12 @@ async def create_new_path_block(
     props: Optional[dict] = None,
     par_block_id: Optional[asUUID] = None,
     type: str = BLOCK_TYPE_PAGE,
-) -> Result[asUUID]:
+) -> Result[Block]:
     r = await _find_block_sort(db_session, space_id, par_block_id, block_type=type)
     if not r.ok():
         return r
     next_sort = r.unpack()[0]
+    title = _normalize_path_block_title(title)
     new_block = Block(
         space_id=space_id,
         type=type,
@@ -75,7 +82,7 @@ async def create_new_path_block(
         return r
     db_session.add(new_block)
     await db_session.flush()
-    return Result.resolve(new_block.id)
+    return Result.resolve(new_block)
 
 
 async def write_sop_block_to_parent(

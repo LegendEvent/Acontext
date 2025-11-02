@@ -41,9 +41,9 @@ class TestPageBlock:
             # Create multiple pages to test sort ordering
             page_ids = []
             for i in range(3):
-                r = await create_new_path_block(session, space.id, f"Test Page {i}")
+                r = await create_new_path_block(session, space.id, f"Test_Page_{i}")
                 assert r.ok(), f"Failed to create new page: {r.error}"
-                page_id = r.unpack()[0]
+                page_id = r.data.id
                 assert page_id is not None
                 page_ids.append(page_id)
 
@@ -51,7 +51,7 @@ class TestPageBlock:
             for i, page_id in enumerate(page_ids):
                 page = await session.get(Block, page_id)
                 assert page is not None
-                assert page.title == f"Test Page {i}"
+                assert page.title == f"Test_Page_{i}"
                 assert page.type == BLOCK_TYPE_PAGE
                 assert page.sort == i
                 assert page.parent_id is None
@@ -77,10 +77,10 @@ class TestPageBlock:
 
             props = {"custom_field": "custom_value", "count": 42}
             r = await create_new_path_block(
-                session, space.id, "Page with Props", props=props
+                session, space.id, "Page_with_Props", props=props
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             page = await session.get(Block, page_id)
             assert page.props == props
@@ -106,19 +106,19 @@ class TestPageBlock:
 
             # Create parent page
             r = await create_new_path_block(
-                session, space.id, "Parent Page", type=BLOCK_TYPE_FOLDER
+                session, space.id, "Parent_Page", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             # Create child pages
             child_ids = []
             for i in range(2):
                 r = await create_new_path_block(
-                    session, space.id, f"Child Page {i}", par_block_id=parent_id
+                    session, space.id, f"Child_Page_{i}", par_block_id=parent_id
                 )
                 assert r.ok()
-                child_ids.append(r.unpack()[0])
+                child_ids.append(r.data.id)
 
             # Verify children
             for i, child_id in enumerate(child_ids):
@@ -147,7 +147,7 @@ class TestPageBlock:
 
             fake_parent_id = uuid.uuid4()
             r = await create_new_path_block(
-                session, space.id, "Test Page", par_block_id=fake_parent_id
+                session, space.id, "Test_Page", par_block_id=fake_parent_id
             )
             assert not r.ok()
             assert "not found" in r.error.errmsg.lower()
@@ -176,7 +176,7 @@ class TestSOPBlock:
             # Create parent page for SOP
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             # Create SOP data
             sop_data = SOPData(
@@ -235,7 +235,7 @@ class TestSOPBlock:
 
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             sop_data = SOPData(
                 use_when="Preferences only SOP",
@@ -277,7 +277,7 @@ class TestSOPBlock:
 
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             # Create SOP using the existing tool
             sop_data = SOPData(
@@ -330,7 +330,7 @@ class TestSOPBlock:
 
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             # Create multiple SOPs
             sop_ids = []
@@ -373,7 +373,7 @@ class TestSOPBlock:
 
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             sop_data = SOPData(
                 use_when="Empty SOP", preferences="   ", tool_sops=[]  # Only whitespace
@@ -404,7 +404,7 @@ class TestSOPBlock:
 
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             sop_data = SOPData(
                 use_when="Invalid tool",
@@ -437,7 +437,7 @@ class TestSOPBlock:
 
             r = await create_new_path_block(session, space.id, "Parent Page")
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             sop_data = SOPData(
                 use_when="Case test",
@@ -515,7 +515,7 @@ class TestFindBlockSort:
             r = await create_new_path_block(
                 session, space.id, "Parent", type=BLOCK_TYPE_FOLDER
             )
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             # First child should get sort 0
             r = await _find_block_sort(session, space.id, parent_id, BLOCK_TYPE_PAGE)
@@ -587,10 +587,10 @@ class TestFolderBlock:
             folder_ids = []
             for i in range(3):
                 r = await create_new_path_block(
-                    session, space.id, f"Test Folder {i}", type=BLOCK_TYPE_FOLDER
+                    session, space.id, f"Test_Folder_{i}", type=BLOCK_TYPE_FOLDER
                 )
                 assert r.ok(), f"Failed to create new folder: {r.error}"
-                folder_id = r.unpack()[0]
+                folder_id = r.data.id
                 assert folder_id is not None
                 folder_ids.append(folder_id)
 
@@ -598,7 +598,7 @@ class TestFolderBlock:
             for i, folder_id in enumerate(folder_ids):
                 folder = await session.get(Block, folder_id)
                 assert folder is not None
-                assert folder.title == f"Test Folder {i}"
+                assert folder.title == f"Test_Folder_{i}"
                 assert folder.type == BLOCK_TYPE_FOLDER
                 assert folder.sort == i
                 assert folder.parent_id is None
@@ -624,10 +624,10 @@ class TestFolderBlock:
 
             # Create parent folder
             r = await create_new_path_block(
-                session, space.id, "Parent Folder", type=BLOCK_TYPE_FOLDER
+                session, space.id, "Parent_Folder", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            parent_id = r.unpack()[0]
+            parent_id = r.data.id
 
             # Create child folders
             child_ids = []
@@ -635,12 +635,12 @@ class TestFolderBlock:
                 r = await create_new_path_block(
                     session,
                     space.id,
-                    f"Child Folder {i}",
+                    f"Child_Folder_{i}",
                     par_block_id=parent_id,
                     type=BLOCK_TYPE_FOLDER,
                 )
                 assert r.ok()
-                child_ids.append(r.unpack()[0])
+                child_ids.append(r.data.id)
 
             # Verify children
             for i, child_id in enumerate(child_ids):
@@ -673,7 +673,7 @@ class TestFolderBlock:
                 session, space.id, "Documents", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            folder_id = r.unpack()[0]
+            folder_id = r.data.id
 
             # Create pages inside the folder
             page_ids = []
@@ -681,19 +681,19 @@ class TestFolderBlock:
                 r = await create_new_path_block(
                     session,
                     space.id,
-                    f"Document {i}",
+                    f"Document_{i}",
                     par_block_id=folder_id,
                     type=BLOCK_TYPE_PAGE,
                 )
                 assert r.ok()
-                page_ids.append(r.unpack()[0])
+                page_ids.append(r.data.id)
 
             # Verify pages are in the folder
             for i, page_id in enumerate(page_ids):
                 page = await session.get(Block, page_id)
                 assert page.parent_id == folder_id
                 assert page.type == BLOCK_TYPE_PAGE
-                assert page.title == f"Document {i}"
+                assert page.title == f"Document_{i}"
 
             await session.delete(project)
 
@@ -716,10 +716,10 @@ class TestFolderBlock:
 
             props = {"color": "blue", "icon": "folder"}
             r = await create_new_path_block(
-                session, space.id, "Special Folder", props=props, type=BLOCK_TYPE_FOLDER
+                session, space.id, "Special_Folder", props=props, type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            folder_id = r.unpack()[0]
+            folder_id = r.data.id
 
             folder = await session.get(Block, folder_id)
             assert folder.props == props
@@ -749,10 +749,10 @@ class TestBlockParentChildRelationships:
 
             # Create folder
             r = await create_new_path_block(
-                session, space.id, "Parent Folder", type=BLOCK_TYPE_FOLDER
+                session, space.id, "Parent_Folder", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            folder_id = r.unpack()[0]
+            folder_id = r.data.id
 
             # Try to create SOP under folder (should fail)
             sop_data = SOPData(
@@ -814,16 +814,16 @@ class TestBlockParentChildRelationships:
 
             # Create parent page
             r = await create_new_path_block(
-                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+                session, space.id, "Parent_Page", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Try to create child page under page (should fail)
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Child Page",
+                "Child_Page",
                 par_block_id=page_id,
                 type=BLOCK_TYPE_PAGE,
             )
@@ -851,16 +851,16 @@ class TestBlockParentChildRelationships:
 
             # Create parent page
             r = await create_new_path_block(
-                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+                session, space.id, "Parent_Page", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Try to create folder under page (should fail)
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Child Folder",
+                "Child_Folder",
                 par_block_id=page_id,
                 type=BLOCK_TYPE_FOLDER,
             )
@@ -888,10 +888,10 @@ class TestBlockParentChildRelationships:
 
             # Create parent page
             r = await create_new_path_block(
-                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+                session, space.id, "Parent_Page", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Create text block under page (should succeed)
             from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
@@ -900,13 +900,13 @@ class TestBlockParentChildRelationships:
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Text Block",
+                "Text_Block",
                 par_block_id=page_id,
                 type=BLOCK_TYPE_TEXT,
                 props=props,
             )
             assert r.ok()
-            text_id = r.unpack()[0]
+            text_id = r.data.id
 
             # Verify the text block
             text_block = await session.get(Block, text_id)
@@ -936,10 +936,10 @@ class TestBlockParentChildRelationships:
 
             # Create folder
             r = await create_new_path_block(
-                session, space.id, "Parent Folder", type=BLOCK_TYPE_FOLDER
+                session, space.id, "Parent_Folder", type=BLOCK_TYPE_FOLDER
             )
             assert r.ok()
-            folder_id = r.unpack()[0]
+            folder_id = r.data.id
 
             # Try to create text block under folder (should fail)
             from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
@@ -947,7 +947,7 @@ class TestBlockParentChildRelationships:
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Text Block",
+                "Text_Block",
                 par_block_id=folder_id,
                 type=BLOCK_TYPE_TEXT,
             )
@@ -977,7 +977,7 @@ class TestBlockParentChildRelationships:
             from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
 
             r = await create_new_path_block(
-                session, space.id, "Root Text Block", type=BLOCK_TYPE_TEXT
+                session, space.id, "Root_Text_Block", type=BLOCK_TYPE_TEXT
             )
             assert not r.ok()
             # Should fail because TEXT requires a page parent
@@ -1003,10 +1003,10 @@ class TestBlockParentChildRelationships:
 
             # Create parent page
             r = await create_new_path_block(
-                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+                session, space.id, "Parent_Page", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Create multiple text blocks
             from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
@@ -1016,13 +1016,13 @@ class TestBlockParentChildRelationships:
                 r = await create_new_path_block(
                     session,
                     space.id,
-                    f"Text Block {i}",
+                    f"Text_Block_{i}",
                     par_block_id=page_id,
                     type=BLOCK_TYPE_TEXT,
-                    props={"preferences": f"Preference {i}"},
+                    props={"preferences": f"Preference_{i}"},
                 )
                 assert r.ok()
-                text_ids.append(r.unpack()[0])
+                text_ids.append(r.data.id)
 
             # Verify sort order
             for i, text_id in enumerate(text_ids):
@@ -1052,10 +1052,10 @@ class TestBlockParentChildRelationships:
 
             # Create parent page
             r = await create_new_path_block(
-                session, space.id, "Parent Page", type=BLOCK_TYPE_PAGE
+                session, space.id, "Parent_Page", type=BLOCK_TYPE_PAGE
             )
             assert r.ok()
-            page_id = r.unpack()[0]
+            page_id = r.data.id
 
             # Create text block
             from acontext_core.schema.orm.block import BLOCK_TYPE_TEXT
@@ -1063,13 +1063,13 @@ class TestBlockParentChildRelationships:
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Text Block",
+                "Text_Block",
                 par_block_id=page_id,
                 type=BLOCK_TYPE_TEXT,
                 props={"preferences": "Test"},
             )
             assert r.ok()
-            text_id = r.unpack()[0]
+            text_id = r.data.id
 
             # Create SOP block
             sop_data = SOPData(
@@ -1116,12 +1116,12 @@ class TestBlockParentChildRelationships:
                 r = await create_new_path_block(
                     session,
                     space.id,
-                    f"Folder Level {i}",
+                    f"Folder_Level_{i}",
                     par_block_id=parent_id,
                     type=BLOCK_TYPE_FOLDER,
                 )
                 assert r.ok()
-                folder_id = r.unpack()[0]
+                folder_id = r.data.id
                 folder_ids.append(folder_id)
                 parent_id = folder_id  # Next folder will be child of this one
 
