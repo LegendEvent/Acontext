@@ -278,7 +278,7 @@ export default function SpacesPage() {
 
   const handleGoToPages = (spaceId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/space/${spaceId}/pages`);
+    router.push(`/space/${spaceId}/skills`);
   };
 
   return (
