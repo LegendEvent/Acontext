@@ -154,10 +154,10 @@ class AcontextClient:
     def _handle_response(response: httpx.Response, *, unwrap: bool) -> Any:
         content_type = response.headers.get("content-type", "")
 
-        parsed: Mapping[str, Any] | MutableMapping[str, Any] | None
+        parsed: Mapping[str, Any] | None
         if "application/json" in content_type:
             try:
-                parsed = response.json()
+                parsed = response.json() # dict
             except ValueError:
                 parsed = None
         else:
@@ -165,7 +165,7 @@ class AcontextClient:
 
         if response.status_code >= 400:
             message = response.reason_phrase
-            payload: Mapping[str, Any] | MutableMapping[str, Any] | None = parsed
+            payload: Mapping[str, Any] | None = parsed
             code: int | None = None
             error: str | None = None
             if payload and isinstance(payload, Mapping):
@@ -189,11 +189,6 @@ class AcontextClient:
             if unwrap:
                 return response.text
             return {"code": response.status_code, "data": response.text, "msg": response.reason_phrase}
-
-        if not isinstance(parsed, Mapping):
-            if unwrap:
-                return parsed
-            return parsed
 
         app_code = parsed.get("code")
         if isinstance(app_code, int) and app_code >= 400:
