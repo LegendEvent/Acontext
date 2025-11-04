@@ -1,4 +1,4 @@
-name: core-test
+name: Core Test
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: python-client-test
+name: Python Client Test
 
 on:
   push:
