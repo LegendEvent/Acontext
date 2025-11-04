@@ -18,7 +18,11 @@ Repository = "https://github.com/memodb-io/Acontext"
 Issues = "https://github.com/memodb-io/Acontext/issues"
 
 [dependency-groups]
-dev = ["pytest", "ruff"]
+dev = [
+    "pytest", 
+    "ruff",
+    "pytest-asyncio"
+]
 
 [build-system]
 requires = ["uv_build>=0.9.2,<0.10.0"]

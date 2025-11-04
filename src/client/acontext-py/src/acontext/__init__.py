@@ -4,12 +4,25 @@ Python SDK for the Acontext API.
 
 from importlib import metadata as _metadata
 
+from .async_client import AcontextAsyncClient
 from .client import AcontextClient, FileUpload, MessagePart
 from .messages import AcontextMessage
-from .resources import BlocksAPI, DiskArtifactsAPI, DisksAPI, SessionsAPI, SpacesAPI
+from .resources import (
+    AsyncBlocksAPI,
+    AsyncDiskArtifactsAPI,
+    AsyncDisksAPI,
+    AsyncSessionsAPI,
+    AsyncSpacesAPI,
+    BlocksAPI,
+    DiskArtifactsAPI,
+    DisksAPI,
+    SessionsAPI,
+    SpacesAPI,
+)
 
 __all__ = [
     "AcontextClient",
+    "AcontextAsyncClient",
     "FileUpload",
     "MessagePart",
     "AcontextMessage",
@@ -18,6 +31,11 @@ __all__ = [
     "BlocksAPI",
     "SessionsAPI",
     "SpacesAPI",
+    "AsyncDisksAPI",
+    "AsyncDiskArtifactsAPI",
+    "AsyncBlocksAPI",
+    "AsyncSessionsAPI",
+    "AsyncSpacesAPI",
     "__version__",
 ]
 
