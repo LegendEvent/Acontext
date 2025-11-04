@@ -31,24 +31,52 @@ jobs:
         working-directory: src/server/
     steps:
       - uses: actions/checkout@v4
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
       - name: Set up Python
         run: uv python install
+
       - name: Install dependencies
         run: |
           cd core
           uv sync --frozen --no-dev --no-cache-dir
+      
       - name: Start containers
+        working-directory: src/server
         run: |
-          cp .env.example .env
-          cp core/config.yaml.example core/config.yaml
-          docker compose up acontext-server-pg acontext-server-redis acontext-server-rabbitmq acontext-server-seaweedfs-setup acontext-server-seaweedfs -d
+          cp .env.example .env || echo "No .env.example file found, using defaults"
+          cp core/config.yaml.example core/config.yaml || echo "No config.yaml.example file found, using defaults"
+          # Create volume directories and set permissions for CI environment
+          mkdir -p db/pg db/redis db/rabbitmq db/s3
+          chmod -R 777 db/
+          echo "Starting containers..."
+          if ! docker compose up acontext-server-pg acontext-server-redis acontext-server-rabbitmq acontext-server-seaweedfs-setup acontext-server-seaweedfs -d; then
+            echo "❌ Failed to start containers, showing logs:"
+            echo ""
+            echo "=== Container Status ==="
+            docker compose ps || true
+            echo ""
+            echo "=== Container Logs ==="
+            docker compose logs --tail=100 || true
+            exit 1
+          fi
+          echo ""
+          echo "Waiting a few seconds for containers to initialize..."
+          sleep 5
+          echo ""
+          echo "=== Container Status ==="
+          docker compose ps
+          echo ""
+          echo "=== Container Logs (startup) ==="
+          docker compose logs --tail=100 || true
+      
       - name: Test with pytest
         run: |
           cd core
           uv run -m pytest --junit-xml=junit/test-results-${{ matrix.python-version }}.xml --cov=. --cov-report=xml:coverage-${{ matrix.python-version }}.xml tests/ -s -v
+      
       - name: Upload pytest test results and coverage
         uses: actions/upload-artifact@v4
         with:
@@ -57,6 +85,7 @@ jobs:
             ./src/server/core/junit/test-results-${{ matrix.python-version }}.xml
             ./src/server/core/coverage-${{ matrix.python-version }}.xml
         if: ${{ always() }}
+      
       - name: Stop containers
         if: ${{ always() }}
         run: |
