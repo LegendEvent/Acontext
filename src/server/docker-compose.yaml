@@ -73,7 +73,7 @@ services:
       -s3.port=9000
       -dir=/data
       -volume.max=100
-      -volume.publicUrl=${S3_ENDPOINT:-http://127.0.0.1:9000}
+      -volume.publicUrl=${S3_ENDPOINT:-http://127.0.0.1:19000}
       -ip=acontext-server-seaweedfs
       -ip.bind=0.0.0.0
       -metricsPort=9324
