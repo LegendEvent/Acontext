@@ -83,7 +83,7 @@ jobs:
         id: check_version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          if npm view acontext@$VERSION version > /dev/null 2>&1; then
+          if npm view @acontext/acontext@$VERSION version > /dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "Version $VERSION already exists on npm"
           else

@@ -5,13 +5,13 @@ TypeScript SDK for interacting with the Acontext REST API.
 ## Installation
 
 ```bash
-npm install acontext
+npm install @acontext/acontext
 ```
 
 ## Quickstart
 
 ```typescript
-import { AcontextClient, MessagePart } from 'acontext';
+import { AcontextClient, MessagePart } from '@acontext/acontext';
 
 const client = new AcontextClient({ apiKey: 'sk_project_token' });
 
@@ -39,7 +39,7 @@ See the inline documentation for the full list of helpers covering sessions, spa
 Artifacts now live under project disks. Create a disk first, then upload files through the disk-scoped helper:
 
 ```typescript
-import { AcontextClient, FileUpload } from 'acontext';
+import { AcontextClient, FileUpload } from '@acontext/acontext';
 
 const client = new AcontextClient({ apiKey: 'sk_project_token' });
 
@@ -61,7 +61,7 @@ await client.disks.artifacts.upsert(
 ## Working with blocks
 
 ```typescript
-import { AcontextClient } from 'acontext';
+import { AcontextClient } from '@acontext/acontext';
 
 const client = new AcontextClient({ apiKey: 'sk_project_token' });
 

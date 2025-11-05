@@ -1,5 +1,5 @@
 {
-  "name": "acontext",
+  "name": "@acontext/acontext",
   "version": "0.0.1",
   "description": "TypeScript SDK for the Acontext API",
   "main": "dist/index.js",
