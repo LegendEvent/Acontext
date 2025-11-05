@@ -1,4 +1,4 @@
-# acontext client for TypeScript
+# Acontext client for TypeScript
 
 TypeScript SDK for interacting with the Acontext REST API.
 
