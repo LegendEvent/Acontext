@@ -145,7 +145,7 @@ services:
   acontext-server-api:
     build:
       context: ./api/go
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: acontext-server-api
     restart: unless-stopped
     environment:
