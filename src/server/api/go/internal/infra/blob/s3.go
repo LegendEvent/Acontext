@@ -100,6 +100,15 @@ func NewS3(ctx context.Context, cfg *config.Config) (*S3Deps, error) {
 		sse = &v
 	}
 
+	if cfg.S3.Bucket == "" {
+		return nil, errors.New("s3 bucket is empty")
+	}
+	if _, err := client.HeadBucket(ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(cfg.S3.Bucket),
+	}); err != nil {
+		return nil, fmt.Errorf("connect to s3 bucket %s: %w", cfg.S3.Bucket, err)
+	}
+
 	return &S3Deps{
 		Client:    client,
 		Uploader:  uploader,
