@@ -86,7 +86,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("redis.addr", "127.0.0.1:16379")
 	v.SetDefault("redis.password", "helloworld")
 	v.SetDefault("s3.endpoint", "http://127.0.0.1:19000")
-	v.SetDefault("s3.internalEndpoint", "http://127.0.0.1:9000")
+	v.SetDefault("s3.internalEndpoint", "http://127.0.0.1:19000")
 	v.SetDefault("s3.region", "auto")
 	v.SetDefault("s3.accessKey", "acontext")
 	v.SetDefault("s3.secretKey", "helloworld")
