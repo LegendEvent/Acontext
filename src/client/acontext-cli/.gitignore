@@ -62,3 +62,4 @@ checksums.txt
 # Snapshots (for GoReleaser testing)
 dist/**
 
+db/
