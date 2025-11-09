@@ -24,11 +24,12 @@ class CoreConfig(BaseModel):
 
     llm_simple_model: str = "gpt-4.1"
 
-    block_embedding_provider: Literal["openai"] = "openai"
+    block_embedding_provider: Literal["openai", "jina"] = "openai"
     block_embedding_model: str = "text-embedding-3-small"
     block_embedding_dim: int = 1536
     block_embedding_api_key: Optional[str] = None
     block_embedding_base_url: Optional[str] = None
+    block_embedding_search_cosine_distance_threshold: float = 0.5
 
     # Core Configuration
     logging_format: str = "text"

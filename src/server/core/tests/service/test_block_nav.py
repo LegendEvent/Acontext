@@ -1,26 +1,33 @@
 import pytest
-import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from acontext_core.schema.orm import Block, Project, Space
 from acontext_core.schema.orm.block import (
     BLOCK_TYPE_FOLDER,
     BLOCK_TYPE_PAGE,
-    BLOCK_TYPE_SOP,
     BLOCK_TYPE_TEXT,
+    BLOCK_TYPE_SOP,
+    BLOCK_TYPE_REFERENCE,
+    CONTENT_BLOCK,
 )
 from acontext_core.infra.db import DatabaseClient
 from acontext_core.service.data.block import create_new_path_block
-from acontext_core.service.data.block_nav import list_paths_under_block
+from acontext_core.schema.block.path_node import repr_path_tree
+from acontext_core.service.data.block_nav import (
+    list_paths_under_block,
+    get_path_info_by_id,
+    read_blocks_from_par_id,
+)
 
 
-class TestListPathsUnderBlock:
+class TestBlockNav:
     @pytest.mark.asyncio
-    async def test_list_paths_empty_space(self):
-        """Test listing paths in an empty space returns empty dict"""
+    async def test_list_paths_under_block_basic(self):
+        """Test listing paths under a block with folders and pages"""
         db_client = DatabaseClient()
         await db_client.create_tables()
 
         async with db_client.get_session_context() as session:
+            # Create test data
             project = Project(
                 secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
             )
@@ -31,447 +38,139 @@ class TestListPathsUnderBlock:
             session.add(space)
             await session.flush()
 
-            # List paths at root with no blocks created
-            r = await list_paths_under_block(session, space.id, depth=0)
-            assert r.ok()
-            assert r.data == {}
+            # Create folder structure:
+            # - Folder1/
+            #   - Page1
+            #   - Page2
+            #   - SubFolder/
+            #     - Page3
+            # - Page4
 
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_root_level_depth_zero(self):
-        """Test listing paths at root level with depth=0 (no recursion)"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create some root-level pages and folders
+            # Create Folder1
             r = await create_new_path_block(
-                session, space.id, "Page1", type=BLOCK_TYPE_PAGE
+                session, space.id, "Folder1", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
+            folder1_id = r.data.id
+
+            # Create Page1 and Page2 under Folder1
+            r = await create_new_path_block(
+                session, space.id, "Page1", par_block_id=folder1_id
             )
             assert r.ok()
             page1_id = r.data.id
 
             r = await create_new_path_block(
-                session, space.id, "Folder1", type=BLOCK_TYPE_FOLDER
-            )
-            assert r.ok()
-            folder1_id = r.data.id
-
-            r = await create_new_path_block(
-                session, space.id, "Page2", type=BLOCK_TYPE_PAGE
+                session, space.id, "Page2", par_block_id=folder1_id
             )
             assert r.ok()
             page2_id = r.data.id
 
-            # List paths at root
-            r = await list_paths_under_block(session, space.id, depth=0)
-            assert r.ok()
-            paths = r.data
-
-            assert len(paths) == 3
-            assert paths["Page1"] == page1_id
-            assert paths["Folder1"] == folder1_id
-            assert paths["Page2"] == page2_id
-
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_with_nested_structure(self):
-        """Test listing paths with nested folder structure and depth=1"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create folder structure
-            r = await create_new_path_block(
-                session, space.id, "Docs", type=BLOCK_TYPE_FOLDER
-            )
-            assert r.ok()
-            docs_id = r.data.id
-
-            # Create pages inside Docs folder
-            r = await create_new_path_block(
-                session, space.id, "README", par_block_id=docs_id, type=BLOCK_TYPE_PAGE
-            )
-            assert r.ok()
-            readme_id = r.data.id
-
-            r = await create_new_path_block(
-                session, space.id, "Guide", par_block_id=docs_id, type=BLOCK_TYPE_PAGE
-            )
-            assert r.ok()
-            guide_id = r.data.id
-
-            # List paths with depth=1
-            r = await list_paths_under_block(session, space.id, depth=1)
-            assert r.ok()
-            paths = r.data
-
-            assert len(paths) == 3
-            assert paths["Docs"] == docs_id
-            assert paths["Docs/README"] == readme_id
-            assert paths["Docs/Guide"] == guide_id
-
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_deep_nesting_with_depth_control(self):
-        """Test listing paths with deep nesting and different depth parameters"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create nested structure: Root/Level1/Level2/Page
-            r = await create_new_path_block(
-                session, space.id, "Root", type=BLOCK_TYPE_FOLDER
-            )
-            assert r.ok()
-            root_id = r.data.id
-
+            # Create SubFolder under Folder1
             r = await create_new_path_block(
                 session,
                 space.id,
-                "Level1",
-                par_block_id=root_id,
+                "SubFolder",
                 type=BLOCK_TYPE_FOLDER,
-            )
-            assert r.ok()
-            level1_id = r.data.id
-
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "Level2",
-                par_block_id=level1_id,
-                type=BLOCK_TYPE_FOLDER,
-            )
-            assert r.ok()
-            level2_id = r.data.id
-
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "DeepPage",
-                par_block_id=level2_id,
-                type=BLOCK_TYPE_PAGE,
-            )
-            assert r.ok()
-            deep_page_id = r.data.id
-
-            # Test with depth=0 (only root level)
-            r = await list_paths_under_block(session, space.id, depth=0)
-            assert r.ok()
-            assert len(r.data) == 1
-            assert "Root" in r.data
-
-            # Test with depth=1 (shows Root/Level1)
-            r = await list_paths_under_block(session, space.id, depth=1)
-            assert r.ok()
-            assert len(r.data) == 2
-            assert "Root" in r.data
-            assert "Root/Level1" in r.data
-
-            # Test with depth=2 (shows Root/Level1/Level2)
-            r = await list_paths_under_block(session, space.id, depth=2)
-            assert r.ok()
-            assert len(r.data) == 3
-            assert "Root" in r.data
-            assert "Root/Level1" in r.data
-            assert "Root/Level1/Level2" in r.data
-
-            # Test with depth=3 (shows all including DeepPage)
-            r = await list_paths_under_block(session, space.id, depth=3)
-            assert r.ok()
-            assert len(r.data) == 4
-            assert r.data["Root/Level1/Level2/DeepPage"] == deep_page_id
-
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_under_specific_folder(self):
-        """Test listing paths under a specific folder (not root)"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create root folders
-            r = await create_new_path_block(
-                session, space.id, "Folder1", type=BLOCK_TYPE_FOLDER
-            )
-            folder1_id = r.data.id
-
-            r = await create_new_path_block(
-                session, space.id, "Folder2", type=BLOCK_TYPE_FOLDER
-            )
-            folder2_id = r.data.id
-
-            # Add content to Folder1
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "PageA",
                 par_block_id=folder1_id,
-                type=BLOCK_TYPE_PAGE,
             )
-            page_a_id = r.data.id
+            assert r.ok()
+            subfolder_id = r.data.id
 
+            # Create Page3 under SubFolder
             r = await create_new_path_block(
-                session,
-                space.id,
-                "PageB",
-                par_block_id=folder1_id,
-                type=BLOCK_TYPE_PAGE,
+                session, space.id, "Page3", par_block_id=subfolder_id
             )
-            page_b_id = r.data.id
+            assert r.ok()
+            page3_id = r.data.id
 
-            # Add content to Folder2
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "PageC",
-                par_block_id=folder2_id,
-                type=BLOCK_TYPE_PAGE,
-            )
-            page_c_id = r.data.id
+            # Create Page4 at root level
+            r = await create_new_path_block(session, space.id, "Page4")
+            assert r.ok()
+            page4_id = r.data.id
 
-            # List paths under Folder1 only
+            # Test 1: List all paths at root level with depth=0 (no recursion)
+            r = await list_paths_under_block(session, space.id, None, "", depth=0)
+            assert r.ok()
+            paths, sub_page_num, sub_folder_num = r.data
+
+            # Should have 1 folder (Folder1) and 1 page (Page4) at root
+            assert sub_folder_num == 1
+            assert sub_page_num == 1
+            assert "Page4" in paths
+            assert paths["Page4"].id == page4_id
+            assert paths["Page4"].type == BLOCK_TYPE_PAGE
+
+            # Test 2: List paths under Folder1 with depth=0
             r = await list_paths_under_block(
-                session, space.id, depth=0, block_id=folder1_id
+                session, space.id, folder1_id, "Folder1/", depth=0
             )
             assert r.ok()
-            paths = r.data
+            paths, sub_page_num, sub_folder_num = r.data
 
-            assert len(paths) == 2
-            assert paths["PageA"] == page_a_id
-            assert paths["PageB"] == page_b_id
-            # PageC should not be included
-            assert "PageC" not in paths
+            # Should have 1 folder (SubFolder) and 2 pages (Page1, Page2)
+            assert sub_folder_num == 1
+            assert sub_page_num == 2
+            assert "Folder1/Page1" in paths
+            assert "Folder1/Page2" in paths
+            assert paths["Folder1/Page1"].id == page1_id
+            assert paths["Folder1/Page2"].id == page2_id
 
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_excludes_sop_and_text_blocks(self):
-        """Test that SOP and TEXT blocks are not included in path listing"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create a page
-            r = await create_new_path_block(
-                session, space.id, "TestPage", type=BLOCK_TYPE_PAGE
+            # Test 3: List paths under Folder1 with depth=1 (recurse into SubFolder)
+            r = await list_paths_under_block(
+                session, space.id, folder1_id, "Folder1/", depth=1
             )
             assert r.ok()
-            page_id = r.data.id
+            paths, sub_page_num, sub_folder_num = r.data
 
-            # Create text block under page
+            # Should include Page3 from SubFolder
+            assert "Folder1/Page1" in paths
+            assert "Folder1/Page2" in paths
+            assert "Folder1/SubFolder/" in paths
+            assert "Folder1/SubFolder/Page3" in paths
+            assert paths["Folder1/SubFolder/Page3"].id == page3_id
+            assert paths["Folder1/SubFolder/"].sub_page_num == 1
+            assert paths["Folder1/SubFolder/"].sub_folder_num == 0
+
+            # Test 4: List all paths from root with depth=2 (full tree)
+            # Create Page3 under SubFolder
             r = await create_new_path_block(
                 session,
                 space.id,
-                "TextBlock",
-                par_block_id=page_id,
-                type=BLOCK_TYPE_TEXT,
-                props={"preferences": "test"},
-            )
-            assert r.ok()
-
-            # List paths - should only show the page, not the text block
-            r = await list_paths_under_block(session, space.id, depth=0)
-            assert r.ok()
-            paths = r.data
-
-            assert len(paths) == 1
-            assert paths["TestPage"] == page_id
-
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_invalid_block_id(self):
-        """Test that listing paths with non-existent block_id fails"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            fake_block_id = uuid.uuid4()
-            r = await list_paths_under_block(
-                session, space.id, depth=0, block_id=fake_block_id
-            )
-            assert not r.ok()
-            assert "not found" in r.error.errmsg.lower()
-
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_with_page_block_id_fails(self):
-        """Test that using a page as block_id fails (must be folder)"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create a page
-            r = await create_new_path_block(
-                session, space.id, "TestPage", type=BLOCK_TYPE_PAGE
-            )
-            assert r.ok()
-            page_id = r.data.id
-
-            # Try to list paths under a page (should fail)
-            r = await list_paths_under_block(
-                session, space.id, depth=0, block_id=page_id
-            )
-            assert not r.ok()
-            assert "not a folder" in r.error.errmsg.lower()
-
-            await session.delete(project)
-
-    @pytest.mark.asyncio
-    async def test_list_paths_mixed_content(self):
-        """Test listing paths with mixed folders and pages at multiple levels"""
-        db_client = DatabaseClient()
-        await db_client.create_tables()
-
-        async with db_client.get_session_context() as session:
-            project = Project(
-                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
-            )
-            session.add(project)
-            await session.flush()
-
-            space = Space(project_id=project.id)
-            session.add(space)
-            await session.flush()
-
-            # Create structure:
-            # - Projects (folder)
-            #   - Project1 (folder)
-            #     - README (page)
-            #   - Project2 (page)
-            # - Notes (page)
-
-            r = await create_new_path_block(
-                session, space.id, "Projects", type=BLOCK_TYPE_FOLDER
-            )
-            projects_id = r.data.id
-
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "Project1",
-                par_block_id=projects_id,
+                "Dir5",
+                par_block_id=subfolder_id,
                 type=BLOCK_TYPE_FOLDER,
             )
-            project1_id = r.data.id
-
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "README",
-                par_block_id=project1_id,
-                type=BLOCK_TYPE_PAGE,
-            )
-            readme_id = r.data.id
-
-            r = await create_new_path_block(
-                session,
-                space.id,
-                "Project2",
-                par_block_id=projects_id,
-                type=BLOCK_TYPE_PAGE,
-            )
-            project2_id = r.data.id
-
-            r = await create_new_path_block(
-                session, space.id, "Notes", type=BLOCK_TYPE_PAGE
-            )
-            notes_id = r.data.id
-
-            # List all paths with depth=2
-            r = await list_paths_under_block(session, space.id, depth=2)
             assert r.ok()
-            paths = r.data
+            dir5_id = r.data.id
+            r = await create_new_path_block(
+                session, space.id, "Page5", par_block_id=dir5_id
+            )
+            assert r.ok()
+            r = await create_new_path_block(
+                session, space.id, "Dir6", par_block_id=dir5_id, type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
 
-            assert len(paths) == 5
-            assert paths["Projects"] == projects_id
-            assert paths["Projects/Project1"] == project1_id
-            assert paths["Projects/Project1/README"] == readme_id
-            assert paths["Projects/Project2"] == project2_id
-            assert paths["Notes"] == notes_id
+            r = await list_paths_under_block(session, space.id, None, "", depth=2)
+            assert r.ok()
+            paths, sub_page_num, sub_folder_num = r.data
 
+            print(repr_path_tree(paths))
+            # Should have all pages accessible from root
+            assert "Page4" in paths
+            assert "Folder1/" in paths
+            assert "Folder1/Page1" in paths
+            assert "Folder1/Page2" in paths
+            assert "Folder1/SubFolder/" in paths
+            assert "Folder1/SubFolder/Page3" in paths
+
+            # Clean up
             await session.delete(project)
 
     @pytest.mark.asyncio
-    async def test_list_paths_with_special_characters_in_title(self):
-        """Test listing paths with special characters in titles"""
+    async def test_list_paths_empty_space(self):
+        """Test listing paths in an empty space"""
         db_client = DatabaseClient()
         await db_client.create_tables()
 
@@ -486,28 +185,218 @@ class TestListPathsUnderBlock:
             session.add(space)
             await session.flush()
 
-            # Create blocks with special characters
-            r = await create_new_path_block(
-                session, space.id, "Folder-With-Dashes", type=BLOCK_TYPE_FOLDER
+            # List paths in empty space
+            r = await list_paths_under_block(session, space.id, None, "", depth=0)
+            assert r.ok()
+            paths, sub_page_num, sub_folder_num = r.data
+
+            assert len(paths) == 0
+            assert sub_page_num == 0
+            assert sub_folder_num == 0
+
+            # Clean up
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_get_path_info_by_id_basic(self):
+        """Test getting path info for a page and folder by ID"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Create test data
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
             )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create a folder structure:
+            # - TestFolder/
+            #   - TestPage
+
+            # Create TestFolder
+            r = await create_new_path_block(
+                session, space.id, "TestFolder", type=BLOCK_TYPE_FOLDER
+            )
+            assert r.ok()
             folder_id = r.data.id
 
+            # Create TestPage under TestFolder
             r = await create_new_path_block(
-                session,
-                space.id,
-                "Page_With_Spaces",
-                par_block_id=folder_id,
-                type=BLOCK_TYPE_PAGE,
+                session, space.id, "TestPage", par_block_id=folder_id
             )
+            assert r.ok()
             page_id = r.data.id
 
-            # List paths
-            r = await list_paths_under_block(session, space.id, depth=1)
+            # Test 1: Get path info for the page
+            r = await get_path_info_by_id(session, space.id, page_id)
             assert r.ok()
-            paths = r.data
+            path_str, path_node = r.data
 
-            assert "Folder-With-Dashes" in paths
-            assert "Folder-With-Dashes/Page_With_Spaces" in paths
-            assert paths["Folder-With-Dashes/Page_With_Spaces"] == page_id
+            assert path_str == "/TestFolder/TestPage"
+            assert path_node.id == page_id
+            assert path_node.title == "TestPage"
+            assert path_node.type == BLOCK_TYPE_PAGE
+            assert path_node.sub_page_num == 0
+            assert path_node.sub_folder_num == 0
 
+            # Test 2: Get path info for the folder
+            r = await get_path_info_by_id(session, space.id, folder_id)
+            assert r.ok()
+            path_str, path_node = r.data
+
+            assert path_str == "/TestFolder/"
+            assert path_node.id == folder_id
+            assert path_node.title == "TestFolder"
+            assert path_node.type == BLOCK_TYPE_FOLDER
+            assert path_node.sub_page_num == 1  # Contains TestPage
+            assert path_node.sub_folder_num == 0
+
+            # Clean up
+            await session.delete(project)
+
+    @pytest.mark.asyncio
+    async def test_read_blocks_from_par_id(self):
+        """Test reading blocks from a parent block with type filtering"""
+        db_client = DatabaseClient()
+        await db_client.create_tables()
+
+        async with db_client.get_session_context() as session:
+            # Create test data
+            project = Project(
+                secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+            )
+            session.add(project)
+            await session.flush()
+
+            space = Space(project_id=project.id)
+            session.add(space)
+            await session.flush()
+
+            # Create a parent page block
+            r = await create_new_path_block(
+                session, space.id, "ParentPage", type=BLOCK_TYPE_PAGE
+            )
+            assert r.ok()
+            parent_id = r.data.id
+
+            # Create child blocks of different types
+            # Text block 1
+            text_block_1 = Block(
+                space_id=space.id,
+                parent_id=parent_id,
+                type=BLOCK_TYPE_TEXT,
+                title="Text Block 1",
+                sort=0,
+            )
+            session.add(text_block_1)
+            await session.flush()
+
+            # Text block 2
+            text_block_2 = Block(
+                space_id=space.id,
+                parent_id=parent_id,
+                type=BLOCK_TYPE_TEXT,
+                title="Text Block 2",
+                sort=1,
+            )
+            session.add(text_block_2)
+            await session.flush()
+
+            # SOP block
+            sop_block = Block(
+                space_id=space.id,
+                parent_id=parent_id,
+                type=BLOCK_TYPE_SOP,
+                title="SOP Block",
+                sort=2,
+            )
+            session.add(sop_block)
+            await session.flush()
+
+            # Reference block (not in CONTENT_BLOCK)
+            ref_block = Block(
+                space_id=space.id,
+                parent_id=parent_id,
+                type=BLOCK_TYPE_REFERENCE,
+                title="Reference Block",
+                sort=3,
+            )
+            session.add(ref_block)
+            await session.flush()
+
+            # Test 1: Read all content blocks (default behavior)
+            r = await read_blocks_from_par_id(session, space.id, parent_id)
+            assert r.ok()
+            blocks = r.data
+
+            # Should return only TEXT and SOP blocks (CONTENT_BLOCK)
+            assert len(blocks) == 3
+            assert blocks[0].id == text_block_1.id
+            assert blocks[0].type == BLOCK_TYPE_TEXT
+            assert blocks[1].id == text_block_2.id
+            assert blocks[1].type == BLOCK_TYPE_TEXT
+            assert blocks[2].id == sop_block.id
+            assert blocks[2].type == BLOCK_TYPE_SOP
+
+            # Test 2: Read only TEXT blocks
+            r = await read_blocks_from_par_id(
+                session, space.id, parent_id, allowed_types={BLOCK_TYPE_TEXT}
+            )
+            assert r.ok()
+            blocks = r.data
+
+            assert len(blocks) == 2
+            assert blocks[0].type == BLOCK_TYPE_TEXT
+            assert blocks[1].type == BLOCK_TYPE_TEXT
+            assert blocks[0].id == text_block_1.id
+            assert blocks[1].id == text_block_2.id
+
+            # Test 3: Read only SOP blocks
+            r = await read_blocks_from_par_id(
+                session, space.id, parent_id, allowed_types={BLOCK_TYPE_SOP}
+            )
+            assert r.ok()
+            blocks = r.data
+
+            assert len(blocks) == 1
+            assert blocks[0].type == BLOCK_TYPE_SOP
+            assert blocks[0].id == sop_block.id
+
+            # Test 4: Read REFERENCE blocks
+            r = await read_blocks_from_par_id(
+                session, space.id, parent_id, allowed_types={BLOCK_TYPE_REFERENCE}
+            )
+            assert r.ok()
+            blocks = r.data
+
+            assert len(blocks) == 1
+            assert blocks[0].type == BLOCK_TYPE_REFERENCE
+            assert blocks[0].id == ref_block.id
+
+            # Test 5: Read with empty allowed_types (should return empty)
+            r = await read_blocks_from_par_id(
+                session, space.id, parent_id, allowed_types=set()
+            )
+            assert r.ok()
+            blocks = r.data
+
+            assert len(blocks) == 0
+
+            # Test 6: Read from non-existent parent (should return empty)
+            import uuid
+
+            non_existent_id = uuid.uuid4()
+            r = await read_blocks_from_par_id(session, space.id, non_existent_id)
+            assert r.ok()
+            blocks = r.data
+
+            assert len(blocks) == 0
+
+            # Clean up
             await session.delete(project)
