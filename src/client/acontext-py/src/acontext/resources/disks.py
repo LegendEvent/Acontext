@@ -3,7 +3,7 @@ Disk and artifact endpoints.
 """
 
 import json
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any, BinaryIO, cast
 
 from .._utils import build_params
@@ -73,9 +73,9 @@ class DiskArtifactsAPI:
         *,
         file: FileUpload
         | tuple[str, BinaryIO | bytes]
-        | tuple[str, BinaryIO | bytes, str | None],
+        | tuple[str, BinaryIO | bytes, str],
         file_path: str | None = None,
-        meta: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
+        meta: Mapping[str, Any] | None = None,
     ) -> Artifact:
         """Upload a file to create or update an artifact.
         
@@ -142,7 +142,7 @@ class DiskArtifactsAPI:
         *,
         file_path: str,
         filename: str,
-        meta: Mapping[str, Any] | MutableMapping[str, Any],
+        meta: Mapping[str, Any],
     ) -> UpdateArtifactResp:
         """Update an artifact's metadata.
         

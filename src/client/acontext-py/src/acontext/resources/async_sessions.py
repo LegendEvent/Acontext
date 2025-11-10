@@ -1,7 +1,7 @@
 """Sessions endpoints (async)."""
 
 import json
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from dataclasses import asdict
 from typing import Any, BinaryIO, Literal
 
@@ -15,7 +15,7 @@ from ..types.session import (
     Message,
     Session,
 )
-from ..uploads import FileUpload
+from ..uploads import FileUpload, normalize_file_upload
 from openai.types.chat import ChatCompletionMessageParam
 from anthropic.types import MessageParam
 
@@ -61,7 +61,7 @@ class AsyncSessionsAPI:
         self,
         *,
         space_id: str | None = None,
-        configs: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
+        configs: Mapping[str, Any] | None = None,
     ) -> Session:
         """Create a new session.
         
@@ -92,7 +92,7 @@ class AsyncSessionsAPI:
         self,
         session_id: str,
         *,
-        configs: Mapping[str, Any] | MutableMapping[str, Any],
+        configs: Mapping[str, Any],
     ) -> None:
         """Update session configurations.
         
@@ -163,7 +163,7 @@ class AsyncSessionsAPI:
         blob: MessageBlob,
         format: Literal["acontext", "openai", "anthropic"] = "openai",
         file_field: str | None = None,
-        file: FileUpload | None = None,
+        file: FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str] | None = None,
     ) -> Message:
         """Send a message to a session.
         
@@ -171,45 +171,61 @@ class AsyncSessionsAPI:
             session_id: The UUID of the session.
             blob: The message blob in Acontext, OpenAI, or Anthropic format.
             format: The format of the message blob. Defaults to "openai".
-            file_field: The field name for file upload. Required if file is provided. Defaults to None.
-            file: Optional file upload. Defaults to None.
+            file_field: The field name for file upload. Only used when format is "acontext".
+                Required if file is provided. Defaults to None.
+            file: Optional file upload. Only used when format is "acontext". Defaults to None.
             
         Returns:
             The created Message object.
             
         Raises:
-            ValueError: If format is invalid or file is provided without file_field.
+            ValueError: If format is invalid, file/file_field provided for non-acontext format,
+                or file is provided without file_field for acontext format.
         """
         if format not in {"acontext", "openai", "anthropic"}:
             raise ValueError(
                 "format must be one of {'acontext', 'openai', 'anthropic'}"
             )
         
-        if file and not file_field:
-            raise ValueError("file_field is required when file is provided")
+        # File upload is only supported for acontext format
+        if format != "acontext" and (file is not None or file_field is not None):
+            raise ValueError(
+                "file and file_field parameters are only supported when format is 'acontext'"
+            )
 
-        payload = {
+        payload: dict[str, Any] = {
             "format": format,
         }
         if format == "acontext":
-            payload["blob"] = asdict(blob)
+            payload["blob"] = asdict(blob)  # type: ignore
+            
+            # Handle file upload for acontext format
+            file_payload: dict[str, tuple[str, BinaryIO, str]] | None = None
+            if file is not None:
+                if file_field is None:
+                    raise ValueError("file_field is required when file is provided")
+                # only support upload one file now
+                upload = normalize_file_upload(file)
+                file_payload = {
+                    file_field: upload.as_httpx()
+                }
+            
+            if file_payload:
+                form_data = {"payload": json.dumps(payload)}
+                data = await self._requester.request(
+                    "POST",
+                    f"/session/{session_id}/messages",
+                    data=form_data,
+                    files=file_payload,
+                )
+            else:
+                data = await self._requester.request(
+                    "POST",
+                    f"/session/{session_id}/messages",
+                    json_data=payload,
+                )
         else:
-            payload["blob"] = blob
-
-        file_payload: dict[str, tuple[str, BinaryIO, str | None]] | None = None
-        if file:
-            # only support upload one file now
-            file_payload = {file_field: file.as_httpx()}
-
-        if file_payload:
-            form_data = {"payload": json.dumps(payload)}
-            data = await self._requester.request(
-                "POST",
-                f"/session/{session_id}/messages",
-                data=form_data,
-                files=file_payload,
-            )
-        else:
+            payload["blob"] = blob  # type: ignore
             data = await self._requester.request(
                 "POST",
                 f"/session/{session_id}/messages",

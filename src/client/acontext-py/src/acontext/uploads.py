@@ -17,20 +17,20 @@ class FileUpload:
 
     filename: str
     content: BinaryIO | bytes
-    content_type: str | None = None
+    content_type: str = "application/octet-stream"
 
-    def as_httpx(self) -> tuple[str, BinaryIO, str | None]:
+    def as_httpx(self) -> tuple[str, BinaryIO, str]:
         """
         Convert to the tuple format expected by ``httpx``.
         """
         if isinstance(self.content, (bytes, bytearray)):
             buffer = io.BytesIO(self.content)
-            return self.filename, buffer, self.content_type or "application/octet-stream"
-        return self.filename, self.content, self.content_type or "application/octet-stream"
+            return self.filename, buffer, self.content_type 
+        return self.filename, self.content, self.content_type
 
 
 def normalize_file_upload(
-    upload: FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str | None],
+    upload: FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str],
 ) -> FileUpload:
     if isinstance(upload, FileUpload):
         return upload

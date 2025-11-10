@@ -6,7 +6,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from acontext.client import AcontextClient, FileUpload, MessagePart  # noqa: E402
+from acontext.client import AcontextClient, FileUpload  # noqa: E402
 from acontext.messages import build_acontext_message  # noqa: E402
 from acontext.errors import APIError, TransportError  # noqa: E402
 
@@ -28,7 +28,7 @@ def client() -> AcontextClient:
 def test_build_acontext_message_with_meta() -> None:
     message = build_acontext_message(
         role="assistant",
-        parts=[MessagePart.text_part("hi")],
+        parts=["hi"],
         meta={"name": "bot"},
     )
 
@@ -80,7 +80,7 @@ def test_send_message_with_files_uses_multipart_payload(mock_request, client: Ac
         "updated_at": "2024-01-01T00:00:00Z",
     }
 
-    blob = build_acontext_message(role="user", parts=[MessagePart.text_part("hello")])
+    blob = build_acontext_message(role="user", parts=["hello"])
 
     class _DummyStream:
         def read(self) -> bytes:
@@ -135,7 +135,7 @@ def test_send_message_allows_nullable_blob_for_other_formats(mock_request, clien
         "updated_at": "2024-01-01T00:00:00Z",
     }
 
-    client.sessions.send_message("session-id", format="openai", blob=None, file=None)
+    client.sessions.send_message("session-id", format="openai", blob=None)  # type: ignore[arg-type]
 
     mock_request.assert_called_once()
     _, kwargs = mock_request.call_args
@@ -149,7 +149,6 @@ def test_send_message_requires_format_when_cannot_infer(mock_request, client: Ac
         client.sessions.send_message(
             "session-id",
             blob={"message": "hi"},  # type: ignore[arg-type]
-            file=None,
         )
 
 
@@ -160,7 +159,6 @@ def test_send_message_rejects_unknown_format(mock_request, client: AcontextClien
             "session-id",
             blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
             format="legacy",  # type: ignore[arg-type]
-            file=None,
         )
 
 
@@ -181,7 +179,6 @@ def test_send_message_explicit_format_still_supported(mock_request, client: Acon
         "session-id",
         blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
         format="openai",
-        file=None,
     )
 
     mock_request.assert_called_once()
@@ -232,7 +229,6 @@ def test_send_message_handles_openai_model_dump(mock_request, client: AcontextCl
         "session-id",
         blob=message,  # type: ignore[arg-type]
         format="openai",
-        file=None,
     )
 
     mock_request.assert_called_once()
@@ -259,7 +255,6 @@ def test_send_message_handles_anthropic_model_dump(mock_request, client: Acontex
         "session-id",
         blob=message,  # type: ignore[arg-type]
         format="anthropic",
-        file=None,
     )
 
     mock_request.assert_called_once()
@@ -281,8 +276,8 @@ def test_send_message_accepts_acontext_message(mock_request, client: AcontextCli
         "updated_at": "2024-01-01T00:00:00Z",
     }
 
-    blob = build_acontext_message(role="assistant", parts=[MessagePart.text_part("hi")])
-    client.sessions.send_message("session-id", blob=blob, format="acontext", file=None)
+    blob = build_acontext_message(role="assistant", parts=["hi"])
+    client.sessions.send_message("session-id", blob=blob, format="acontext")
 
     mock_request.assert_called_once()
     _, kwargs = mock_request.call_args
@@ -291,7 +286,7 @@ def test_send_message_accepts_acontext_message(mock_request, client: AcontextCli
 
 @patch("acontext.client.AcontextClient.request")
 def test_send_message_requires_file_field_when_file_provided(mock_request, client: AcontextClient) -> None:
-    blob = build_acontext_message(role="user", parts=[MessagePart.text_part("hello")])
+    blob = build_acontext_message(role="user", parts=["hello"])
     
     class _DummyStream:
         def read(self) -> bytes:
@@ -305,6 +300,39 @@ def test_send_message_requires_file_field_when_file_provided(mock_request, clien
             blob=blob,
             format="acontext",
             file=upload,
+        )
+    
+    mock_request.assert_not_called()
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_send_message_rejects_file_for_non_acontext_format(mock_request, client: AcontextClient) -> None:
+    class _DummyStream:
+        def read(self) -> bytes:
+            return b"bytes"
+    
+    upload = FileUpload(filename="image.png", content=_DummyStream(), content_type="image/png")
+    
+    with pytest.raises(ValueError, match="file and file_field parameters are only supported when format is 'acontext'"):
+        client.sessions.send_message(
+            "session-id",
+            blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
+            format="openai",
+            file=upload,
+            file_field="attachment",
+        )
+    
+    mock_request.assert_not_called()
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_send_message_rejects_file_field_for_non_acontext_format(mock_request, client: AcontextClient) -> None:
+    with pytest.raises(ValueError, match="file and file_field parameters are only supported when format is 'acontext'"):
+        client.sessions.send_message(
+            "session-id",
+            blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
+            format="openai",
+            file_field="attachment",
         )
     
     mock_request.assert_not_called()

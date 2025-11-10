@@ -2,7 +2,7 @@
 Support for constructing session messages.
 """
 
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -25,14 +25,6 @@ class MessagePart:
     meta: Mapping[str, Any] | None = None
     file_field: str | None = None
 
-    @classmethod
-    def text_part(cls, text: str, *, meta: Mapping[str, Any] | None = None) -> "MessagePart":
-        return cls(type="text", text=text, meta=meta)
-    
-    @classmethod
-    def file_field_part(cls, file_field: str, *, meta: Mapping[str, Any] | None = None) -> "MessagePart":
-        return cls(type="file", file_field=file_field, meta=meta)
-
 @dataclass(slots=True)
 class AcontextMessage:
     """
@@ -41,7 +33,7 @@ class AcontextMessage:
 
     role: Literal["user", "assistant", "system"]
     parts: list[MessagePart]
-    meta: MutableMapping[str, Any] | None = None
+    meta: Mapping[str, Any] | None = None
 
 
 def build_acontext_message(

@@ -2,7 +2,7 @@
 Custom exceptions raised by the acontext Python client.
 """
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any
 
 
@@ -29,7 +29,7 @@ class APIError(AcontextError):
         code: int | None = None,
         message: str | None = None,
         error: str | None = None,
-        payload: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
+        payload: Mapping[str, Any] | None = None,
     ) -> None:
         self.status_code = status_code
         self.code = code

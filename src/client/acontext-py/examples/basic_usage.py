@@ -13,19 +13,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from anthropic.types import MessageParam, TextBlockParam, ToolUseBlockParam
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionMessageFunctionToolCallParam,
-    ChatCompletionUserMessageParam,
-)
-from openai.types.chat.chat_completion_message_function_tool_call_param import Function
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from acontext import AcontextClient, FileUpload, MessagePart  # noqa: E402
-from acontext.errors import APIError, AcontextError, TransportError  # noqa: E402
-from acontext.messages import build_acontext_message  # noqa: E402
+from acontext import AcontextClient
+from acontext.errors import APIError, AcontextError, TransportError
+from acontext.messages import build_acontext_message 
 
 
 SPACE_CONFIG_NAME = "sdk-e2e-space"
@@ -93,11 +86,11 @@ def exercise_blocks(client: AcontextClient, space_id: str) -> dict[str, Any]:
     return summary
 
 
-def build_file_upload() -> FileUpload:
-    return FileUpload(
-        filename=FILE_NAME,
-        content=FILE_CONTENT,
-        content_type="text/markdown",
+def build_file_upload() -> tuple[str, bytes, str]:
+    return (
+        FILE_NAME,
+        FILE_CONTENT,
+        "text/markdown",
     )
 
 
@@ -118,7 +111,7 @@ def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
     # send message in acontext format
     acontext_blob = build_acontext_message(
         role="user",
-        parts=[MessagePart.text_part("Hello from the SDK e2e test!")],
+        parts=["Hello from the SDK e2e test!"],
     )
     client.sessions.send_message(session_id, blob=acontext_blob, format="acontext")
 
@@ -126,7 +119,7 @@ def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
     file_field = "retro_notes"
     file_blob = build_acontext_message(
         role="user",
-        parts=[MessagePart.file_field_part(file_field)],
+        parts=[{"type": "file", "file_field": file_field}],
     )
     client.sessions.send_message(
         session_id,
@@ -139,60 +132,59 @@ def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
     # send tool-call message
     tool_blob = build_acontext_message(
         role="assistant",
-        parts=[
-            MessagePart(type="text", text="Triggering weather tool."),
-            MessagePart(
-                type="tool-call",
-                meta={
+        parts=["Triggering weather tool.",
+            {
+                "type": "tool-call",
+                "meta": {
                     "id": "call_001",
                     "name": "search_apis",
                     "arguments": '{"query": "weather API free", "type": "public"}',
-                },
-            ),
+                }
+            }
         ],
     )
     client.sessions.send_message(session_id, blob=tool_blob, format="acontext")
 
     # send OpenAI compatible messages
-    openai_user = ChatCompletionUserMessageParam(role="user", content="Hello from OpenAI format")
-    client.sessions.send_message(session_id, blob=openai_user, format="openai")
+    openai_user = {"role": "user", "content": "Hello from OpenAI format"}
+    client.sessions.send_message(session_id, blob=openai_user, format="openai")  # type: ignore[arg-type]
 
-    openai_assistant = ChatCompletionAssistantMessageParam(
-        role="assistant",
-        content="Answering via OpenAI compatible payload.",
-        tool_calls=[
-            ChatCompletionMessageFunctionToolCallParam(
-                type="function",
-                id="call_002",
-                function=Function(
-                    name="search_apis",
-                    arguments='{"query": "weather API free", "type": "public"}',
-                ),
-            )
+    openai_assistant = {
+        "role": "assistant",
+        "content": "Answering via OpenAI compatible payload.",
+        "tool_calls": [
+            {
+                "type": "function",
+                "id": "call_002",
+                "function": {
+                    "name": "search_apis",
+                    "arguments": '{"query": "weather API free", "type": "public"}',
+                },
+            }
         ],
-    )
-    client.sessions.send_message(session_id, blob=openai_assistant, format="openai")
+    }
+    client.sessions.send_message(session_id, blob=openai_assistant, format="openai")  # type: ignore[arg-type]
 
     # send Anthropic compatible messages
-    anthropic_user = MessageParam(role="user", content="Hello from Anthropic format")
-    client.sessions.send_message(session_id, blob=anthropic_user, format="anthropic")
+    anthropic_user = {"role": "user", "content": "Hello from Anthropic format"}
+    client.sessions.send_message(session_id, blob=anthropic_user, format="anthropic")  # type: ignore[arg-type]
 
-    anthropic_assistant = MessageParam(
-        role="assistant",
-        content=[
-            TextBlockParam(
-                type="text",
-                text="Answering via Anthropic compatible payload.",
-            ),
-            ToolUseBlockParam(
-                id="call_003",
-                type="tool_use",
-                name="search_apis",
-                input={"query": "weather API free", "type": "public"},
-            ),
+    anthropic_assistant = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "text",
+                "text": "Answering via Anthropic compatible payload.",
+            },
+            {
+                "id": "call_003",
+                "type": "tool_use",
+                "name": "search_apis",
+                "input": {"query": "weather API free", "type": "public"},
+            },
         ],
-    )
-    client.sessions.send_message(session_id, blob=anthropic_assistant, format="anthropic")
+    }
+    client.sessions.send_message(session_id, blob=anthropic_assistant, format="anthropic")  # type: ignore[arg-type]
 
     summary["messages"] = client.sessions.get_messages(
         session_id,
@@ -227,7 +219,7 @@ def exercise_disks(client: AcontextClient) -> dict[str, Any]:
     summary["artifact_get"] = client.disks.artifacts.get(
         disk_id,
         file_path="/notes/",
-        filename=upload.filename,
+        filename=upload[0],
         with_public_url=True,
         with_content=True,
         expire=60,
@@ -236,13 +228,13 @@ def exercise_disks(client: AcontextClient) -> dict[str, Any]:
     client.disks.artifacts.update(
         disk_id,
         file_path="/notes/",
-        filename=upload.filename,
+        filename=upload[0],
         meta={"source": "sdk-e2e", "reviewed": True},
     )
 
     summary["artifact_list"] = client.disks.artifacts.list(disk_id, path="/notes/")
 
-    client.disks.artifacts.delete(disk_id, file_path="notes", filename=upload.filename)
+    client.disks.artifacts.delete(disk_id, file_path="notes", filename=upload[0])
     client.disks.delete(disk_id)
     summary["disks_after_delete"] = client.disks.list()
 

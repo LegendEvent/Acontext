@@ -2,7 +2,7 @@
 Spaces endpoints.
 """
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any
 
 from .._utils import build_params
@@ -38,7 +38,7 @@ class SpacesAPI:
         data = self._requester.request("GET", "/space", params=params or None)
         return ListSpacesOutput.model_validate(data)
 
-    def create(self, *, configs: Mapping[str, Any] | MutableMapping[str, Any] | None = None) -> Space:
+    def create(self, *, configs: Mapping[str, Any] | None = None) -> Space:
         """Create a new space.
         
         Args:
@@ -65,7 +65,7 @@ class SpacesAPI:
         self,
         space_id: str,
         *,
-        configs: Mapping[str, Any] | MutableMapping[str, Any],
+        configs: Mapping[str, Any],
     ) -> None:
         """Update space configurations.
         

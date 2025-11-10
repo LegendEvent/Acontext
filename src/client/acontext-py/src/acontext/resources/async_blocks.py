@@ -2,7 +2,7 @@
 Block endpoints (async).
 """
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any
 
 from ..client_types import AsyncRequesterProtocol
@@ -45,7 +45,7 @@ class AsyncBlocksAPI:
         block_type: str,
         parent_id: str | None = None,
         title: str | None = None,
-        props: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
+        props: Mapping[str, Any] | None = None,
     ) -> Block:
         """Create a new block in a space.
         
@@ -97,7 +97,7 @@ class AsyncBlocksAPI:
         block_id: str,
         *,
         title: str | None = None,
-        props: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
+        props: Mapping[str, Any] | None = None,
     ) -> None:
         """Update block properties.
         

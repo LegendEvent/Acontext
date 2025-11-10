@@ -2,7 +2,7 @@
 Spaces endpoints (async).
 """
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any
 
 from .._utils import build_params
@@ -38,7 +38,7 @@ class AsyncSpacesAPI:
         data = await self._requester.request("GET", "/space", params=params or None)
         return ListSpacesOutput.model_validate(data)
 
-    async def create(self, *, configs: Mapping[str, Any] | MutableMapping[str, Any] | None = None) -> Space:
+    async def create(self, *, configs: Mapping[str, Any] | None = None) -> Space:
         """Create a new space.
         
         Args:
@@ -65,7 +65,7 @@ class AsyncSpacesAPI:
         self,
         space_id: str,
         *,
-        configs: Mapping[str, Any] | MutableMapping[str, Any],
+        configs: Mapping[str, Any],
     ) -> None:
         """Update space configurations.
         

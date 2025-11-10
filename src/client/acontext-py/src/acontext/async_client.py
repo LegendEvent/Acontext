@@ -3,7 +3,7 @@ High-level asynchronous client for the Acontext API.
 """
 
 import os
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any, BinaryIO
 
 import httpx
@@ -70,6 +70,7 @@ class AcontextAsyncClient:
                 timeout = 10.0
 
         # Determine actual timeout value
+        actual_timeout: float | httpx.Timeout
         if isinstance(timeout, httpx.Timeout):
             actual_timeout = timeout
         else:
@@ -131,8 +132,8 @@ class AcontextAsyncClient:
         path: str,
         *,
         params: Mapping[str, Any] | None = None,
-        json_data: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
-        data: Mapping[str, Any] | MutableMapping[str, Any] | None = None,
+        json_data: Mapping[str, Any] | None = None,
+        data: Mapping[str, Any] | None = None,
         files: Mapping[str, tuple[str, BinaryIO, str | None]] | None = None,
         unwrap: bool = True,
     ) -> Any:
