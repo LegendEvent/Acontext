@@ -10,7 +10,7 @@ class Space(BaseModel):
 
     id: str = Field(..., description="Space UUID")
     project_id: str = Field(..., description="Project UUID")
-    configs: dict[str, Any] = Field(..., description="Space configuration dictionary")
+    configs: dict[str, Any] | None = Field(None, description="Space configuration dictionary")
     created_at: str = Field(..., description="ISO 8601 formatted creation timestamp")
     updated_at: str = Field(..., description="ISO 8601 formatted update timestamp")
 

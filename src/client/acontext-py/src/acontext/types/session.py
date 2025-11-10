@@ -53,7 +53,7 @@ class Session(BaseModel):
     id: str = Field(..., description="Session UUID")
     project_id: str = Field(..., description="Project UUID")
     space_id: str | None = Field(None, description="Space UUID, optional")
-    configs: dict[str, Any] = Field(..., description="Session configuration dictionary")
+    configs: dict[str, Any] | None = Field(None, description="Session configuration dictionary")
     created_at: str = Field(..., description="ISO 8601 formatted creation timestamp")
     updated_at: str = Field(..., description="ISO 8601 formatted update timestamp")
 
