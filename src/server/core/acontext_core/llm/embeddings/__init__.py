@@ -1,4 +1,3 @@
-import time
 from typing import Literal
 import numpy as np
 from traceback import format_exc
@@ -39,12 +38,9 @@ async def get_embedding(
 ) -> Result[EmbeddingReturn]:
     model = model or DEFAULT_CORE_CONFIG.block_embedding_model
     try:
-        _start_time = time.perf_counter()
         results = await FACTORIES[DEFAULT_CORE_CONFIG.block_embedding_provider](
             model, texts, phase
         )
-        latency_s = time.perf_counter() - _start_time
-        LOG.info(f"Embedding finished in {latency_s:.4f}s")
     except Exception as e:
         LOG.error(f"Error in get_embedding: {e} {format_exc()}")
         return Result.reject(f"Error in get_embedding: {e}")

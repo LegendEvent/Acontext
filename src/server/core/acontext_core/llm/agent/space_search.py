@@ -8,81 +8,50 @@ from ...util.generate_ids import track_process
 from ...schema.block.sop_block import SOPData
 from ...schema.result import Result
 from ...schema.utils import asUUID
-from ..prompt.space_construct import SpaceConstructPrompt
-from ..tool.space_tools import SPACE_TOOLS, SpaceCtx
+from ..prompt.space_search import SpaceSearchPrompt
+from ..tool.space_search_tools import SPACE_SEARCH_TOOLS, SpaceSearchCtx
 
 
-async def build_space_ctx(
+async def build_space_search_ctx(
     db_session: AsyncSession,
     project_id: asUUID,
     space_id: asUUID,
-    data_candidate: list[dict],
-    before_use_ctx: SpaceCtx = None,
-) -> SpaceCtx:
+    limit: int = 10,
+    before_use_ctx: SpaceSearchCtx = None,
+) -> SpaceSearchCtx:
     if before_use_ctx is not None:
         before_use_ctx.db_session = db_session
         return before_use_ctx
     LOG.info(f"Building space context for project {project_id} and space {space_id}")
-    ctx = SpaceCtx(db_session, project_id, space_id, data_candidate, set(), {"/": None})
+    ctx = SpaceSearchCtx(db_session, project_id, space_id, limit, [], {"/": None})
     return ctx
 
 
-def pack_candidate_data_list(data: list[GeneralBlockData]) -> str:
-    return "\n".join(
-        [
-            f"<candidate_data id={i}>{d['data']}</candidate_data>"
-            for i, d in enumerate(data)
-        ]
-    )
-
-
 @track_process
-async def space_construct_agent_curd(
+async def space_agent_search(
     project_id: asUUID,
     space_id: asUUID,
-    task_id: asUUID,
-    sop_datas: List[SOPData],
-    max_iterations=16,
-) -> Result[None]:
-    """
-    Construct Agent - Process SOP data and build into Space
+    user_query: str,
+    limit: int = 10,
+    max_iterations: int = 16,
+) -> Result[SpaceSearchCtx]:
 
-    Args:
-        project_id: Project ID
-        space_id: Space ID
-        task_id: Task ID
-        sop_datas: SOP data
-        max_iterations: Maximum iterations
-
-    Returns:
-        Result[Dict[str, Any]]: Processing result
-    """
-
-    json_tools = [tool.model_dump() for tool in SpaceConstructPrompt.tool_schema()]
+    json_tools = [tool.model_dump() for tool in SpaceSearchPrompt.tool_schema()]
     already_iterations = 0
-    candidate_data_list = [
-        {
-            "type": "sop",
-            "data": sop_data.model_dump(),
-        }
-        for sop_data in sop_datas
-    ]
     _messages = [
         {
             "role": "user",
-            "content": SpaceConstructPrompt.pack_task_input(
-                pack_candidate_data_list(candidate_data_list)
-            ),
+            "content": SpaceSearchPrompt.pack_task_input(user_query),
         }
     ]
     just_finish = False
     USE_CTX = None
     while already_iterations < max_iterations:
         r = await llm_complete(
-            system_prompt=SpaceConstructPrompt.system_prompt(),
+            system_prompt=SpaceSearchPrompt.system_prompt(),
             history_messages=_messages,
             tools=json_tools,
-            prompt_kwargs=SpaceConstructPrompt.prompt_kwargs(),
+            prompt_kwargs=SpaceSearchPrompt.prompt_kwargs(),
         )
         llm_return, eil = r.unpack()
         if eil:
@@ -97,18 +66,15 @@ async def space_construct_agent_curd(
         for tool_call in use_tools:
             try:
                 tool_name = tool_call.function.name
-                if tool_name == "finish":
-                    just_finish = True
-                    continue
                 tool_arguments = tool_call.function.arguments
-                tool = SPACE_TOOLS[tool_name]
+                tool = SPACE_SEARCH_TOOLS[tool_name]
                 with bound_logging_vars(tool=tool_name):
                     async with DB_CLIENT.get_session_context() as db_session:
-                        USE_CTX = await build_space_ctx(
+                        USE_CTX = await build_space_search_ctx(
                             db_session,
                             project_id,
                             space_id,
-                            candidate_data_list,
+                            limit,
                             before_use_ctx=USE_CTX,
                         )
                         r = await tool.handler(USE_CTX, tool_arguments)
@@ -117,6 +83,9 @@ async def space_construct_agent_curd(
                         return r
                 if tool_name != "report_thinking":
                     LOG.info(f"Tool Call: {tool_name} - {tool_arguments} -> {t}")
+                if tool_name == "submit_final_answer":
+                    just_finish = True
+                    continue
                 tool_response.append(
                     {
                         "role": "tool",
@@ -130,7 +99,8 @@ async def space_construct_agent_curd(
                 return Result.reject(f"Tool {tool_name} error: {str(e)}")
         _messages.extend(tool_response)
         if just_finish:
-            LOG.info("finish tool called, exit the loop")
+            LOG.info("submit_answer tool called, exit the loop")
             break
         already_iterations += 1
-    return Result.resolve(None)
+    USE_CTX.db_session = None  # remove the out-dated session
+    return Result.resolve(USE_CTX)

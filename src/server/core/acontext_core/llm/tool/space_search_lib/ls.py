@@ -7,11 +7,11 @@ from ....schema.orm import Task
 from ....schema.block.path_node import repr_path_tree
 from ....service.data import block_nav as BN
 from ....schema.session.task import TaskStatus
-from .ctx import SpaceCtx
+from .ctx import SpaceSearchCtx
 
 
 async def _ls_handler(
-    ctx: SpaceCtx,
+    ctx: SpaceSearchCtx,
     llm_arguments: dict,
 ) -> Result[str]:
     depth = llm_arguments.get("depth", 1)

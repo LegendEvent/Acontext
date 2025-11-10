@@ -11,6 +11,7 @@ class ProjectConfig(BaseModel):
     project_session_message_buffer_ttl_seconds: int = 60  # 1 minutes
     default_task_agent_max_iterations: int = 4
     default_sop_agent_max_iterations: int = 4
+    default_space_construct_agent_max_iterations: int = 16
 
 
 class CoreConfig(BaseModel):
@@ -29,7 +30,7 @@ class CoreConfig(BaseModel):
     block_embedding_dim: int = 1536
     block_embedding_api_key: Optional[str] = None
     block_embedding_base_url: Optional[str] = None
-    block_embedding_search_cosine_distance_threshold: float = 0.5
+    block_embedding_search_cosine_distance_threshold: float = 0.8
 
     # Core Configuration
     logging_format: str = "text"

@@ -10,6 +10,7 @@ from ...llm.embeddings import get_embedding
 from ...env import LOG
 
 
+# TODO: add project_id to record
 async def search_blocks(
     db_session: AsyncSession,
     space_id: asUUID,
@@ -117,7 +118,7 @@ async def search_path_blocks(
     space_id: asUUID,
     query_text: str,
     topk: int = 10,
-    threshold: float = 0.5,
+    threshold: float = 0.8,
     fetch_ratio: float = 1.5,
 ) -> Result[List[Tuple[Block, float]]]:
     return await search_blocks(
@@ -130,7 +131,7 @@ async def search_content_blocks(
     space_id: asUUID,
     query_text: str,
     topk: int = 10,
-    threshold: float = 0.5,
+    threshold: float = 0.8,
     fetch_ratio: float = 1.5,
 ) -> Result[List[Tuple[Block, float]]]:
     return await search_blocks(

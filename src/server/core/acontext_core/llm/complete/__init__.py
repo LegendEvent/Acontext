@@ -1,4 +1,3 @@
-import time
 from typing import Callable, Awaitable, Any, Mapping, Optional
 from .openai_sdk import openai_complete
 from .anthropic_sdk import anthropic_complete
@@ -31,7 +30,6 @@ async def llm_complete(
     use_complete_func = FACTORIES[DEFAULT_CORE_CONFIG.llm_sdk]
 
     try:
-        _start_s = time.perf_counter()
         response = await use_complete_func(
             prompt,
             model=use_model,
@@ -43,8 +41,6 @@ async def llm_complete(
             tools=tools,
             **kwargs,
         )
-        _end_s = time.perf_counter()
-        LOG.info(f"LLM Complete finished in {_end_s - _start_s:.4f}s")
     except Exception as e:
         return Result.reject(f"LLM complete failed - error: {str(e)}")
 

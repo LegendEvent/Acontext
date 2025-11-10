@@ -25,12 +25,12 @@ async def process_sop_complete(
     LOG.info(f"Processing SOP completion for task {task_id}")
 
     # Call construct agent
-    construct_result = await SC.construct_agent_curd(
+    construct_result = await SC.space_construct_agent_curd(
         project_id,
         space_id,
         task_id,
-        sop_data,
-        max_iterations=project_config.default_sop_agent_max_iterations,
+        [sop_data],
+        max_iterations=project_config.default_space_construct_agent_max_iterations,
     )
 
     if construct_result.ok():

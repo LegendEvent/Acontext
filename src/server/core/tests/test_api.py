@@ -103,7 +103,7 @@ def mock_get_embedding():
 
 
 class TestSemanticGlobEndpoint:
-    """Test the /api/v1/space/{space_id}/semantic_glob endpoint"""
+    """Test the /api/v1/project/{project_id}/space/{space_id}/semantic_glob endpoint"""
 
     @pytest.mark.asyncio
     async def test_semantic_glob_success(self):
@@ -185,7 +185,7 @@ class TestSemanticGlobEndpoint:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.get(
-                    f"/api/v1/space/{space_id}/semantic_glob",
+                    f"/api/v1/project/{project_id}/space/{space_id}/semantic_glob",
                     params={"query": "Python programming", "limit": 10},
                 )
 
@@ -270,7 +270,7 @@ class TestSemanticGlobEndpoint:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.get(
-                    f"/api/v1/space/{space_id}/semantic_glob",
+                    f"/api/v1/project/{project_id}/space/{space_id}/semantic_glob",
                     params={
                         "query": "test query",
                         "limit": 5,
@@ -293,12 +293,13 @@ class TestSemanticGlobEndpoint:
     @pytest.mark.asyncio
     async def test_semantic_glob_invalid_space_id(self):
         """Test API with invalid space ID"""
+        valid_project_id = str(uuid4())
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             # Test with non-UUID space_id
             response = await client.get(
-                "/api/v1/space/not-a-uuid/semantic_glob",
+                f"/api/v1/project/{valid_project_id}/space/not-a-uuid/semantic_glob",
                 params={"query": "test"},
             )
 
@@ -309,32 +310,35 @@ class TestSemanticGlobEndpoint:
     @pytest.mark.asyncio
     async def test_semantic_glob_invalid_params(self):
         """Test API with invalid query parameters"""
+        valid_project_id = str(uuid4())
         valid_space_id = str(uuid4())
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             # Test without required query parameter
-            response = await client.get(f"/api/v1/space/{valid_space_id}/semantic_glob")
+            response = await client.get(
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_glob"
+            )
             assert response.status_code == 422, "Should fail without query parameter"
 
             # Test with limit out of range
             response = await client.get(
-                f"/api/v1/space/{valid_space_id}/semantic_glob",
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_glob",
                 params={"query": "test", "limit": 100},  # Max is 50
             )
             assert response.status_code == 422, "Should fail with limit > 50"
 
             # Test with negative limit
             response = await client.get(
-                f"/api/v1/space/{valid_space_id}/semantic_glob",
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_glob",
                 params={"query": "test", "limit": -1},
             )
             assert response.status_code == 422, "Should fail with negative limit"
 
             # Test with threshold out of range
             response = await client.get(
-                f"/api/v1/space/{valid_space_id}/semantic_glob",
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_glob",
                 params={"query": "test", "threshold": 3.0},  # Max is 2.0
             )
             assert response.status_code == 422, "Should fail with threshold > 2.0"
@@ -343,7 +347,7 @@ class TestSemanticGlobEndpoint:
 
 
 class TestSemanticGrepEndpoint:
-    """Test the /api/v1/space/{space_id}/semantic_grep endpoint"""
+    """Test the /api/v1/project/{project_id}/space/{space_id}/semantic_grep endpoint"""
 
     @pytest.mark.asyncio
     async def test_semantic_grep_success(self):
@@ -438,7 +442,7 @@ class TestSemanticGrepEndpoint:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.get(
-                    f"/api/v1/space/{space_id}/semantic_grep",
+                    f"/api/v1/project/{project_id}/space/{space_id}/semantic_grep",
                     params={"query": "Python programming", "limit": 10},
                 )
 
@@ -535,7 +539,7 @@ class TestSemanticGrepEndpoint:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.get(
-                    f"/api/v1/space/{space_id}/semantic_grep",
+                    f"/api/v1/project/{project_id}/space/{space_id}/semantic_grep",
                     params={"query": "deployment procedure", "limit": 10},
                 )
 
@@ -554,12 +558,13 @@ class TestSemanticGrepEndpoint:
     @pytest.mark.asyncio
     async def test_semantic_grep_invalid_space_id(self):
         """Test API with invalid space ID"""
+        valid_project_id = str(uuid4())
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             # Test with non-UUID space_id
             response = await client.get(
-                "/api/v1/space/not-a-uuid/semantic_grep",
+                f"/api/v1/project/{valid_project_id}/space/not-a-uuid/semantic_grep",
                 params={"query": "test"},
             )
 
@@ -570,32 +575,35 @@ class TestSemanticGrepEndpoint:
     @pytest.mark.asyncio
     async def test_semantic_grep_invalid_params(self):
         """Test API with invalid query parameters"""
+        valid_project_id = str(uuid4())
         valid_space_id = str(uuid4())
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             # Test without required query parameter
-            response = await client.get(f"/api/v1/space/{valid_space_id}/semantic_grep")
+            response = await client.get(
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_grep"
+            )
             assert response.status_code == 422, "Should fail without query parameter"
 
             # Test with limit out of range
             response = await client.get(
-                f"/api/v1/space/{valid_space_id}/semantic_grep",
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_grep",
                 params={"query": "test", "limit": 100},  # Max is 50
             )
             assert response.status_code == 422, "Should fail with limit > 50"
 
             # Test with negative limit
             response = await client.get(
-                f"/api/v1/space/{valid_space_id}/semantic_grep",
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_grep",
                 params={"query": "test", "limit": -1},
             )
             assert response.status_code == 422, "Should fail with negative limit"
 
             # Test with threshold out of range
             response = await client.get(
-                f"/api/v1/space/{valid_space_id}/semantic_grep",
+                f"/api/v1/project/{valid_project_id}/space/{valid_space_id}/semantic_grep",
                 params={"query": "test", "threshold": 3.0},  # Max is 2.0
             )
             assert response.status_code == 422, "Should fail with threshold > 2.0"

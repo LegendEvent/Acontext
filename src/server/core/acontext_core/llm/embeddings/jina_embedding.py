@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from typing import Literal
 from ...env import LOG, DEFAULT_CORE_CONFIG
@@ -14,6 +15,7 @@ async def jina_embedding(
     model: str, texts: list[str], phase: Literal["query", "document"] = "document"
 ) -> EmbeddingReturn:
     jina_async_client = get_jina_async_client_instance()
+    _start_s = time.perf_counter()
     response = await jina_async_client.post(
         "/embeddings",
         json={
@@ -25,11 +27,12 @@ async def jina_embedding(
         },
         timeout=20,
     )
+    _end_s = time.perf_counter()
     if response.status_code != 200:
         raise ValueError(f"Failed to embed texts: {response.text}")
     data = response.json()
     LOG.info(
-        f"Jina embedding, {model}, {phase}, {data['usage']['prompt_tokens']}/{data['usage']['total_tokens']}"
+        f"Jina embedding, {model}, {phase}, {data['usage']['prompt_tokens']}/{data['usage']['total_tokens']}, time {_end_s - _start_s:.4f}s"
     )
     return EmbeddingReturn(
         embedding=np.array([dp["embedding"] for dp in data["data"]]),

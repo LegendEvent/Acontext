@@ -46,6 +46,7 @@ async def render_sop_block(
             order=block.sort,
             block_id=block.id,
             type=block.type,
+            title=block.title,
             props=props,
             parent_id=block.parent_id,
         )
@@ -64,6 +65,7 @@ async def render_text_block(
             order=block.sort,
             block_id=block.id,
             type=block.type,
+            title=block.title,
             props=props,
             parent_id=block.parent_id,
         )

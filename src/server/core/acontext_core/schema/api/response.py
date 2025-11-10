@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel, Field
 from ..utils import asUUID
 
@@ -11,4 +11,14 @@ class SearchResultBlockItem(BaseModel):
         ...,
         description="Block properties. For text and sop blocks, it is the rendered props.",
     )
-    distance: float = Field(..., description="Distance between the query and the block")
+    distance: Optional[float] = Field(
+        ...,
+        description="Distance between the query and the block. None for 'agentic' mode.",
+    )
+
+
+class SpaceSearchResult(BaseModel):
+    cited_blocks: list[SearchResultBlockItem] = Field(..., description="Cited blocks")
+    final_answer: Optional[str] = Field(
+        ..., description="Final answer, not-null for 'agentic' mode."
+    )
