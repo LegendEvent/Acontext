@@ -1283,12 +1283,12 @@ export default function DiskPage() {
                     >
                       {isUpdatingMeta ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                           {t("updating")}
                         </>
                       ) : (
                         <>
-                          <Edit className="h-4 w-4 mr-2" />
+                          <Edit className="h-4 w-4" />
                           {t("editMeta")}
                         </>
                       )}
@@ -1301,12 +1301,12 @@ export default function DiskPage() {
                     >
                       {isLoadingDownload ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                           {t("downloading")}
                         </>
                       ) : (
                         <>
-                          <Download className="h-4 w-4 mr-2" />
+                          <Download className="h-4 w-4" />
                           {t("download")}
                         </>
                       )}
@@ -1319,12 +1319,12 @@ export default function DiskPage() {
                     >
                       {isDeletingArtifact ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                           {t("deleting")}
                         </>
                       ) : (
                         <>
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-4 w-4" />
                           {t("delete")}
                         </>
                       )}
@@ -1435,7 +1435,7 @@ export default function DiskPage() {
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("deleting")}
                 </>
               ) : (
@@ -1473,7 +1473,7 @@ export default function DiskPage() {
             >
               {isDeletingArtifact ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("deleting")}
                 </>
               ) : (
@@ -1565,12 +1565,12 @@ export default function DiskPage() {
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("uploading")}
                 </>
               ) : (
                 <>
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4" />
                   {t("upload")}
                 </>
               )}
@@ -1641,12 +1641,12 @@ export default function DiskPage() {
             >
               {isUpdatingMeta ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("updating")}
                 </>
               ) : (
                 <>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4" />
                   {t("update")}
                 </>
               )}

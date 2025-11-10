@@ -370,8 +370,8 @@ export default function SessionsPage() {
   };
 
   return (
-    <div className="h-full bg-background p-6">
-      <div className="space-y-4">
+    <div className="h-full bg-background p-6 flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{t("sessionList")}</h1>
@@ -384,7 +384,7 @@ export default function SessionsPage() {
               variant="outline"
               onClick={handleOpenCreateDialog}
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               {t("createSession")}
             </Button>
             <Button
@@ -394,12 +394,12 @@ export default function SessionsPage() {
             >
               {isRefreshingSessions ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("loading")}
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4" />
                   {t("refresh")}
                 </>
               )}
@@ -433,19 +433,21 @@ export default function SessionsPage() {
             className="max-w-sm"
           />
         </div>
+      </div>
 
-        <div className="rounded-md border">
-          {isLoadingSessions ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredSessions.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-sm text-muted-foreground">
-                {sessions.length === 0 ? t("noData") : t("noMatching")}
-              </p>
-            </div>
-          ) : (
+      <div className="flex-1 rounded-md border overflow-hidden flex flex-col min-h-0">
+        {isLoadingSessions ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-sm text-muted-foreground">
+              {sessions.length === 0 ? t("noData") : t("noMatching")}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -530,8 +532,8 @@ export default function SessionsPage() {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Dialog */}
@@ -554,7 +556,7 @@ export default function SessionsPage() {
             >
               {isDeletingSession ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("deleting")}
                 </>
               ) : (
@@ -595,7 +597,7 @@ export default function SessionsPage() {
             >
               {isSavingConfig ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("saving")}
                 </>
               ) : (
@@ -644,7 +646,7 @@ export default function SessionsPage() {
             >
               {isConnecting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("connecting")}
                 </>
               ) : (
@@ -716,7 +718,7 @@ export default function SessionsPage() {
             >
               {isCreatingSession ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("creating")}
                 </>
               ) : (

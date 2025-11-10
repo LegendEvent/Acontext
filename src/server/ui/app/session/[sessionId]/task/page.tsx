@@ -161,8 +161,8 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="h-full bg-background p-6">
-      <div className="space-y-4">
+    <div className="h-full bg-background p-6 flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 space-y-4">
         <div className="flex items-stretch gap-2">
           <Button
             variant="outline"
@@ -189,30 +189,31 @@ export default function TasksPage() {
             >
               {isRefreshingTasks ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t("loading")}
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4" />
                   {t("refresh")}
                 </>
               )}
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className="rounded-md border overflow-hidden flex flex-col">
-          {isLoadingTasks ? (
-            <div className="flex items-center justify-center h-64">
+      <div className="flex-1 rounded-md border overflow-hidden flex flex-col min-h-0">
+        {isLoadingTasks ? (
+          <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : allTasks.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-sm text-muted-foreground">{t("noData")}</p>
-            </div>
-          ) : (
-            <>
+          </div>
+        ) : allTasks.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-sm text-muted-foreground">{t("noData")}</p>
+          </div>
+        ) : (
+          <>
               <div className="flex-1 overflow-auto">
                 <Table>
                   <TableHeader>
@@ -345,9 +346,8 @@ export default function TasksPage() {
                   </Pagination>
                 </div>
               )}
-            </>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       {/* Task Detail Dialog */}

@@ -5,6 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import { Tree, NodeRendererProps, TreeApi } from "react-arborist";
 import { useTranslations } from "next-intl";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -21,6 +38,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BlockEditor, useBlockEditor, DEFAULT_BLOCK_CONFIGS } from "@/components/block-editor";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   ChevronRight,
   FileText,
@@ -33,19 +57,19 @@ import {
   FilePlus,
   FolderPlus,
   ArrowLeft,
+  FileEdit,
+  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   listBlocks,
   createBlock,
   deleteBlock,
-  updateBlockProperties,
-  updateBlockSort,
   moveBlock,
   getSpaceConfigs,
+  updateBlockProperties,
 } from "@/api/models/space";
 import { Block } from "@/types";
-import { BlockNoteEditor } from "@/components/blocknote-editor";
 
 interface TreeNode {
   id: string;
@@ -62,6 +86,146 @@ interface NodeProps extends NodeRendererProps<TreeNode> {
   onDeleteClick: (node: TreeNode, e: React.MouseEvent) => void;
   onCreateClick: (type: "folder" | "page", parentId: string) => void;
   t: (key: string) => string;
+}
+
+// Sortable Block Item Component
+interface SortableBlockItemProps {
+  block: Block;
+  index: number;
+  onEdit: (block: Block) => void;
+  onDelete: (blockId: string) => void;
+  t: (key: string) => string;
+}
+
+function SortableBlockItem({ block, index, onEdit, onDelete, t }: SortableBlockItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border rounded-lg bg-card group relative"
+    >
+      {/* Header with block info and actions */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
+        <div className="flex items-center gap-3">
+          {/* Drag Handle */}
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+            title={t("dragToReorder")}
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <span className="text-sm font-medium text-muted-foreground">
+            #{index + 1}
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+              block.type === "sop" &&
+                "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+              block.type === "text" &&
+                "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+            )}
+          >
+            {block.type === "sop"
+              ? "SOP"
+              : block.type === "text"
+              ? "TEXT"
+              : block.type.toUpperCase()}
+          </span>
+        </div>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            className="p-1.5 rounded-md hover:bg-primary/10 transition-colors"
+            onClick={() => onEdit(block)}
+            title={t("edit")}
+          >
+            <FileEdit className="h-4 w-4 text-primary" />
+          </button>
+          <button
+            className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+            onClick={() => onDelete(block.id)}
+            title={t("deleteTooltip")}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 space-y-3">
+        {/* Use When / Title */}
+        {block.title && (
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-1">
+              {t("useWhen")}
+            </h3>
+            <p className="text-base font-medium">{block.title}</p>
+          </div>
+        )}
+
+        {/* Block-specific content */}
+        {block.type === "sop" && (
+          <>
+            {/* Preferences */}
+            {block.props?.preferences &&
+              typeof block.props.preferences === "string" && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-1">
+                    {t("preferences")}
+                  </h3>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {String(block.props.preferences)}
+                  </p>
+                </div>
+              )}
+
+            {/* Steps - TODO: Need to load tool_sops data */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">
+                {t("steps")}
+              </h3>
+              <div className="text-sm text-muted-foreground italic">
+                {t("stepsPlaceholder")}
+              </div>
+            </div>
+          </>
+        )}
+
+        {block.type === "text" && (
+          <>
+            {/* Notes */}
+            {block.props?.notes && typeof block.props.notes === "string" && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-1">
+                  {t("notes")}
+                </h3>
+                <p className="text-sm whitespace-pre-wrap">
+                  {String(block.props.notes)}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function Node({
@@ -210,6 +374,18 @@ export default function PagesPage() {
   const [createTitle, setCreateTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
+  // Use block editor hook
+  const blockEditor = useBlockEditor();
+  const [isBlockSaving, setIsBlockSaving] = useState(false);
+
+  // Drag and drop sensors for sortable content blocks
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const loadSpaceInfo = async () => {
     try {
       const res = await getSpaceConfigs(spaceId);
@@ -260,6 +436,7 @@ export default function PagesPage() {
       loadSpaceInfo();
       loadTreeData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaceId]);
 
   const loadFolderChildren = async (nodeId: string) => {
@@ -621,82 +798,138 @@ export default function PagesPage() {
     }
   };
 
-  // Handle blocks change from editor
-  const handleBlocksChange = async (updatedBlocks: Block[]) => {
-    if (!selectedNode) return;
-
-    try {
-      const originalBlockIds = new Set(contentBlocks.map((b) => b.id));
-      const updatedBlockIds = new Set(updatedBlocks.map((b) => b.id));
-
-      // Detect deleted blocks
-      for (const originalBlock of contentBlocks) {
-        if (!updatedBlockIds.has(originalBlock.id)) {
-          await deleteBlock(spaceId, originalBlock.id);
-        }
-      }
-
-      // Detect new and updated blocks
-      const finalBlocks: Block[] = [];
-      for (let i = 0; i < updatedBlocks.length; i++) {
-        const block = updatedBlocks[i];
-        const isNewBlock = !originalBlockIds.has(block.id);
-
-        if (isNewBlock) {
-          // Create new block
-          const res = await createBlock(spaceId, {
-            type: block.type,
-            parent_id: selectedNode.id,
-            title: block.title,
-            props: block.props,
-          });
-          if (res.code !== 0 || !res.data) {
-            console.error("Failed to create block:", res.message);
-            continue;
-          }
-          // Use the block data from server
-          finalBlocks.push(res.data);
-        } else {
-          // Check if block content or type changed
-          const originalBlock = contentBlocks.find((b) => b.id === block.id);
-          if (originalBlock) {
-            const contentChanged =
-              block.title !== originalBlock.title ||
-              block.type !== originalBlock.type ||
-              JSON.stringify(block.props) !==
-                JSON.stringify(originalBlock.props);
-
-            if (contentChanged) {
-              await updateBlockProperties(spaceId, block.id, {
-                title: block.title,
-                props: block.props,
-              });
-            }
-
-            // Check if sort order changed
-            if (block.sort !== originalBlock.sort) {
-              await updateBlockSort(spaceId, block.id, block.sort);
-            }
-          }
-          // Use the updated block
-          finalBlocks.push(block);
-        }
-      }
-
-      // Update state with the final blocks directly, no need to reload from server
-      setContentBlocks(finalBlocks);
-    } catch (error) {
-      console.error("Failed to update blocks:", error);
-    }
-  };
-
   const handleGoBack = () => {
     router.push("/space");
   };
 
+  // Handle block save (create or edit)
+  const handleBlockSave = async (values: Record<string, string>) => {
+    if (!selectedNode) return;
+
+    try {
+      setIsBlockSaving(true);
+
+      if (blockEditor.mode === "create") {
+        // Create new block
+        const { title, ...propsFields } = values;
+        const res = await createBlock(spaceId, {
+          type: blockEditor.blockType,
+          parent_id: selectedNode.id,
+          title,
+          props: propsFields,
+        });
+
+        if (res.code !== 0) {
+          console.error(res.message);
+          return;
+        }
+      } else {
+        // Edit existing block - we need to get block ID from initialValues
+        const blockId = (blockEditor.initialValues as Record<string, string>)._blockId;
+        if (!blockId) return;
+
+        const { title, ...propsFields } = values;
+        const res = await updateBlockProperties(spaceId, blockId, {
+          title,
+          props: propsFields,
+        });
+
+        if (res.code !== 0) {
+          console.error(res.message);
+          return;
+        }
+      }
+
+      // Reload content
+      await loadPageContent(selectedNode.id);
+      blockEditor.close();
+    } catch (error) {
+      console.error("Failed to save block:", error);
+    } finally {
+      setIsBlockSaving(false);
+    }
+  };
+
+  // Handle create content block click
+  const handleCreateContentClick = (type: string) => {
+    blockEditor.openCreate(type);
+  };
+
+  // Handle edit block click
+  const handleEditBlockClick = (block: Block) => {
+    // Prepare initial values for the editor
+    const initialValues: Record<string, string> = {
+      title: block.title,
+      _blockId: block.id, // Hidden field to store block ID
+    };
+
+    // Add block-specific props
+    if (block.type === "sop" && typeof block.props?.preferences === "string") {
+      initialValues.preferences = block.props.preferences;
+    } else if (block.type === "text" && typeof block.props?.notes === "string") {
+      initialValues.notes = block.props.notes;
+    }
+
+    blockEditor.openEdit(block.type, initialValues);
+  };
+
+  // Handle drag end for reordering blocks
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !selectedNode) {
+      return;
+    }
+
+    const oldIndex = contentBlocks.findIndex((block) => block.id === active.id);
+    const newIndex = contentBlocks.findIndex((block) => block.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Optimistically update UI
+    const newBlocks = arrayMove(contentBlocks, oldIndex, newIndex);
+    setContentBlocks(newBlocks);
+
+    try {
+      // Call moveBlock API to update the order with new sort value
+      const res = await moveBlock(spaceId, active.id as string, {
+        parent_id: selectedNode.id,
+        sort: newIndex,
+      });
+
+      if (res.code !== 0) {
+        console.error("Failed to reorder block:", res.message);
+        // Reload to get correct order
+        await loadPageContent(selectedNode.id);
+      }
+    } catch (error) {
+      console.error("Failed to reorder block:", error);
+      // Reload to get correct order
+      await loadPageContent(selectedNode.id);
+    }
+  };
+
+  // Handle delete content block
+  const handleDeleteContentBlock = async (blockId: string) => {
+    if (!selectedNode) return;
+
+    try {
+      const res = await deleteBlock(spaceId, blockId);
+      if (res.code !== 0) {
+        console.error(res.message);
+        return;
+      }
+
+      // Reload content
+      await loadPageContent(selectedNode.id);
+    } catch (error) {
+      console.error("Failed to delete content block:", error);
+    }
+  };
+
   return (
-    <div className="h-full bg-background p-6">
-      <div className="mb-4 flex items-stretch gap-2">
+    <div className="h-full bg-background p-6 flex flex-col overflow-hidden">
+      <div className="mb-4 flex items-stretch gap-2 flex-shrink-0">
         <Button
           variant="outline"
           onClick={handleGoBack}
@@ -713,7 +946,7 @@ export default function PagesPage() {
         </div>
       </div>
 
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* Left: Page Tree */}
         <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
           <div className="h-full flex flex-col pr-4">
@@ -813,42 +1046,96 @@ export default function PagesPage() {
         </ResizablePanel>
         <ResizableHandle withHandle />
 
-        {/* Right: BlockNote Editor */}
+        {/* Right: Content Display */}
         <ResizablePanel>
           <div className="h-full overflow-auto pl-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">{t("contentTitle")}</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefreshContent}
-                disabled={!selectedNode || selectedNode.type !== "page" || isLoadingContent}
-                title={t("refresh")}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                {selectedNode && selectedNode.type === "page" && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isLoadingContent}
+                      >
+                        <Plus className="h-4 w-4" />
+                        {t("addBlock")}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {DEFAULT_BLOCK_CONFIGS.map((config) => (
+                        <DropdownMenuItem
+                          key={config.type}
+                          onClick={() => handleCreateContentClick(config.type)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">{config.label}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {config.description}
+                            </div>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRefreshContent}
+                  disabled={!selectedNode || selectedNode.type !== "page" || isLoadingContent}
+                  title={t("refresh")}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="rounded-md border bg-card">
-              {!selectedNode ? (
-                <p className="text-sm text-muted-foreground m-6">
+            {!selectedNode ? (
+              <div className="rounded-md border bg-card p-6">
+                <p className="text-sm text-muted-foreground">
                   {t("selectPagePrompt")}
                 </p>
-              ) : isLoadingContent ? (
-                <div className="flex items-center justify-center h-64">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : isLoadingContent ? (
+              <div className="rounded-md border bg-card flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="space-y-4">
+                  {contentBlocks.length === 0 ? (
+                    <div className="rounded-md border bg-card p-6">
+                      <p className="text-sm text-muted-foreground text-center">
+                        {t("noBlocks")}
+                      </p>
+                    </div>
+                  ) : (
+                    <SortableContext
+                      items={contentBlocks.map((block) => block.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {contentBlocks.map((block, index) => (
+                        <SortableBlockItem
+                          key={block.id}
+                          block={block}
+                          index={index}
+                          onEdit={handleEditBlockClick}
+                          onDelete={handleDeleteContentBlock}
+                          t={t}
+                        />
+                      ))}
+                    </SortableContext>
+                  )}
                 </div>
-              ) : contentBlocks.length === 0 ? (
-                <p className="text-sm text-muted-foreground m-6">
-                  {t("noBlocks")}
-                </p>
-              ) : (
-                <BlockNoteEditor
-                  blocks={contentBlocks}
-                  editable={true}
-                  onChange={handleBlocksChange}
-                />
-              )}
-            </div>
+              </DndContext>
+            )}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -938,6 +1225,25 @@ export default function PagesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Block Editor */}
+      <BlockEditor
+        mode={blockEditor.mode}
+        blockType={blockEditor.blockType}
+        initialValues={blockEditor.initialValues}
+        onSave={handleBlockSave}
+        onCancel={blockEditor.close}
+        open={blockEditor.isOpen}
+        isLoading={isBlockSaving}
+        translations={{
+          cancel: t("cancel"),
+          save: t("save"),
+          saving: t("saving"),
+          create: t("create"),
+          creating: t("creating"),
+        }}
+      />
+
     </div>
   );
 }
