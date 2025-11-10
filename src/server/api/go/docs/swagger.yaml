@@ -58,27 +58,6 @@ definitions:
       public_url:
         type: string
     type: object
-  handler.GetSemanticAnswerReq:
-    properties:
-      query:
-        type: string
-    required:
-    - query
-    type: object
-  handler.GetSemanticGlobalReq:
-    properties:
-      query:
-        type: string
-    required:
-    - query
-    type: object
-  handler.GetSemanticGrepReq:
-    properties:
-      query:
-        type: string
-    required:
-    - query
-    type: object
   handler.ListArtifactsResp:
     properties:
       artifacts:
@@ -142,14 +121,33 @@ definitions:
     required:
     - configs
     type: object
+  httpclient.SearchResultBlockItem:
+    properties:
+      block_id:
+        type: string
+      distance:
+        type: number
+      props:
+        additionalProperties: true
+        type: object
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  httpclient.SpaceSearchResult:
+    properties:
+      cited_blocks:
+        items:
+          $ref: '#/definitions/httpclient.SearchResultBlockItem'
+        type: array
+      final_answer:
+        type: string
+    type: object
   model.Artifact:
     properties:
       created_at:
         type: string
-      disk:
-        allOf:
-        - $ref: '#/definitions/model.Disk'
-        description: Artifact <-> Disk
       disk_id:
         type: string
       filename:
@@ -163,26 +161,18 @@ definitions:
     type: object
   model.Block:
     properties:
-      children:
-        items:
-          $ref: '#/definitions/model.Block'
-        type: array
       created_at:
         type: string
       id:
         type: string
       is_archived:
         type: boolean
-      parent:
-        $ref: '#/definitions/model.Block'
       parent_id:
         type: string
       props:
         type: object
       sort:
         type: integer
-      space:
-        $ref: '#/definitions/model.Space'
       space_id:
         type: string
       title:
@@ -198,10 +188,6 @@ definitions:
         type: string
       id:
         type: string
-      project:
-        allOf:
-        - $ref: '#/definitions/model.Project'
-        description: Disk <-> Project
       project_id:
         type: string
       updated_at:
@@ -209,18 +195,12 @@ definitions:
     type: object
   model.Message:
     properties:
-      children:
-        items:
-          $ref: '#/definitions/model.Message'
-        type: array
       created_at:
         type: string
       id:
         type: string
       meta:
         type: object
-      parent:
-        $ref: '#/definitions/model.Message'
       parent_id:
         type: string
       parts:
@@ -229,46 +209,12 @@ definitions:
         type: array
       role:
         type: string
-      session:
-        allOf:
-        - $ref: '#/definitions/model.Session'
-        description: Message <-> Session
       session_id:
         type: string
       session_task_process_status:
         type: string
-      task:
-        allOf:
-        - $ref: '#/definitions/model.Task'
-        description: Message <-> Task
       task_id:
         type: string
-      updated_at:
-        type: string
-    type: object
-  model.Project:
-    properties:
-      configs:
-        type: object
-      created_at:
-        type: string
-      id:
-        type: string
-      sessions:
-        description: Project <-> Session
-        items:
-          $ref: '#/definitions/model.Session'
-        type: array
-      spaces:
-        description: Project <-> Space
-        items:
-          $ref: '#/definitions/model.Space'
-        type: array
-      tasks:
-        description: Project <-> Task
-        items:
-          $ref: '#/definitions/model.Task'
-        type: array
       updated_at:
         type: string
     type: object
@@ -280,28 +226,10 @@ definitions:
         type: string
       id:
         type: string
-      messages:
-        description: Session <-> Message
-        items:
-          $ref: '#/definitions/model.Message'
-        type: array
-      project:
-        allOf:
-        - $ref: '#/definitions/model.Project'
-        description: Session <-> Project
       project_id:
         type: string
-      space:
-        allOf:
-        - $ref: '#/definitions/model.Space'
-        description: Session <-> Space
       space_id:
         type: string
-      tasks:
-        description: Session <-> Task
-        items:
-          $ref: '#/definitions/model.Task'
-        type: array
       updated_at:
         type: string
     type: object
@@ -313,17 +241,8 @@ definitions:
         type: string
       id:
         type: string
-      project:
-        allOf:
-        - $ref: '#/definitions/model.Project'
-        description: Space <-> Project
       project_id:
         type: string
-      sessions:
-        description: Space <-> Session
-        items:
-          $ref: '#/definitions/model.Session'
-        type: array
       updated_at:
         type: string
     type: object
@@ -337,23 +256,10 @@ definitions:
         type: string
       is_planning:
         type: boolean
-      messages:
-        description: Task <-> Message (one-to-many)
-        items:
-          $ref: '#/definitions/model.Message'
-        type: array
       order:
         type: integer
-      project:
-        allOf:
-        - $ref: '#/definitions/model.Project'
-        description: Task <-> Project
       project_id:
         type: string
-      session:
-        allOf:
-        - $ref: '#/definitions/model.Session'
-        description: Task <-> Session
       session_id:
         type: string
       space_digested:
@@ -1475,43 +1381,11 @@ paths:
       summary: Update space configs
       tags:
       - space
-  /space/{space_id}/semantic_answer:
+  /space/{space_id}/experience_search:
     get:
       consumes:
       - application/json
-      description: Retrieve the semantic answer for a given query within a space by
-        its ID
-      parameters:
-      - description: Space ID
-        example: 123e4567-e89b-12d3-a456-426614174000
-        format: uuid
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: GetSemanticAnswer payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/handler.GetSemanticAnswerReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serializer.Response'
-      security:
-      - BearerAuth: []
-      summary: Get semantic answer
-      tags:
-      - space
-  /space/{space_id}/semantic_global:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve the semantic global information for a given query within
+      description: Retrieve the experience search results for a given query within
         a space by its ID
       parameters:
       - description: Space ID
@@ -1521,19 +1395,88 @@ paths:
         name: space_id
         required: true
         type: string
-      - description: GetSemanticGlobal payload
-        in: body
-        name: payload
+      - description: Search query for page/folder titles
+        in: query
+        name: query
         required: true
-        schema:
-          $ref: '#/definitions/handler.GetSemanticGlobalReq'
+        type: string
+      - description: Maximum number of results to return (1-50, default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: 'Search mode: fast or agentic (default fast)'
+        in: query
+        name: mode
+        type: string
+      - description: Cosine distance threshold (0=identical, 2=opposite)
+        format: float64
+        in: query
+        name: semantic_threshold
+        type: number
+      - description: Maximum number of iterations for agentic search (1-100, default
+          16)
+        in: query
+        name: max_iterations
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/serializer.Response'
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/httpclient.SpaceSearchResult'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get experience search
+      tags:
+      - space
+  /space/{space_id}/semantic_global:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the semantic global (glob) search results for page/folder
+        titles within a space by its ID
+      parameters:
+      - description: Space ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        format: uuid
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: Search query for page/folder titles
+        in: query
+        name: query
+        required: true
+        type: string
+      - description: Maximum number of results to return (1-50, default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: Cosine distance threshold (0=identical, 2=opposite)
+        format: float64
+        in: query
+        name: threshold
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/httpclient.SearchResultBlockItem'
+                  type: array
+              type: object
       security:
       - BearerAuth: []
       summary: Get semantic global
@@ -1543,8 +1486,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve the semantic grep results for a given query within a space
-        by its ID
+      description: Retrieve the semantic grep search results for content blocks within
+        a space by its ID
       parameters:
       - description: Space ID
         example: 123e4567-e89b-12d3-a456-426614174000
@@ -1553,19 +1496,34 @@ paths:
         name: space_id
         required: true
         type: string
-      - description: GetSemanticGrep payload
-        in: body
-        name: payload
+      - description: Search query for content blocks
+        in: query
+        name: query
         required: true
-        schema:
-          $ref: '#/definitions/handler.GetSemanticGrepReq'
+        type: string
+      - description: Maximum number of results to return (1-50, default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: Cosine distance threshold (0=identical, 2=opposite)
+        format: float64
+        in: query
+        name: threshold
+        type: number
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/serializer.Response'
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/httpclient.SearchResultBlockItem'
+                  type: array
+              type: object
       security:
       - BearerAuth: []
       summary: Get semantic grep

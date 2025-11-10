@@ -1,0 +1,208 @@
+package httpclient
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/memodb-io/Acontext/internal/config"
+	"go.uber.org/zap"
+)
+
+// CoreClient is the HTTP client for Acontext Core service
+type CoreClient struct {
+	BaseURL    string
+	HTTPClient *http.Client
+	Logger     *zap.Logger
+}
+
+// NewCoreClient creates a new CoreClient
+func NewCoreClient(cfg *config.Config, log *zap.Logger) *CoreClient {
+	return &CoreClient{
+		BaseURL: cfg.Core.BaseURL,
+		HTTPClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		Logger: log,
+	}
+}
+
+// SearchResultBlockItem represents a search result block item
+type SearchResultBlockItem struct {
+	BlockID  uuid.UUID              `json:"block_id"`
+	Title    string                 `json:"title"`
+	Type     string                 `json:"type"`
+	Props    map[string]interface{} `json:"props"`
+	Distance *float64               `json:"distance"`
+}
+
+// SpaceSearchResult represents the result of a space search
+type SpaceSearchResult struct {
+	CitedBlocks []SearchResultBlockItem `json:"cited_blocks"`
+	FinalAnswer *string                 `json:"final_answer"`
+}
+
+// SemanticGrepRequest represents the request for semantic grep
+type SemanticGrepRequest struct {
+	Query     string   `json:"query"`
+	Limit     int      `json:"limit"`
+	Threshold *float64 `json:"threshold"`
+}
+
+// SemanticGlobalRequest represents the request for semantic global (glob)
+type SemanticGlobalRequest struct {
+	Query     string   `json:"query"`
+	Limit     int      `json:"limit"`
+	Threshold *float64 `json:"threshold"`
+}
+
+// ExperienceSearchRequest represents the request for experience search
+type ExperienceSearchRequest struct {
+	Query             string   `json:"query"`
+	Limit             int      `json:"limit"`
+	Mode              string   `json:"mode"`
+	SemanticThreshold *float64 `json:"semantic_threshold"`
+	MaxIterations     int      `json:"max_iterations"`
+}
+
+// SemanticGrep calls the semantic_grep endpoint
+func (c *CoreClient) SemanticGrep(ctx context.Context, projectID, spaceID uuid.UUID, req SemanticGrepRequest) ([]SearchResultBlockItem, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/project/%s/space/%s/semantic_grep", c.BaseURL, projectID.String(), spaceID.String())
+
+	// Build query parameters
+	params := url.Values{}
+	params.Set("query", req.Query)
+	params.Set("limit", fmt.Sprintf("%d", req.Limit))
+	if req.Threshold != nil {
+		params.Set("threshold", fmt.Sprintf("%f", *req.Threshold))
+	}
+
+	fullURL := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.Logger.Error("semantic_grep request failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("body", string(body)))
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result []SearchResultBlockItem
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return result, nil
+}
+
+// SemanticGlobal calls the semantic_glob endpoint
+func (c *CoreClient) SemanticGlobal(ctx context.Context, projectID, spaceID uuid.UUID, req SemanticGlobalRequest) ([]SearchResultBlockItem, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/project/%s/space/%s/semantic_glob", c.BaseURL, projectID.String(), spaceID.String())
+
+	// Build query parameters
+	params := url.Values{}
+	params.Set("query", req.Query)
+	params.Set("limit", fmt.Sprintf("%d", req.Limit))
+	if req.Threshold != nil {
+		params.Set("threshold", fmt.Sprintf("%f", *req.Threshold))
+	}
+
+	fullURL := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.Logger.Error("semantic_glob request failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("body", string(body)))
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result []SearchResultBlockItem
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return result, nil
+}
+
+// ExperienceSearch calls the experience_search endpoint
+func (c *CoreClient) ExperienceSearch(ctx context.Context, projectID, spaceID uuid.UUID, req ExperienceSearchRequest) (*SpaceSearchResult, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/project/%s/space/%s/experience_search", c.BaseURL, projectID.String(), spaceID.String())
+
+	// Build query parameters
+	params := url.Values{}
+	params.Set("query", req.Query)
+	params.Set("limit", fmt.Sprintf("%d", req.Limit))
+	params.Set("mode", req.Mode)
+	if req.SemanticThreshold != nil {
+		params.Set("semantic_threshold", fmt.Sprintf("%f", *req.SemanticThreshold))
+	}
+	params.Set("max_iterations", fmt.Sprintf("%d", req.MaxIterations))
+
+	fullURL := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.Logger.Error("experience_search request failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("body", string(body)))
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result SpaceSearchResult
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return &result, nil
+}

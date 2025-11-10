@@ -17,16 +17,16 @@ type Session struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Session <-> Project
-	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
+	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Session <-> Space
-	Space *Space `gorm:"foreignKey:SpaceID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"space"`
+	Space *Space `gorm:"foreignKey:SpaceID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"-"`
 
 	// Session <-> Message
-	Messages []Message `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"messages"`
+	Messages []Message `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Session <-> Task
-	Tasks []Task `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"tasks"`
+	Tasks []Task `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Session) TableName() string { return "sessions" }

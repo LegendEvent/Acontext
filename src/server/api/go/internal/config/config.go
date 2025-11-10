@@ -68,6 +68,10 @@ type S3Cfg struct {
 	SSE              string
 }
 
+type CoreCfg struct {
+	BaseURL string
+}
+
 type Config struct {
 	App      AppCfg
 	Root     RootCfg
@@ -76,6 +80,7 @@ type Config struct {
 	Redis    RedisCfg
 	RabbitMQ MQCfg
 	S3       S3Cfg
+	Core     CoreCfg
 }
 
 func setDefaults(v *viper.Viper) {
@@ -94,6 +99,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("rabbitmq.url", "amqp://acontext:helloworld@127.0.0.1:15672/%2F")
 	v.SetDefault("rabbitmq.exchangeName.sessionMessage", "session.message")
 	v.SetDefault("rabbitmq.routingKey.sessionMessageInsert", "session.message.insert")
+	v.SetDefault("core.baseURL", "http://127.0.0.1:8019")
 }
 
 func Load() (*Config, error) {

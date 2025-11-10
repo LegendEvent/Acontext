@@ -17,13 +17,13 @@ type Project struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Project <-> Space
-	Spaces []Space `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"spaces"`
+	Spaces []Space `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Project <-> Session
-	Sessions []Session `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"sessions"`
+	Sessions []Session `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Project <-> Task
-	Tasks []Task `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"tasks"`
+	Tasks []Task `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Project) TableName() string { return "projects" }

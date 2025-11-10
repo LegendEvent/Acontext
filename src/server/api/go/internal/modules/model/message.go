@@ -20,8 +20,8 @@ type Message struct {
 	ID        uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	SessionID uuid.UUID  `gorm:"type:uuid;not null;index;index:idx_session_created,priority:1" json:"session_id"`
 	ParentID  *uuid.UUID `gorm:"type:uuid;index" json:"parent_id"`
-	Parent    *Message   `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"parent"`
-	Children  []Message  `gorm:"foreignKey:ParentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"children"`
+	Parent    *Message   `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
+	Children  []Message  `gorm:"foreignKey:ParentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	Role string `gorm:"type:text;not null;check:role IN ('user','assistant','system')" json:"role"`
 
@@ -38,10 +38,10 @@ type Message struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Message <-> Session
-	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"session"`
+	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Message <-> Task
-	Task *Task `gorm:"foreignKey:TaskID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"task"`
+	Task *Task `gorm:"foreignKey:TaskID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Message) TableName() string { return "messages" }

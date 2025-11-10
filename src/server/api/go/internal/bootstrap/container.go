@@ -8,6 +8,7 @@ import (
 	"github.com/memodb-io/Acontext/internal/infra/blob"
 	"github.com/memodb-io/Acontext/internal/infra/cache"
 	"github.com/memodb-io/Acontext/internal/infra/db"
+	"github.com/memodb-io/Acontext/internal/infra/httpclient"
 	"github.com/memodb-io/Acontext/internal/infra/logger"
 	mq "github.com/memodb-io/Acontext/internal/infra/queue"
 	"github.com/memodb-io/Acontext/internal/modules/handler"
@@ -102,6 +103,13 @@ func BuildContainer() *do.Injector {
 		}, nil
 	})
 
+	// Core HTTP Client
+	do.Provide(inj, func(i *do.Injector) (*httpclient.CoreClient, error) {
+		cfg := do.MustInvoke[*config.Config](i)
+		log := do.MustInvoke[*zap.Logger](i)
+		return httpclient.NewCoreClient(cfg, log), nil
+	})
+
 	// Repo
 	do.Provide(inj, func(i *do.Injector) (repo.AssetReferenceRepo, error) {
 		return repo.NewAssetReferenceRepo(
@@ -174,7 +182,10 @@ func BuildContainer() *do.Injector {
 
 	// Handler
 	do.Provide(inj, func(i *do.Injector) (*handler.SpaceHandler, error) {
-		return handler.NewSpaceHandler(do.MustInvoke[service.SpaceService](i)), nil
+		return handler.NewSpaceHandler(
+			do.MustInvoke[service.SpaceService](i),
+			do.MustInvoke[*httpclient.CoreClient](i),
+		), nil
 	})
 	do.Provide(inj, func(i *do.Injector) (*handler.SessionHandler, error) {
 		return handler.NewSessionHandler(do.MustInvoke[service.SessionService](i)), nil

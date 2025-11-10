@@ -1633,14 +1633,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/space/{space_id}/semantic_answer": {
+        "/space/{space_id}/experience_search": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve the semantic answer for a given query within a space by its ID",
+                "description": "Retrieve the experience search results for a given query within a space by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1650,7 +1650,7 @@ const docTemplate = `{
                 "tags": [
                     "space"
                 ],
-                "summary": "Get semantic answer",
+                "summary": "Get experience search",
                 "parameters": [
                     {
                         "type": "string",
@@ -1662,20 +1662,55 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "GetSemanticAnswer payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.GetSemanticAnswerReq"
-                        }
+                        "type": "string",
+                        "description": "Search query for page/folder titles",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of results to return (1-50, default 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search mode: fast or agentic (default fast)",
+                        "name": "mode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "format": "float64",
+                        "description": "Cosine distance threshold (0=identical, 2=opposite)",
+                        "name": "semantic_threshold",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of iterations for agentic search (1-100, default 16)",
+                        "name": "max_iterations",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/serializer.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httpclient.SpaceSearchResult"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -1688,7 +1723,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve the semantic global information for a given query within a space by its ID",
+                "description": "Retrieve the semantic global (glob) search results for page/folder titles within a space by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1710,20 +1745,46 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "GetSemanticGlobal payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.GetSemanticGlobalReq"
-                        }
+                        "type": "string",
+                        "description": "Search query for page/folder titles",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of results to return (1-50, default 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "format": "float64",
+                        "description": "Cosine distance threshold (0=identical, 2=opposite)",
+                        "name": "threshold",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/serializer.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/httpclient.SearchResultBlockItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -1736,7 +1797,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve the semantic grep results for a given query within a space by its ID",
+                "description": "Retrieve the semantic grep search results for content blocks within a space by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1758,20 +1819,46 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "GetSemanticGrep payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.GetSemanticGrepReq"
-                        }
+                        "type": "string",
+                        "description": "Search query for content blocks",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of results to return (1-50, default 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "format": "float64",
+                        "description": "Cosine distance threshold (0=identical, 2=opposite)",
+                        "name": "threshold",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/serializer.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/httpclient.SearchResultBlockItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -1860,39 +1947,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/fileparser.FileContent"
                 },
                 "public_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "handler.GetSemanticAnswerReq": {
-            "type": "object",
-            "required": [
-                "query"
-            ],
-            "properties": {
-                "query": {
-                    "type": "string"
-                }
-            }
-        },
-        "handler.GetSemanticGlobalReq": {
-            "type": "object",
-            "required": [
-                "query"
-            ],
-            "properties": {
-                "query": {
-                    "type": "string"
-                }
-            }
-        },
-        "handler.GetSemanticGrepReq": {
-            "type": "object",
-            "required": [
-                "query"
-            ],
-            "properties": {
-                "query": {
                     "type": "string"
                 }
             }
@@ -1992,19 +2046,46 @@ const docTemplate = `{
                 }
             }
         },
+        "httpclient.SearchResultBlockItem": {
+            "type": "object",
+            "properties": {
+                "block_id": {
+                    "type": "string"
+                },
+                "distance": {
+                    "type": "number"
+                },
+                "props": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpclient.SpaceSearchResult": {
+            "type": "object",
+            "properties": {
+                "cited_blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpclient.SearchResultBlockItem"
+                    }
+                },
+                "final_answer": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Artifact": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string"
-                },
-                "disk": {
-                    "description": "Artifact \u003c-\u003e Disk",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Disk"
-                        }
-                    ]
                 },
                 "disk_id": {
                     "type": "string"
@@ -2026,12 +2107,6 @@ const docTemplate = `{
         "model.Block": {
             "type": "object",
             "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Block"
-                    }
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2041,9 +2116,6 @@ const docTemplate = `{
                 "is_archived": {
                     "type": "boolean"
                 },
-                "parent": {
-                    "$ref": "#/definitions/model.Block"
-                },
                 "parent_id": {
                     "type": "string"
                 },
@@ -2052,9 +2124,6 @@ const docTemplate = `{
                 },
                 "sort": {
                     "type": "integer"
-                },
-                "space": {
-                    "$ref": "#/definitions/model.Space"
                 },
                 "space_id": {
                     "type": "string"
@@ -2079,14 +2148,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "project": {
-                    "description": "Disk \u003c-\u003e Project",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Project"
-                        }
-                    ]
-                },
                 "project_id": {
                     "type": "string"
                 },
@@ -2098,12 +2159,6 @@ const docTemplate = `{
         "model.Message": {
             "type": "object",
             "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Message"
-                    }
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2112,9 +2167,6 @@ const docTemplate = `{
                 },
                 "meta": {
                     "type": "object"
-                },
-                "parent": {
-                    "$ref": "#/definitions/model.Message"
                 },
                 "parent_id": {
                     "type": "string"
@@ -2128,68 +2180,14 @@ const docTemplate = `{
                 "role": {
                     "type": "string"
                 },
-                "session": {
-                    "description": "Message \u003c-\u003e Session",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Session"
-                        }
-                    ]
-                },
                 "session_id": {
                     "type": "string"
                 },
                 "session_task_process_status": {
                     "type": "string"
                 },
-                "task": {
-                    "description": "Message \u003c-\u003e Task",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Task"
-                        }
-                    ]
-                },
                 "task_id": {
                     "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.Project": {
-            "type": "object",
-            "properties": {
-                "configs": {
-                    "type": "object"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "sessions": {
-                    "description": "Project \u003c-\u003e Session",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Session"
-                    }
-                },
-                "spaces": {
-                    "description": "Project \u003c-\u003e Space",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Space"
-                    }
-                },
-                "tasks": {
-                    "description": "Project \u003c-\u003e Task",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Task"
-                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -2208,41 +2206,11 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "messages": {
-                    "description": "Session \u003c-\u003e Message",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Message"
-                    }
-                },
-                "project": {
-                    "description": "Session \u003c-\u003e Project",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Project"
-                        }
-                    ]
-                },
                 "project_id": {
                     "type": "string"
                 },
-                "space": {
-                    "description": "Session \u003c-\u003e Space",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Space"
-                        }
-                    ]
-                },
                 "space_id": {
                     "type": "string"
-                },
-                "tasks": {
-                    "description": "Session \u003c-\u003e Task",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Task"
-                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -2261,23 +2229,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "project": {
-                    "description": "Space \u003c-\u003e Project",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Project"
-                        }
-                    ]
-                },
                 "project_id": {
                     "type": "string"
-                },
-                "sessions": {
-                    "description": "Space \u003c-\u003e Session",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Session"
-                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -2299,34 +2252,11 @@ const docTemplate = `{
                 "is_planning": {
                     "type": "boolean"
                 },
-                "messages": {
-                    "description": "Task \u003c-\u003e Message (one-to-many)",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Message"
-                    }
-                },
                 "order": {
                     "type": "integer"
                 },
-                "project": {
-                    "description": "Task \u003c-\u003e Project",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Project"
-                        }
-                    ]
-                },
                 "project_id": {
                     "type": "string"
-                },
-                "session": {
-                    "description": "Task \u003c-\u003e Session",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.Session"
-                        }
-                    ]
                 },
                 "session_id": {
                     "type": "string"

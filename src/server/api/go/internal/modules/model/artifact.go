@@ -27,7 +27,7 @@ type Disk struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Disk <-> Project
-	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
+	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Disk) TableName() string { return "disks" }
@@ -44,7 +44,7 @@ type Artifact struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Artifact <-> Disk
-	Disk *Disk `gorm:"foreignKey:DiskID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"disk"`
+	Disk *Disk `gorm:"foreignKey:DiskID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Artifact) TableName() string { return "artifacts" }

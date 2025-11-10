@@ -171,6 +171,7 @@ services:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-acontext}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-helloworld}
       S3_BUCKET: ${S3_BUCKET:-acontext-assets}
+      CORE_BASE_URL: http://acontext-server-core:8000
     ports:
       - "${API_EXPORT_PORT:-8029}:8029"
     depends_on:

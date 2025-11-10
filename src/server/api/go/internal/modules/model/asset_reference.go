@@ -7,10 +7,10 @@ import (
 	"gorm.io/datatypes"
 )
 
-// TODO: Fix race condition in concurrent scenarios. When multiple goroutines simultaneously
-// update the RefCount field, there's a risk of data races and incorrect reference counting.
-// Moving the reference count data to Redis with atomic operations (e.g., INCR/DECR) will
-// prevent race conditions and ensure thread-safe reference counting.
+// Thread-Safety Note: Reference counting is handled atomically at the database level using
+// SQL expressions (e.g., "ref_count = ref_count + 1") in the repository layer. This leverages
+// PostgreSQL's row-level locking and transaction isolation to prevent race conditions even
+// under high concurrency, eliminating the need for application-level synchronization or Redis.
 
 // AssetReference tracks references to assets stored in S3
 // This allows for reference counting and safe deletion of assets
@@ -44,7 +44,7 @@ type AssetReference struct {
 	LastReferencedAt time.Time `gorm:"type:timestamp;index" json:"last_referenced_at"`
 
 	// AssetReference <-> Project
-	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
+	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (AssetReference) TableName() string { return "asset_references" }

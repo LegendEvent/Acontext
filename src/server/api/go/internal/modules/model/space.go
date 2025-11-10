@@ -16,10 +16,10 @@ type Space struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Space <-> Project
-	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
+	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Space <-> Session
-	Sessions []Session `gorm:"constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"sessions"`
+	Sessions []Session `gorm:"constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Space) TableName() string { return "spaces" }

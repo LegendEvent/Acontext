@@ -22,13 +22,13 @@ type Task struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Task <-> Session
-	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"session"`
+	Session *Session `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Task <-> Project
-	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"project"`
+	Project *Project `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 
 	// Task <-> Message (one-to-many)
-	Messages []Message `gorm:"constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"messages"`
+	Messages []Message `gorm:"constraint:OnDelete:SET NULL,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Task) TableName() string { return "tasks" }
