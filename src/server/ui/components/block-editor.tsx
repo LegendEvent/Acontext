@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -132,9 +132,11 @@ export function BlockEditor({
     return z.object(schemaFields);
   }, [config]);
 
+  type FormValues = Record<string, string>;
+
   // Initialize react-hook-form
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema) as unknown as Resolver<FormValues>,
     defaultValues: initialValues,
   });
 
@@ -147,10 +149,10 @@ export function BlockEditor({
       });
       form.reset(values);
     }
-  }, [open, initialValues, config, form]);
+  }, [open, initialValues, config, form, schema]);
 
-  const handleSave = async (values: z.infer<typeof schema>) => {
-    await onSave(values as Record<string, string>);
+  const handleSave = async (values: FormValues) => {
+    await onSave(values);
   };
 
   const handleCancel = () => {
@@ -185,7 +187,7 @@ export function BlockEditor({
                 <FormField
                   key={field.name}
                   control={form.control}
-                  name={field.name as keyof z.infer<typeof schema>}
+                  name={field.name}
                   render={({ field: formField }) => (
                     <FormItem>
                       <FormLabel>

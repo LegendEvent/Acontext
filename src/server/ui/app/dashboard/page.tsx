@@ -177,9 +177,11 @@ export default function DashboardPage() {
 
   const renderChart = (hasData: boolean, chart: ReactElement) =>
     hasData ? (
-      <ChartContainer config={chartConfig} className="h-[300px]">
-        {chart}
-      </ChartContainer>
+      <div className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="h-full w-full">
+          {chart}
+        </ChartContainer>
+      </div>
     ) : (
       <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
         {t("noData")}

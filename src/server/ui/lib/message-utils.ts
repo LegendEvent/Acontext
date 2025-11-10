@@ -51,7 +51,7 @@ export function buildMessageParts(
   // Add tool calls
   toolCalls.forEach((tc) => {
     try {
-      const params = JSON.parse(tc.parameters);
+      JSON.parse(tc.parameters); // Validate JSON format
       parts.push({
         type: "tool-call",
         meta: {

@@ -245,7 +245,7 @@ export default function TasksPage() {
                           {task.id}
                         </TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center justify-center rounded-md bg-secondary px-2 py-1 text-xs font-medium">
+                          <span className="inline-flex items-center justify-center rounded-md bg-secondary border border-border px-2 py-1 text-xs font-medium">
                             {task.order}
                           </span>
                         </TableCell>
@@ -264,7 +264,7 @@ export default function TasksPage() {
                               Yes
                             </span>
                           ) : (
-                            <span className="text-muted-foreground text-xs">
+                            <span className="inline-flex items-center rounded-md bg-secondary border border-border px-2 py-1 text-xs font-medium text-muted-foreground">
                               No
                             </span>
                           )}

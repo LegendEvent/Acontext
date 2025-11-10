@@ -162,6 +162,7 @@ export default function SessionsPage() {
   useEffect(() => {
     loadSessions();
     loadSpaces();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionSpaceFilter]);
 
   const validateJSON = (value: string): boolean => {
