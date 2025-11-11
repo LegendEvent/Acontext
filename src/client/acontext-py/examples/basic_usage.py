@@ -75,9 +75,18 @@ def exercise_blocks(client: AcontextClient, space_id: str) -> dict[str, Any]:
     client.blocks.move(space_id, text_block.id, parent_id=page_b.id)
     client.blocks.update_sort(space_id, text_block.id, sort=0)
 
+    text_block_2 = client.blocks.create(space_id, 
+        parent_id=page_b.id,
+        block_type="text",
+        title="Another Block",
+        props={"text": "Another block contents"},
+    )
+    client.blocks.update_sort(space_id, text_block_2.id, sort=1)
+
     summary["blocks_after_updates"] = client.blocks.list(space_id)
 
     client.blocks.delete(space_id, text_block.id)
+    client.blocks.delete(space_id, text_block_2.id)
     client.blocks.delete(space_id, page_b.id)
     client.blocks.delete(space_id, page_a.id)
     client.blocks.delete(space_id, folder.id)

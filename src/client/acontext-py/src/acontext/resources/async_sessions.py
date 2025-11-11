@@ -197,7 +197,12 @@ class AsyncSessionsAPI:
             "format": format,
         }
         if format == "acontext":
-            payload["blob"] = asdict(blob)  # type: ignore
+            if isinstance(blob, Mapping):
+                payload["blob"] = blob
+            elif isinstance(blob, AcontextMessage):
+                payload["blob"] = asdict(blob) 
+            else:
+                raise ValueError(f"Invalid blob type: {type(blob)} when format is 'acontext'. Expected Mapping or AcontextMessage")
             
             # Handle file upload for acontext format
             file_payload: dict[str, tuple[str, BinaryIO, str]] | None = None
@@ -226,6 +231,7 @@ class AsyncSessionsAPI:
                 )
         else:
             payload["blob"] = blob  # type: ignore
+
             data = await self._requester.request(
                 "POST",
                 f"/session/{session_id}/messages",
