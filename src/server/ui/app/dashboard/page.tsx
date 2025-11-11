@@ -51,6 +51,9 @@ const createPlaceholderData = (timeRange: TimeRange): DashboardData => {
       usage: 0,
     })),
     taskStatistics: [],
+    newSessionsCount: labels.map((label) => ({ date: label, count: 0 })),
+    newDisksCount: labels.map((label) => ({ date: label, count: 0 })),
+    newSpacesCount: labels.map((label) => ({ date: label, count: 0 })),
   }
 }
 
@@ -147,6 +150,18 @@ export default function DashboardPage() {
     () => dashboardData.storageUsage.some((point) => point.usage > 0),
     [dashboardData.storageUsage]
   )
+  const hasNewSessionsData = useMemo(
+    () => dashboardData.newSessionsCount.some((point) => point.count > 0),
+    [dashboardData.newSessionsCount]
+  )
+  const hasNewDisksData = useMemo(
+    () => dashboardData.newDisksCount.some((point) => point.count > 0),
+    [dashboardData.newDisksCount]
+  )
+  const hasNewSpacesData = useMemo(
+    () => dashboardData.newSpacesCount.some((point) => point.count > 0),
+    [dashboardData.newSpacesCount]
+  )
 
   const chartConfig = useMemo(
     () => ({
@@ -170,6 +185,10 @@ export default function DashboardPage() {
       usage: {
         label: t("storageUsage"),
         color: "#3b82f6",
+      },
+      count: {
+        label: t("count"),
+        color: "#8b5cf6",
       },
     }),
     [t]
@@ -463,6 +482,108 @@ export default function DashboardPage() {
                   dataKey="usage"
                   fill="#3b82f6"
                   name={t("storageUsage")}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            )
+          )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New counts section - 3 charts in one row */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* New sessions count bar chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("newSessionsChart")}</CardTitle>
+            <CardDescription>{t("newSessionsChartDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+          {renderChart(
+            hasNewSessionsData,
+            (
+              <BarChart data={dashboardData.newSessionsCount} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis width={50} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="count"
+                  fill="#8b5cf6"
+                  name={t("newSessions")}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            )
+          )}
+          </CardContent>
+        </Card>
+
+        {/* New disks count bar chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("newDisksChart")}</CardTitle>
+            <CardDescription>{t("newDisksChartDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+          {renderChart(
+            hasNewDisksData,
+            (
+              <BarChart data={dashboardData.newDisksCount} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis width={50} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="count"
+                  fill="#ec4899"
+                  name={t("newDisks")}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            )
+          )}
+          </CardContent>
+        </Card>
+
+        {/* New spaces count bar chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("newSpacesChart")}</CardTitle>
+            <CardDescription>{t("newSpacesChartDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+          {renderChart(
+            hasNewSpacesData,
+            (
+              <BarChart data={dashboardData.newSpacesCount} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis width={50} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="count"
+                  fill="#14b8a6"
+                  name={t("newSpaces")}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

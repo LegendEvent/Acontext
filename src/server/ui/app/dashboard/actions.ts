@@ -28,6 +28,9 @@ export type DashboardData = {
   taskAvgMessageTurns: Array<{ date: string; avgTurns: number }>;
   storageUsage: Array<{ date: string; usage: number }>;
   taskStatistics: Array<TaskStatistics>;
+  newSessionsCount: Array<{ date: string; count: number }>;
+  newDisksCount: Array<{ date: string; count: number }>;
+  newSpacesCount: Array<{ date: string; count: number }>;
 };
 
 declare global {
@@ -90,6 +93,18 @@ const emptyData = (days: number): DashboardData => {
       usage: 0,
     })),
     taskStatistics: [],
+    newSessionsCount: buckets.map(({ label }) => ({
+      date: label,
+      count: 0,
+    })),
+    newDisksCount: buckets.map(({ label }) => ({
+      date: label,
+      count: 0,
+    })),
+    newSpacesCount: buckets.map(({ label }) => ({
+      date: label,
+      count: 0,
+    })),
   };
 };
 
@@ -127,19 +142,23 @@ export const fetchDashboardData = async (
       taskMessageRows,
       storageRows,
       taskStatsRows,
+      newSessionsRows,
+      newDisksRows,
+      newSpacesRows,
     ] = await Promise.all([
       pool.query<{
         date: string;
         success_count: number;
-        total_count: number;
+        failed_count: number;
       }>(
         `
         SELECT
           TO_CHAR(DATE(created_at), 'YYYY-MM-DD') AS date,
           COUNT(*) FILTER (WHERE status = 'success') AS success_count,
-          COUNT(*) AS total_count
+          COUNT(*) FILTER (WHERE status = 'failed') AS failed_count
         FROM tasks
         WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+          AND is_planning = false
         GROUP BY DATE(created_at)
         ORDER BY DATE(created_at) ASC
         `,
@@ -161,6 +180,7 @@ export const fetchDashboardData = async (
           COUNT(*) FILTER (WHERE status = 'failed') AS failed_count
         FROM tasks
         WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+          AND is_planning = false
         GROUP BY DATE(created_at)
         ORDER BY DATE(created_at) ASC
         `,
@@ -199,6 +219,7 @@ export const fetchDashboardData = async (
           SELECT COUNT(t.id) AS task_count
           FROM tasks t
           WHERE t.session_id = s.id
+            AND t.is_planning = false
         ) task_counts ON true
         WHERE s.created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
         GROUP BY DATE(s.created_at)
@@ -221,6 +242,7 @@ export const fetchDashboardData = async (
           WHERE m.task_id = t.id
         ) message_counts ON true
         WHERE t.created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+          AND t.is_planning = false
         GROUP BY DATE(t.created_at)
         ORDER BY DATE(t.created_at) ASC
         `,
@@ -261,6 +283,7 @@ export const fetchDashboardData = async (
           SELECT COUNT(*) AS total_count
           FROM tasks
           WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+            AND is_planning = false
         )
         SELECT
           status,
@@ -272,6 +295,7 @@ export const fetchDashboardData = async (
           END AS avg_duration_seconds
         FROM tasks
         WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+          AND is_planning = false
         GROUP BY status
         ORDER BY
           CASE status
@@ -281,6 +305,51 @@ export const fetchDashboardData = async (
             WHEN 'failed' THEN 4
             ELSE 5
           END
+        `,
+        [intervalDays]
+      ),
+      pool.query<{
+        date: string;
+        count: number;
+      }>(
+        `
+        SELECT
+          TO_CHAR(DATE(created_at), 'YYYY-MM-DD') AS date,
+          COUNT(*) AS count
+        FROM sessions
+        WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
+        `,
+        [intervalDays]
+      ),
+      pool.query<{
+        date: string;
+        count: number;
+      }>(
+        `
+        SELECT
+          TO_CHAR(DATE(created_at), 'YYYY-MM-DD') AS date,
+          COUNT(*) AS count
+        FROM disks
+        WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
+        `,
+        [intervalDays]
+      ),
+      pool.query<{
+        date: string;
+        count: number;
+      }>(
+        `
+        SELECT
+          TO_CHAR(DATE(created_at), 'YYYY-MM-DD') AS date,
+          COUNT(*) AS count
+        FROM spaces
+        WHERE created_at >= CURRENT_DATE - ($1::int) * INTERVAL '1 day'
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
         `,
         [intervalDays]
       ),
@@ -298,9 +367,10 @@ export const fetchDashboardData = async (
 
     const taskSuccessRate = dateBuckets.map(({ key, label }) => {
       const row = taskSuccessMap.get(key);
+      const totalCompleted = (row?.success_count ?? 0) + (row?.failed_count ?? 0);
       const success =
-        row && row.total_count > 0
-          ? Number(((row.success_count / row.total_count) * 100).toFixed(1))
+        totalCompleted > 0
+          ? Number((((row?.success_count ?? 0) / totalCompleted) * 100).toFixed(1))
           : 0;
       return {
         date: label,
@@ -374,6 +444,40 @@ export const fetchDashboardData = async (
         : null,
     }));
 
+    const newSessionsMap = new Map(
+      newSessionsRows.rows.map((row) => [row.date, row])
+    );
+    const newDisksMap = new Map(
+      newDisksRows.rows.map((row) => [row.date, row])
+    );
+    const newSpacesMap = new Map(
+      newSpacesRows.rows.map((row) => [row.date, row])
+    );
+
+    const newSessionsCount = dateBuckets.map(({ key, label }) => {
+      const row = newSessionsMap.get(key);
+      return {
+        date: label,
+        count: row?.count ?? 0,
+      };
+    });
+
+    const newDisksCount = dateBuckets.map(({ key, label }) => {
+      const row = newDisksMap.get(key);
+      return {
+        date: label,
+        count: row?.count ?? 0,
+      };
+    });
+
+    const newSpacesCount = dateBuckets.map(({ key, label }) => {
+      const row = newSpacesMap.get(key);
+      return {
+        date: label,
+        count: row?.count ?? 0,
+      };
+    });
+
     return {
       taskSuccessRate,
       taskStatusDistribution,
@@ -382,6 +486,9 @@ export const fetchDashboardData = async (
       taskAvgMessageTurns,
       storageUsage,
       taskStatistics,
+      newSessionsCount,
+      newDisksCount,
+      newSpacesCount,
     };
   }).catch((error) => {
     console.error("Failed to fetch dashboard data:", error);
