@@ -106,10 +106,28 @@ func (c *OpenAIConverter) convertToUserMessage(msg model.Message, publicURLs map
 			}
 		case "file":
 			if part.Meta != nil {
-				if fileID, ok := part.Meta["file_id"].(string); ok {
-					fileParam := openai.ChatCompletionContentPartFileFileParam{
-						FileID: param.NewOpt(fileID),
-					}
+				fileParam := openai.ChatCompletionContentPartFileFileParam{}
+				hasContent := false
+
+				// Add file_id if present
+				if fileID, ok := part.Meta["file_id"].(string); ok && fileID != "" {
+					fileParam.FileID = param.NewOpt(fileID)
+					hasContent = true
+				}
+
+				// Add base64 file_data if present
+				if fileData, ok := part.Meta["file_data"].(string); ok && fileData != "" {
+					fileParam.FileData = param.NewOpt(fileData)
+					hasContent = true
+				}
+
+				// Add filename if present
+				if filename, ok := part.Meta["filename"].(string); ok && filename != "" {
+					fileParam.Filename = param.NewOpt(filename)
+					hasContent = true
+				}
+
+				if hasContent {
 					contentParts = append(contentParts, openai.FileContentPart(fileParam))
 				}
 			}

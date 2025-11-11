@@ -928,6 +928,73 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 		},
 		{
+			name:           "openai format - file with base64 data",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"format": "openai",
+				"blob": map[string]interface{}{
+					"role": "user",
+					"content": []map[string]interface{}{
+						{
+							"type": "file",
+							"file": map[string]interface{}{
+								"file_data": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkcyBbMyAwIFJdPj4KZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94IFswIDAgMzAgMzBdL1BhcmVudCAyIDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNCAwIFI+Pj4+L0NvbnRlbnRzIDUgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvVGltZXMtUm9tYW4+PgplbmRvYmoKNSAwIG9iago8PC9MZW5ndGggNDQ+PgpzdHJlYW0KQlQKL0YxIDEyIFRmCjEwIDEwIFRkCihUZXN0KSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY0IDAwMDAwIG4gCjAwMDAwMDAxMjEgMDAwMDAgbiAKMDAwMDAwMDIzOSAwMDAwMCBuIAowMDAwMDAwMzE5IDAwMDAwIG4gCnRyYWlsZXIKPDwvU2l6ZSA2L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKNDExCiUlRU9G",
+								"filename": "test.pdf",
+							},
+						},
+						{
+							"type": "text",
+							"text": "What's in this PDF?",
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "openai format - file with file_id",
+			sessionIDParam: sessionID.String(),
+			requestBody: map[string]interface{}{
+				"format": "openai",
+				"blob": map[string]interface{}{
+					"role": "user",
+					"content": []map[string]interface{}{
+						{
+							"type": "file",
+							"file": map[string]interface{}{
+								"file_id": "file-abc123",
+							},
+						},
+						{
+							"type": "text",
+							"text": "Analyze this file",
+						},
+					},
+				},
+			},
+			setup: func(svc *MockSessionService) {
+				expectedMessage := &model.Message{
+					ID:        uuid.New(),
+					SessionID: sessionID,
+					Role:      "user",
+				}
+				svc.On("SendMessage", mock.Anything, mock.MatchedBy(func(in service.SendMessageInput) bool {
+					return in.ProjectID == projectID && in.SessionID == sessionID && in.Role == "user"
+				})).Return(expectedMessage, nil)
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		{
 			name:           "openai format - user with input_audio",
 			sessionIDParam: sessionID.String(),
 			requestBody: map[string]interface{}{

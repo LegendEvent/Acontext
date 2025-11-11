@@ -20,7 +20,7 @@ func NewTaskRepo(db *gorm.DB) TaskRepo {
 }
 
 func (r *taskRepo) ListBySessionWithCursor(ctx context.Context, sessionID uuid.UUID, afterCreatedAt time.Time, afterID uuid.UUID, limit int, timeDesc bool) ([]model.Task, error) {
-	q := r.db.WithContext(ctx).Where("session_id = ?", sessionID)
+	q := r.db.WithContext(ctx).Where("session_id = ? AND is_planning = false", sessionID)
 
 	// Apply cursor-based pagination filter if cursor is provided
 	if !afterCreatedAt.IsZero() && afterID != uuid.Nil {
