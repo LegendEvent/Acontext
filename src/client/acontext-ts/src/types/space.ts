@@ -22,3 +22,20 @@ export const ListSpacesOutputSchema = z.object({
 
 export type ListSpacesOutput = z.infer<typeof ListSpacesOutputSchema>;
 
+export const SearchResultBlockItemSchema = z.object({
+  block_id: z.string(),
+  title: z.string(),
+  type: z.string(),
+  props: z.record(z.string(), z.unknown()),
+  distance: z.number().nullable(),
+});
+
+export type SearchResultBlockItem = z.infer<typeof SearchResultBlockItemSchema>;
+
+export const SpaceSearchResultSchema = z.object({
+  cited_blocks: z.array(SearchResultBlockItemSchema),
+  final_answer: z.string().nullable(),
+});
+
+export type SpaceSearchResult = z.infer<typeof SpaceSearchResultSchema>;
+

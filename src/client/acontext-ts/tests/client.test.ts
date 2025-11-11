@@ -92,6 +92,74 @@ describe('AcontextClient Integration Tests', () => {
       const space = await client.spaces.getConfigs(createdSpaceId);
       expect(space.configs).toMatchObject({ name: 'Updated Test Space', test: true });
     });
+
+    // TODO: Uncomment these tests when the search APIs are ready to test
+    // test('should perform experience search with fast mode', async () => {
+    //   if (!createdSpaceId) {
+    //     throw new Error('Space not created');
+    //   }
+    //   const result = await client.spaces.experienceSearch(createdSpaceId, {
+    //     query: 'test query',
+    //     limit: 5,
+    //     mode: 'fast',
+    //   });
+    //   expect(result).toBeDefined();
+    //   expect(result.cited_blocks).toBeInstanceOf(Array);
+    //   expect(result.final_answer === null || typeof result.final_answer === 'string').toBe(true);
+    // });
+
+    // test('should perform experience search with agentic mode', async () => {
+    //   if (!createdSpaceId) {
+    //     throw new Error('Space not created');
+    //   }
+    //   const result = await client.spaces.experienceSearch(createdSpaceId, {
+    //     query: 'API best practices',
+    //     limit: 10,
+    //     mode: 'agentic',
+    //     semanticThreshold: 0.8,
+    //     maxIterations: 20,
+    //   });
+    //   expect(result).toBeDefined();
+    //   expect(result.cited_blocks).toBeInstanceOf(Array);
+    // });
+
+    // test('should perform semantic global search', async () => {
+    //   if (!createdSpaceId) {
+    //     throw new Error('Space not created');
+    //   }
+    //   const results = await client.spaces.semanticGlobal(createdSpaceId, {
+    //     query: 'test pages',
+    //     limit: 10,
+    //     threshold: 1.0,
+    //   });
+    //   expect(results).toBeDefined();
+    //   expect(Array.isArray(results)).toBe(true);
+    //   results.forEach((item) => {
+    //     expect(item.block_id).toBeDefined();
+    //     expect(item.title).toBeDefined();
+    //     expect(item.type).toBeDefined();
+    //     expect(item.props).toBeDefined();
+    //   });
+    // });
+
+    // test('should perform semantic grep search', async () => {
+    //   if (!createdSpaceId) {
+    //     throw new Error('Space not created');
+    //   }
+    //   const results = await client.spaces.semanticGrep(createdSpaceId, {
+    //     query: 'test content',
+    //     limit: 15,
+    //     threshold: 0.7,
+    //   });
+    //   expect(results).toBeDefined();
+    //   expect(Array.isArray(results)).toBe(true);
+    //   results.forEach((item) => {
+    //     expect(item.block_id).toBeDefined();
+    //     expect(item.title).toBeDefined();
+    //     expect(item.type).toBeDefined();
+    //     expect(item.props).toBeDefined();
+    //   });
+    // });
   });
 
   describe('Sessions API', () => {
