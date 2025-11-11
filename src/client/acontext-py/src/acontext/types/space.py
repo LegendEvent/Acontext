@@ -23,3 +23,24 @@ class ListSpacesOutput(BaseModel):
     items: list[Space] = Field(..., description="List of spaces")
     next_cursor: str | None = Field(None, description="Cursor for pagination")
     has_more: bool = Field(..., description="Whether there are more items")
+
+
+class SearchResultBlockItem(BaseModel):
+    """Search result block item model."""
+
+    block_id: str = Field(..., description="Block UUID")
+    title: str = Field(..., description="Block title")
+    type: str = Field(..., description="Block type")
+    props: dict[str, Any] = Field(..., description="Block properties")
+    distance: float | None = Field(
+        None, description="Cosine distance (0=identical, 2=opposite)"
+    )
+
+
+class SpaceSearchResult(BaseModel):
+    """Experience search result model."""
+
+    cited_blocks: list[SearchResultBlockItem] = Field(
+        ..., description="List of cited blocks"
+    )
+    final_answer: str | None = Field(None, description="AI-generated final answer")

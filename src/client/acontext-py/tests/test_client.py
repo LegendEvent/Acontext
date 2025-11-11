@@ -60,7 +60,9 @@ def test_handle_response_app_code_error() -> None:
 
 @patch("acontext.client.httpx.Client.request")
 def test_request_transport_error(mock_request) -> None:
-    exc = httpx.ConnectError("boom", request=httpx.Request("GET", "https://api.acontext.test/failure"))
+    exc = httpx.ConnectError(
+        "boom", request=httpx.Request("GET", "https://api.acontext.test/failure")
+    )
     mock_request.side_effect = exc
     with AcontextClient(api_key="token") as client:
         with pytest.raises(TransportError):
@@ -68,7 +70,9 @@ def test_request_transport_error(mock_request) -> None:
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_with_files_uses_multipart_payload(mock_request, client: AcontextClient) -> None:
+def test_send_message_with_files_uses_multipart_payload(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -87,7 +91,9 @@ def test_send_message_with_files_uses_multipart_payload(mock_request, client: Ac
             return b"bytes"
 
     dummy_stream = _DummyStream()
-    upload = FileUpload(filename="image.png", content=dummy_stream, content_type="image/png")
+    upload = FileUpload(
+        filename="image.png", content=dummy_stream, content_type="image/png"
+    )
 
     client.sessions.send_message(
         "session-id",
@@ -123,7 +129,9 @@ def test_send_message_with_files_uses_multipart_payload(mock_request, client: Ac
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_allows_nullable_blob_for_other_formats(mock_request, client: AcontextClient) -> None:
+def test_send_message_allows_nullable_blob_for_other_formats(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -143,7 +151,9 @@ def test_send_message_allows_nullable_blob_for_other_formats(mock_request, clien
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_requires_format_when_cannot_infer(mock_request, client: AcontextClient) -> None:
+def test_send_message_requires_format_when_cannot_infer(
+    mock_request, client: AcontextClient
+) -> None:
     # Type checker will catch this, but at runtime we need format
     with pytest.raises((TypeError, ValueError)):
         client.sessions.send_message(
@@ -153,7 +163,9 @@ def test_send_message_requires_format_when_cannot_infer(mock_request, client: Ac
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_rejects_unknown_format(mock_request, client: AcontextClient) -> None:
+def test_send_message_rejects_unknown_format(
+    mock_request, client: AcontextClient
+) -> None:
     with pytest.raises(ValueError, match="format must be one of"):
         client.sessions.send_message(
             "session-id",
@@ -163,7 +175,9 @@ def test_send_message_rejects_unknown_format(mock_request, client: AcontextClien
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_explicit_format_still_supported(mock_request, client: AcontextClient) -> None:
+def test_send_message_explicit_format_still_supported(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -212,7 +226,9 @@ class _FakeAnthropicMessage:
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_handles_openai_model_dump(mock_request, client: AcontextClient) -> None:
+def test_send_message_handles_openai_model_dump(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -238,7 +254,9 @@ def test_send_message_handles_openai_model_dump(mock_request, client: AcontextCl
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_handles_anthropic_model_dump(mock_request, client: AcontextClient) -> None:
+def test_send_message_handles_anthropic_model_dump(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -264,7 +282,9 @@ def test_send_message_handles_anthropic_model_dump(mock_request, client: Acontex
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_accepts_acontext_message(mock_request, client: AcontextClient) -> None:
+def test_send_message_accepts_acontext_message(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -285,35 +305,48 @@ def test_send_message_accepts_acontext_message(mock_request, client: AcontextCli
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_requires_file_field_when_file_provided(mock_request, client: AcontextClient) -> None:
+def test_send_message_requires_file_field_when_file_provided(
+    mock_request, client: AcontextClient
+) -> None:
     blob = build_acontext_message(role="user", parts=["hello"])
-    
+
     class _DummyStream:
         def read(self) -> bytes:
             return b"bytes"
-    
-    upload = FileUpload(filename="image.png", content=_DummyStream(), content_type="image/png")
-    
-    with pytest.raises(ValueError, match="file_field is required when file is provided"):
+
+    upload = FileUpload(
+        filename="image.png", content=_DummyStream(), content_type="image/png"
+    )
+
+    with pytest.raises(
+        ValueError, match="file_field is required when file is provided"
+    ):
         client.sessions.send_message(
             "session-id",
             blob=blob,
             format="acontext",
             file=upload,
         )
-    
+
     mock_request.assert_not_called()
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_rejects_file_for_non_acontext_format(mock_request, client: AcontextClient) -> None:
+def test_send_message_rejects_file_for_non_acontext_format(
+    mock_request, client: AcontextClient
+) -> None:
     class _DummyStream:
         def read(self) -> bytes:
             return b"bytes"
-    
-    upload = FileUpload(filename="image.png", content=_DummyStream(), content_type="image/png")
-    
-    with pytest.raises(ValueError, match="file and file_field parameters are only supported when format is 'acontext'"):
+
+    upload = FileUpload(
+        filename="image.png", content=_DummyStream(), content_type="image/png"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="file and file_field parameters are only supported when format is 'acontext'",
+    ):
         client.sessions.send_message(
             "session-id",
             blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
@@ -321,28 +354,37 @@ def test_send_message_rejects_file_for_non_acontext_format(mock_request, client:
             file=upload,
             file_field="attachment",
         )
-    
+
     mock_request.assert_not_called()
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_send_message_rejects_file_field_for_non_acontext_format(mock_request, client: AcontextClient) -> None:
-    with pytest.raises(ValueError, match="file and file_field parameters are only supported when format is 'acontext'"):
+def test_send_message_rejects_file_field_for_non_acontext_format(
+    mock_request, client: AcontextClient
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="file and file_field parameters are only supported when format is 'acontext'",
+    ):
         client.sessions.send_message(
             "session-id",
             blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
             format="openai",
             file_field="attachment",
         )
-    
+
     mock_request.assert_not_called()
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_sessions_get_messages_forwards_format(mock_request, client: AcontextClient) -> None:
+def test_sessions_get_messages_forwards_format(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {"items": [], "has_more": False}
 
-    result = client.sessions.get_messages("session-id", format="acontext", time_desc=True)
+    result = client.sessions.get_messages(
+        "session-id", format="acontext", time_desc=True
+    )
 
     mock_request.assert_called_once()
     args, kwargs = mock_request.call_args
@@ -354,8 +396,11 @@ def test_sessions_get_messages_forwards_format(mock_request, client: AcontextCli
     assert hasattr(result, "items")
     assert hasattr(result, "has_more")
 
+
 @patch("acontext.client.AcontextClient.request")
-def test_sessions_get_tasks_without_filters(mock_request, client: AcontextClient) -> None:
+def test_sessions_get_tasks_without_filters(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {"items": [], "has_more": False}
 
     result = client.sessions.get_tasks("session-id")
@@ -455,7 +500,9 @@ def test_blocks_create_root_payload(mock_request, client: AcontextClient) -> Non
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_blocks_create_with_parent_payload(mock_request, client: AcontextClient) -> None:
+def test_blocks_create_with_parent_payload(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "block",
         "space_id": "space-id",
@@ -533,7 +580,9 @@ def test_blocks_move_with_sort(mock_request, client: AcontextClient) -> None:
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_blocks_update_properties_requires_payload(mock_request, client: AcontextClient) -> None:
+def test_blocks_update_properties_requires_payload(
+    mock_request, client: AcontextClient
+) -> None:
     with pytest.raises(ValueError):
         client.blocks.update_properties("space-id", "block-id")
 
@@ -566,7 +615,9 @@ def test_artifacts_aliases_disk_artifacts(client: AcontextClient) -> None:
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_disk_artifacts_upsert_uses_multipart_payload(mock_request, client: AcontextClient) -> None:
+def test_disk_artifacts_upsert_uses_multipart_payload(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "id": "artifact",
         "disk_id": "disk-id",
@@ -579,7 +630,9 @@ def test_disk_artifacts_upsert_uses_multipart_payload(mock_request, client: Acon
 
     client.disks.artifacts.upsert(
         "disk-id",
-        file=FileUpload(filename="file.txt", content=b"data", content_type="text/plain"),
+        file=FileUpload(
+            filename="file.txt", content=b"data", content_type="text/plain"
+        ),
         file_path="/folder",
         meta={"source": "unit-test"},
     )
@@ -601,7 +654,9 @@ def test_disk_artifacts_upsert_uses_multipart_payload(mock_request, client: Acon
 
 
 @patch("acontext.client.AcontextClient.request")
-def test_disk_artifacts_get_translates_query_params(mock_request, client: AcontextClient) -> None:
+def test_disk_artifacts_get_translates_query_params(
+    mock_request, client: AcontextClient
+) -> None:
     mock_request.return_value = {
         "artifact": {
             "id": "artifact",
@@ -634,3 +689,160 @@ def test_disk_artifacts_get_translates_query_params(mock_request, client: Aconte
         "with_content": "true",
         "expire": 900,
     }
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_spaces_experience_search_with_fast_mode(
+    mock_request, client: AcontextClient
+) -> None:
+    mock_request.return_value = {
+        "cited_blocks": [
+            {
+                "block_id": "block-1",
+                "title": "Auth Guide",
+                "type": "page",
+                "props": {"text": "Authentication guide content"},
+                "distance": 0.23,
+            }
+        ],
+        "final_answer": "To implement authentication...",
+    }
+
+    result = client.spaces.experience_search(
+        "space-id",
+        query="How to implement authentication?",
+        limit=5,
+        mode="fast",
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/space/space-id/experience_search"
+    assert kwargs["params"] == {
+        "query": "How to implement authentication?",
+        "limit": 5,
+        "mode": "fast",
+    }
+    # Verify response structure
+    assert hasattr(result, "cited_blocks")
+    assert hasattr(result, "final_answer")
+    assert len(result.cited_blocks) == 1
+    assert result.cited_blocks[0].title == "Auth Guide"
+    assert result.final_answer == "To implement authentication..."
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_spaces_experience_search_with_agentic_mode(
+    mock_request, client: AcontextClient
+) -> None:
+    mock_request.return_value = {
+        "cited_blocks": [],
+        "final_answer": None,
+    }
+
+    result = client.spaces.experience_search(
+        "space-id",
+        query="API security best practices",
+        limit=10,
+        mode="agentic",
+        semantic_threshold=0.8,
+        max_iterations=20,
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/space/space-id/experience_search"
+    assert kwargs["params"] == {
+        "query": "API security best practices",
+        "limit": 10,
+        "mode": "agentic",
+        "semantic_threshold": 0.8,
+        "max_iterations": 20,
+    }
+    assert result.cited_blocks == []
+    assert result.final_answer is None
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_spaces_semantic_global(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = [
+        {
+            "block_id": "block-1",
+            "title": "User Login System",
+            "type": "page",
+            "props": {"path": "/docs/auth/login"},
+            "distance": 0.15,
+        },
+        {
+            "block_id": "block-2",
+            "title": "OAuth Integration",
+            "type": "folder",
+            "props": {"path": "/docs/auth/oauth"},
+            "distance": 0.32,
+        },
+    ]
+
+    result = client.spaces.semantic_global(
+        "space-id",
+        query="authentication pages",
+        limit=10,
+        threshold=1.0,
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/space/space-id/semantic_global"
+    assert kwargs["params"] == {
+        "query": "authentication pages",
+        "limit": 10,
+        "threshold": 1.0,
+    }
+    # Verify response structure
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0].title == "User Login System"
+    assert result[0].distance == 0.15
+    assert result[1].title == "OAuth Integration"
+
+
+@patch("acontext.client.AcontextClient.request")
+def test_spaces_semantic_grep(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = [
+        {
+            "block_id": "block-1",
+            "title": "Token Validation Function",
+            "type": "code_block",
+            "props": {"language": "javascript"},
+            "distance": 0.18,
+        },
+    ]
+
+    result = client.spaces.semantic_grep(
+        "space-id",
+        query="JWT token validation code",
+        limit=20,
+        threshold=0.7,
+    )
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/space/space-id/semantic_grep"
+    assert kwargs["params"] == {
+        "query": "JWT token validation code",
+        "limit": 20,
+        "threshold": 0.7,
+    }
+    # Verify response structure
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0].title == "Token Validation Function"
+    assert result[0].type == "code_block"
+    assert result[0].distance == 0.18

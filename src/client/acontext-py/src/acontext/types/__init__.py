@@ -23,7 +23,9 @@ from .session import (
 from .block import Block
 from .space import (
     ListSpacesOutput,
+    SearchResultBlockItem,
     Space,
+    SpaceSearchResult,
 )
 
 __all__ = [
@@ -47,8 +49,9 @@ __all__ = [
     "Task",
     # Space types
     "ListSpacesOutput",
+    "SearchResultBlockItem",
     "Space",
+    "SpaceSearchResult",
     # Block types
     "Block",
 ]
-
