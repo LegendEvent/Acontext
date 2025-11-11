@@ -42,6 +42,7 @@ Get started by running: acontext create
 		fmt.Println()
 		fmt.Println("Quick Commands:")
 		fmt.Println("  acontext create     Create a new project")
+		fmt.Println("  acontext docker     Manage Docker services (up/down/status/logs/env)")
 		fmt.Println("  acontext version    Show version information")
 		fmt.Println("  acontext help       Show help information")
 		fmt.Println()
@@ -62,4 +63,3 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("Acontext CLI version %s\n", version)
 	},
 }
-
