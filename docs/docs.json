@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "almond",
   "name": "Acontext Docs",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#0EA5E9",
+    "light": "#7DD3FC",
+    "dark": "#0284C7"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -15,40 +15,47 @@
         "groups": [
           {
             "group": "Getting started",
+            "icon": "rocket",
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "local"
             ]
           },
           {
             "group": "Context Storage",
+            "icon": "database",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              {
+                "group": "Messages",
+                "pages": [
+                  "store/messages/multi-provider",
+                  "store/messages/multi-modal"
+                ]
+              },
+              "store/disk"
             ]
           },
           {
             "group": "Task Observability",
+            "icon": "radar",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "observe/agent_tasks",
+              "observe/dashboard"
             ]
           },
           {
             "group": "Agent Self-learning",
+            "icon": "sparkles",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "learn/skill-space",
+              "learn/search-skills"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "TODO",
         "groups": [
           {
             "group": "API documentation",

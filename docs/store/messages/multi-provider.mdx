@@ -1,0 +1,569 @@
+---
+title: Multi-provider Messages
+description: "Store and retrieve messages from multiple LLM providers"
+---
+
+Acontext provides a flexible message storage system that supports multiple LLM providers (OpenAI, Anthropic). You can store messages then retrieve them later for analysis, debugging, or continuing conversations.
+
+## Prerequisites
+
+Before storing messages, you need:
+- A running Acontext server ([run locally](/local))
+- An Acontext API key (default is `sk-ac-your-root-api-bearer-token`)
+
+<Note>
+Messages are stored within sessions. Create a session first, then send messages to it.
+</Note>
+
+## Sending messages
+
+### Create a session first
+
+Before sending messages, create a session to store them:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
+# Create a session
+session = client.sessions.create()
+print(f"Session created: {session.id}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// Create a session
+const session = await client.sessions.create();
+console.log(`Session created: ${session.id}`);
+```
+</CodeGroup>
+
+### Send a single message
+
+Send messages in OpenAI or Anthropic format:
+
+<Tabs>
+<Tab title="OpenAI Format">
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+session = client.sessions.create()
+
+# Send a message in OpenAI format
+message = client.sessions.send_message(
+    session_id=session.id,
+    blob={
+        "role": "user",
+        "content": "What is the capital of France?"
+    },
+    format="openai"
+)
+
+print(f"Message sent: {message.id}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+const session = await client.sessions.create();
+
+// Send a message in OpenAI format
+const message = await client.sessions.sendMessage(session.id, {
+  blob: {
+    role: 'user',
+    content: 'What is the capital of France?'
+  },
+  format: 'openai'
+});
+
+console.log(`Message sent: ${message.id}`);
+```
+</CodeGroup>
+</Tab>
+
+<Tab title="Anthropic Format">
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+session = client.sessions.create()
+
+# Send a message in Anthropic format
+message = client.sessions.send_message(
+    session_id=session.id,
+    blob={
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Explain quantum computing"}
+        ]
+    },
+    format="anthropic"
+)
+
+print(f"Message sent: {message.id}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+const session = await client.sessions.create();
+
+// Send a message in Anthropic format
+const message = await client.sessions.sendMessage(session.id, {
+  blob: {
+    role: 'user',
+    content: [
+      { type: 'text', text: 'Explain quantum computing' }
+    ]
+  },
+  format: 'anthropic'
+});
+
+console.log(`Message sent: ${message.id}`);
+```
+</CodeGroup>
+</Tab>
+</Tabs>
+
+### Send multiple messages
+
+You can send multiple messages sequentially to build a conversation:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+session = client.sessions.create()
+
+# Send multiple messages to build a conversation
+messages_to_send = [
+    {"role": "user", "content": "Hello! Can you help me with Python?"},
+    {"role": "assistant", "content": "Of course! I'd be happy to help with Python. What would you like to know?"},
+    {"role": "user", "content": "How do I read a JSON file?"},
+    {"role": "assistant", "content": "You can use the json module: import json; with open('file.json') as f: data = json.load(f)"}
+]
+
+for msg in messages_to_send:
+    message = client.sessions.send_message(
+        session_id=session.id,
+        blob=msg,
+        format="openai"
+    )
+    print(f"Sent message: {message.id}")
+
+print(f"Total messages sent: {len(messages_to_send)}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+const session = await client.sessions.create();
+
+// Send multiple messages to build a conversation
+const messagesToSend = [
+  { role: 'user', content: 'Hello! Can you help me with Python?' },
+  { role: 'assistant', content: 'Of course! I'd be happy to help with Python. What would you like to know?' },
+  { role: 'user', content: 'How do I read a JSON file?' },
+  { role: 'assistant', content: 'You can use the json module: import json; with open("file.json") as f: data = json.load(f)' }
+];
+
+for (const msg of messagesToSend) {
+  const message = await client.sessions.sendMessage(session.id, {
+    blob: msg,
+    format: 'openai'
+  });
+  console.log(`Sent message: ${message.id}`);
+}
+
+console.log(`Total messages sent: ${messagesToSend.length}`);
+```
+</CodeGroup>
+
+<Check>
+Each message receives a unique ID upon creation. You can use these IDs to reference specific messages later.
+</Check>
+
+## Retrieving messages
+
+### Get all messages from a session
+
+Retrieve messages from a session with pagination support:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
+# Get messages from a session
+result = client.sessions.get_messages(
+    session_id="session_uuid",
+    limit=50,
+    format="openai",
+    time_desc=True  # Most recent first
+)
+
+print(f"Retrieved {len(result.items)} messages")
+for msg in result.items:
+    print(f"- {msg.role}: {msg.content[:50]}...")
+
+# Handle pagination if there are more messages
+if result.next_cursor:
+    next_page = client.sessions.get_messages(
+        session_id="session_uuid",
+        cursor=result.next_cursor,
+        limit=50
+    )
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// Get messages from a session
+const result = await client.sessions.getMessages('session_uuid', {
+  limit: 50,
+  format: 'openai',
+  timeDesc: true  // Most recent first
+});
+
+console.log(`Retrieved ${result.items.length} messages`);
+result.items.forEach(msg => {
+  console.log(`- ${msg.role}: ${msg.content.substring(0, 50)}...`);
+});
+
+// Handle pagination if there are more messages
+if (result.nextCursor) {
+  const nextPage = await client.sessions.getMessages('session_uuid', {
+    cursor: result.nextCursor,
+    limit: 50
+  });
+}
+```
+</CodeGroup>
+
+## Message format compatibility
+
+Acontext supports two message formats for maximum compatibility:
+
+<CardGroup cols={2}>
+<Card title="OpenAI Format" icon="message">
+Compatible with OpenAI's Chat Completion API format. Use for GPT-3.5, GPT-4, and similar models.
+</Card>
+
+<Card title="Anthropic Format" icon="message">
+Compatible with Anthropic's Messages API format. Use for Claude models.
+</Card>
+</CardGroup>
+
+<Tip>
+You can send messages in one format and retrieve them in another. Acontext automatically handles format conversion.
+</Tip>
+
+## Complete workflow example
+
+Here's a complete example showing how to store and retrieve a conversation:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+# Initialize client
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
+try:
+    # 1. Create a session
+    session = client.sessions.create()
+    
+    # 2. Send multiple messages
+    conversation = [
+        {"role": "user", "content": "I'm having trouble logging in"},
+        {"role": "assistant", "content": "I can help with that. What error are you seeing?"},
+        {"role": "user", "content": "It says 'Invalid credentials'"},
+        {"role": "assistant", "content": "Try resetting your password using the forgot password link."}
+    ]
+    
+    for msg in conversation:
+        client.sessions.send_message(
+            session_id=session.id,
+            blob=msg,
+            format="openai"
+        )
+    
+    print(f"Stored {len(conversation)} messages in session {session.id}")
+    
+    # 3. Retrieve messages later
+    result = client.sessions.get_messages(
+        session_id=session.id,
+        format="openai",
+        time_desc=False  # Chronological order
+    )
+    
+    print(f"\nRetrieved conversation ({len(result.items)} messages):")
+    for msg in result.items:
+        print(f"{msg.role}: {msg.content}")
+        
+finally:
+    client.close()
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+// Initialize client
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+async function storeAndRetrieveConversation() {
+  try {
+    // 1. Create a session
+    const session = await client.sessions.create();
+    
+    // 2. Send multiple messages
+    const conversation = [
+      { role: 'user', content: 'I\'m having trouble logging in' },
+      { role: 'assistant', content: 'I can help with that. What error are you seeing?' },
+      { role: 'user', content: 'It says \'Invalid credentials\'' },
+      { role: 'assistant', content: 'Try resetting your password using the forgot password link.' }
+    ];
+    
+    for (const msg of conversation) {
+      await client.sessions.sendMessage(session.id, {
+        blob: msg,
+        format: 'openai'
+      });
+    }
+    
+    console.log(`Stored ${conversation.length} messages in session ${session.id}`);
+    
+    // 3. Retrieve messages later
+    const result = await client.sessions.getMessages(session.id, {
+      format: 'openai',
+      timeDesc: false  // Chronological order
+    });
+    
+    console.log(`\nRetrieved conversation (${result.items.length} messages):`);
+    result.items.forEach(msg => {
+      console.log(`${msg.role}: ${msg.content}`);
+    });
+    
+  } finally {
+    await client.close();
+  }
+}
+
+storeAndRetrieveConversation();
+```
+</CodeGroup>
+
+## Pagination and limits
+
+When retrieving large message histories, use pagination to efficiently process results:
+
+<Steps>
+<Step title="Set an appropriate limit">
+Start with a reasonable page size (e.g., 50-100 messages) based on your use case.
+
+```python
+result = client.sessions.get_messages(session_id="session_uuid", limit=50)
+```
+</Step>
+
+<Step title="Check for more pages">
+Look for the `next_cursor` field in the response to determine if more messages exist.
+
+```python
+if result.next_cursor:
+    print("More messages available")
+```
+</Step>
+
+<Step title="Fetch subsequent pages">
+Use the cursor to retrieve the next page of results.
+
+```python
+next_page = client.sessions.get_messages(
+    session_id="session_uuid",
+    cursor=result.next_cursor,
+    limit=50
+)
+```
+</Step>
+</Steps>
+
+<Note>
+The maximum limit per request is typically 100 messages. Check your plan's specific limits in the dashboard.
+</Note>
+
+## Managing sessions
+
+### Delete a session
+
+When you're done with a conversation or workflow, you can delete the session to clean up storage:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
+# Delete a session when you're done with it
+session_id = "session_uuid"
+client.sessions.delete(session_id)
+
+print(f"Session {session_id} deleted successfully")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// Delete a session when you're done with it
+const sessionId = 'session_uuid';
+await client.sessions.delete(sessionId);
+
+console.log(`Session ${sessionId} deleted successfully`);
+```
+</CodeGroup>
+
+<Warning>
+Deleting a session permanently removes all associated messages. This action cannot be undone.
+</Warning>
+
+### List and clean up old sessions
+
+You can list sessions and delete the ones you no longer need:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
+# List all sessions
+sessions = client.sessions.list(limit=100, time_desc=True)
+
+print(f"Found {len(sessions.items)} sessions")
+
+# Delete old sessions (example: delete all except the most recent 10)
+for session in sessions.items[10:]:
+    client.sessions.delete(session.id)
+    print(f"Deleted session {session.id}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// List all sessions
+const sessions = await client.sessions.list({ limit: 100, timeDesc: true });
+
+console.log(`Found ${sessions.items.length} sessions`);
+
+// Delete old sessions (example: delete all except the most recent 10)
+for (const session of sessions.items.slice(10)) {
+  await client.sessions.delete(session.id);
+  console.log(`Deleted session ${session.id}`);
+}
+```
+</CodeGroup>
+
+## Best practices
+
+<AccordionGroup>
+<Accordion title="Organize messages with sessions">
+- Use **sessions** to group related messages (e.g., one conversation, one task)
+- Create a new session for each distinct conversation or workflow
+</Accordion>
+
+<Accordion title="Choose the right message format">
+- Use **OpenAI format** if you're working with OpenAI models or want broad compatibility
+- Use **Anthropic format** if you're primarily using Claude models
+- You can convert between formats when retrieving messages
+</Accordion>
+
+<Accordion title="Handle pagination efficiently">
+- Set appropriate page sizes (50-100 messages typically works well)
+- Cache results when possible to reduce API calls
+- Use `time_desc=True` to get most recent messages first
+- Process pages asynchronously for better performance with large histories
+</Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={3}>
+<Card title="Sessions API" icon="window" href="/api-reference/sessions">
+Explore the complete Sessions API reference for advanced features
+</Card>
+
+<Card title="Store Artifacts" icon="file" href="/store/artifacts">
+Learn how to store files and documents alongside your messages
+</Card>
+
+<Card title="Agent Tasks" icon="robot" href="/observe/agent_tasks">
+Track and observe agent tasks created during conversations
+</Card>
+</CardGroup>

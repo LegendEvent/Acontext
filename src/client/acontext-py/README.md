@@ -15,7 +15,7 @@ pip install acontext
 ```python
 from acontext import AcontextClient, MessagePart
 
-with AcontextClient(api_key="sk_project_token") as client:
+with AcontextClient(api_key="sk-ac-your-root-api-bearer-token") as client:
     # List spaces for the authenticated project
     spaces = client.spaces.list()
 
@@ -39,7 +39,7 @@ Artifacts now live under project disks. Create a disk first, then upload files t
 ```python
 from acontext import AcontextClient, FileUpload
 
-client = AcontextClient(api_key="sk_project_token")
+client = AcontextClient(api_key="sk-ac-your-root-api-bearer-token")
 try:
     disk = client.disks.create()
     client.disks.artifacts.upsert(
@@ -61,7 +61,7 @@ finally:
 ```python
 from acontext import AcontextClient
 
-client = AcontextClient(api_key="sk_project_token")
+client = AcontextClient(api_key="sk-ac-your-root-api-bearer-token")
 
 space = client.spaces.create()
 try:
@@ -104,7 +104,6 @@ result = client.spaces.experience_search(
     query="What are the best practices for API security?",
     limit=10,
     mode="agentic",
-    semantic_threshold=0.8,
     max_iterations=20,
 )
 

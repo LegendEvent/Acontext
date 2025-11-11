@@ -1,14 +1,14 @@
 import os
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Literal, Mapping, Optional, Any, Type
 
 
 class ProjectConfig(BaseModel):
     project_session_message_use_previous_messages_turns: int = 3
-    project_session_message_buffer_max_turns: int = 32
+    project_session_message_buffer_max_turns: int = 16
     project_session_message_buffer_max_overflow: int = 16
-    project_session_message_buffer_ttl_seconds: int = 60  # 1 minutes
+    project_session_message_buffer_ttl_seconds: int = 4  # 4 seconds
     default_task_agent_max_iterations: int = 4
     default_sop_agent_max_iterations: int = 4
     default_space_construct_agent_max_iterations: int = 16

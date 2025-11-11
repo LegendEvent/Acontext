@@ -1,27 +1,13 @@
----
-title: "Cursor setup"
-description: "Configure Cursor for your documentation workflow"
-icon: "arrow-pointer"
----
+# Acontext code writing rule
+- Don't write the SDK code that passing the default value, make sure the SDK code is clean and short as possible.
 
-Use Cursor to help write and maintain your documentation. This guide shows how to configure Cursor for better results on technical writing tasks and using Mintlify components.
-
-## Prerequisites
-
-- Cursor editor installed
-- Access to your documentation repository
-
-## Project rules
-
-Create project rules that all team members can use. In your documentation repository root:
-
-```bash
-mkdir -p .cursor
+- always pass base_url and api_key to init a client, for example:
+```python
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
 ```
-
-Create `.cursor/rules.md`:
-
-````markdown
 # Mintlify technical writing rule
 
 You are an AI writing assistant specialized in creating exceptional technical documentation using Mintlify components and following industry-leading technical writing practices.
@@ -417,4 +403,3 @@ description: "Concise description explaining page purpose and value"
 - Use **RequestExample/ResponseExample** specifically for API endpoint documentation
 - Use **ParamField** for API parameters, **ResponseField** for API responses
 - Use **Expandable** for nested object properties or hierarchical information
-````

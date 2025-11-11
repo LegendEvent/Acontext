@@ -15,6 +15,8 @@ async def insert_task_handler(ctx: TaskCtx, llm_arguments: dict) -> Result[str]:
         after_order=llm_arguments["after_task_order"],
         data={
             "task_description": llm_arguments["task_description"],
+            "user_preferences": [],
+            "progresses": [],
         },
     )
     t, eil = r.unpack()

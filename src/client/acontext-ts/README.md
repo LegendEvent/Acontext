@@ -13,7 +13,7 @@ npm install @acontext/acontext
 ```typescript
 import { AcontextClient, MessagePart } from '@acontext/acontext';
 
-const client = new AcontextClient({ apiKey: 'sk_project_token' });
+const client = new AcontextClient({ apiKey: 'sk-ac-your-root-api-bearer-token' });
 
 // List spaces for the authenticated project
 const spaces = await client.spaces.list();
@@ -41,7 +41,7 @@ Artifacts now live under project disks. Create a disk first, then upload files t
 ```typescript
 import { AcontextClient, FileUpload } from '@acontext/acontext';
 
-const client = new AcontextClient({ apiKey: 'sk_project_token' });
+const client = new AcontextClient({ apiKey: 'sk-ac-your-root-api-bearer-token' });
 
 const disk = await client.disks.create();
 await client.disks.artifacts.upsert(
@@ -63,7 +63,7 @@ await client.disks.artifacts.upsert(
 ```typescript
 import { AcontextClient } from '@acontext/acontext';
 
-const client = new AcontextClient({ apiKey: 'sk_project_token' });
+const client = new AcontextClient({ apiKey: 'sk-ac-your-root-api-bearer-token' });
 
 const space = await client.spaces.create();
 const page = await client.blocks.create(space.id, {
@@ -96,6 +96,7 @@ const result = await client.spaces.experienceSearch('space-uuid', {
   query: 'How to implement authentication?',
   limit: 10,
   mode: 'fast',
+  semanticThreshold: 0.8,
 });
 
 // Agentic mode - AI-powered iterative search
@@ -103,7 +104,6 @@ const agenticResult = await client.spaces.experienceSearch('space-uuid', {
   query: 'What are the best practices for API security?',
   limit: 10,
   mode: 'agentic',
-  semanticThreshold: 0.8,
   maxIterations: 20,
 });
 

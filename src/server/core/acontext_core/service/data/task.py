@@ -1,10 +1,8 @@
-from sqlalchemy import String
-from typing import List, Optional
+from typing import List
 from sqlalchemy import select, delete, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import ARRAY
 from ...schema.orm import Task, Message
 from ...schema.result import Result
 from ...schema.utils import asUUID
@@ -18,7 +16,7 @@ async def fetch_planning_task(
         select(Task)
         .where(Task.session_id == session_id)
         .options(selectinload(Task.messages))
-        .where(Task.is_planning == True)
+        .where(Task.is_planning == True)  # noqa: E712
     )
     result = await db_session.execute(query)
     planning = result.scalars().first()
@@ -66,7 +64,7 @@ async def fetch_current_tasks(
     query = (
         select(Task)
         .where(Task.session_id == session_id)
-        .where(Task.is_planning == False)
+        .where(Task.is_planning == False)  # noqa: E712
         .options(selectinload(Task.messages))  # Eagerly load related messages
         .order_by(Task.order.asc())
     )
@@ -264,7 +262,7 @@ async def append_messages_to_planning_section(
     query = (
         select(Task)
         .where(Task.session_id == session_id)
-        .where(Task.is_planning == True)
+        .where(Task.is_planning == True)  # noqa: E712
     )
     result = await db_session.execute(query)
     planning_task = result.scalars().first()
