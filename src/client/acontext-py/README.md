@@ -30,6 +30,35 @@ with AcontextClient(api_key="sk_project_token") as client:
 
 See the sections below for detailed examples of all available APIs.
 
+### Async Client
+
+The SDK provides full async support via `AsyncAcontextClient`. All API methods are available in async form:
+
+```python
+import asyncio
+from acontext import AsyncAcontextClient
+
+async def main():
+    async with AsyncAcontextClient(api_key="sk_project_token") as client:
+        # Create a space
+        space = await client.spaces.create()
+        
+        # Create a session
+        session = await client.sessions.create(space_id=space.id)
+        
+        # Send a message
+        from acontext.messages import build_acontext_message
+        message = build_acontext_message(role="user", parts=["Hello async!"])
+        await client.sessions.send_message(session.id, blob=message, format="acontext")
+        
+        # Perform concurrent operations
+        spaces_task = client.spaces.list(limit=10)
+        sessions_task = client.sessions.list(limit=10)
+        spaces, sessions = await asyncio.gather(spaces_task, sessions_task)
+
+asyncio.run(main())
+```
+
 ### Spaces API
 
 #### List spaces
@@ -208,6 +237,35 @@ client.sessions.send_message(
     blob=anthropic_message,
     format="anthropic"
 )
+```
+
+#### Flush session buffer
+
+```python
+result = client.sessions.flush(session_id="session-uuid")
+print(result)  # {"status": 0, "errmsg": ""}
+```
+
+### Tools API
+
+#### Get tool names
+
+```python
+tools = client.tools.get_tool_name()
+for tool in tools:
+    print(f"{tool.name} (used in {tool.sop_count} SOPs)")
+```
+
+#### Rename tool names
+
+```python
+result = client.tools.rename_tool_name(
+    rename=[
+        {"old_name": "calculate", "new_name": "calculate_math"},
+        {"old_name": "search", "new_name": "search_web"},
+    ]
+)
+print(result.status)  # 0 for success
 ```
 
 ### Blocks API

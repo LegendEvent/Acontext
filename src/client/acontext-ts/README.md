@@ -30,6 +30,9 @@ await client.sessions.sendMessage(
   },
   { format: 'acontext' }
 );
+
+// Flush session buffer when needed
+await client.sessions.flush(session.id);
 ```
 
 See the inline documentation for the full list of helpers covering sessions, spaces, disks, and artifact uploads.
@@ -76,6 +79,42 @@ await client.blocks.create(space.id, {
   title: 'First block',
   props: { text: 'Plan the sprint goals' },
 });
+```
+
+## Managing sessions
+
+### Flush session buffer
+
+The `flush` method clears the session buffer, useful for managing session state:
+
+```typescript
+const result = await client.sessions.flush('session-uuid');
+console.log(result); // { status: 0, errmsg: '' }
+```
+
+## Working with tools
+
+The SDK provides APIs to manage tool names within your project:
+
+### Get tool names
+
+```typescript
+const tools = await client.tools.getToolName();
+for (const tool of tools) {
+  console.log(`${tool.name} (used in ${tool.sop_count} SOPs)`);
+}
+```
+
+### Rename tool names
+
+```typescript
+const result = await client.tools.renameToolName({
+  rename: [
+    { oldName: 'calculate', newName: 'calculate_math' },
+    { oldName: 'search', newName: 'search_web' },
+  ],
+});
+console.log(result); // { status: 0, errmsg: '' }
 ```
 
 ## Semantic search within spaces
