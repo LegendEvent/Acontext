@@ -6,4 +6,5 @@ export * from './space';
 export * from './session';
 export * from './disk';
 export * from './block';
+export * from './tool';
 

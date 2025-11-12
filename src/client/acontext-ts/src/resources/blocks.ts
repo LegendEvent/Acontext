@@ -4,6 +4,7 @@
 
 import { RequesterProtocol } from '../client-types';
 import { Block, BlockSchema } from '../types';
+import { InsertBlockResponse, InsertBlockResponseSchema } from '../types/tool';
 
 export class BlocksAPI {
   constructor(private requester: RequesterProtocol) {}
@@ -36,7 +37,7 @@ export class BlocksAPI {
       title?: string | null;
       props?: Record<string, unknown> | null;
     }
-  ): Promise<Block> {
+  ): Promise<InsertBlockResponse> {
     const payload: Record<string, unknown> = { type: options.blockType };
     if (options.parentId !== undefined && options.parentId !== null) {
       payload.parent_id = options.parentId;
@@ -50,7 +51,7 @@ export class BlocksAPI {
     const data = await this.requester.request('POST', `/space/${spaceId}/block`, {
       jsonData: payload,
     });
-    return BlockSchema.parse(data);
+    return InsertBlockResponseSchema.parse(data);
   }
 
   async delete(spaceId: string, blockId: string): Promise<void> {

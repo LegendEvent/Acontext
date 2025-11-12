@@ -202,5 +202,10 @@ export class SessionsAPI {
     });
     return GetMessagesOutputSchema.parse(data);
   }
+
+  async flush(sessionId: string): Promise<{ status: number; errmsg: string }> {
+    const data = await this.requester.request('POST', `/session/${sessionId}/flush`);
+    return data as { status: number; errmsg: string };
+  }
 }
 
