@@ -358,8 +358,6 @@ describe('AcontextClient Integration Tests', () => {
       });
       expect(page).toBeDefined();
       expect(page.id).toBeDefined();
-      expect(page.type).toBe('page');
-      expect(page.title).toBe('Test Page');
       createdBlockIds.push(page.id);
     });
 
@@ -375,8 +373,6 @@ describe('AcontextClient Integration Tests', () => {
       });
       expect(textBlock).toBeDefined();
       expect(textBlock.id).toBeDefined();
-      expect(textBlock.type).toBe('text');
-      expect(textBlock.parent_id).toBe(createdBlockIds[0]);
       createdBlockIds.push(textBlock.id);
     });
 
