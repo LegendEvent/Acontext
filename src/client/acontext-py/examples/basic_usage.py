@@ -49,50 +49,51 @@ def exercise_spaces(client: AcontextClient) -> tuple[str, dict[str, Any]]:
     return space_id, summary
 
 
-def exercise_blocks(client: AcontextClient, space_id: str) -> dict[str, Any]:
-    summary: dict[str, Any] = {}
-    summary["initial_blocks"] = client.blocks.list(space_id)
-
-    folder = client.blocks.create(space_id, block_type="folder", title="SDK E2E Folder")
-    page_a = client.blocks.create(space_id, parent_id=folder.id, block_type="page", title="SDK E2E Page A")
-    page_b = client.blocks.create(space_id, parent_id=folder.id, block_type="page", title="SDK E2E Page B")
-    text_block = client.blocks.create(
-        space_id,
-        parent_id=page_a.id,
-        block_type="text",
-        title="Initial Block",
-        props={"text": "Plan the sprint goals"},
-    )
-
-    summary["text_block_properties"] = client.blocks.get_properties(space_id, text_block.id)
-    client.blocks.update_properties(
-        space_id,
-        text_block.id,
-        title="Updated Block",
-        props={"text": "Updated block contents"},
-    )
-
-    client.blocks.move(space_id, text_block.id, parent_id=page_b.id)
-    client.blocks.update_sort(space_id, text_block.id, sort=0)
-
-    text_block_2 = client.blocks.create(space_id, 
-        parent_id=page_b.id,
-        block_type="text",
-        title="Another Block",
-        props={"text": "Another block contents"},
-    )
-    client.blocks.update_sort(space_id, text_block_2.id, sort=1)
-
-    summary["blocks_after_updates"] = client.blocks.list(space_id)
-
-    client.blocks.delete(space_id, text_block.id)
-    client.blocks.delete(space_id, text_block_2.id)
-    client.blocks.delete(space_id, page_b.id)
-    client.blocks.delete(space_id, page_a.id)
-    client.blocks.delete(space_id, folder.id)
-    summary["final_blocks"] = client.blocks.list(space_id)
-
-    return summary
+# NOTE: Block operations are commented out because API passes through to core
+# def exercise_blocks(client: AcontextClient, space_id: str) -> dict[str, Any]:
+#     summary: dict[str, Any] = {}
+#     summary["initial_blocks"] = client.blocks.list(space_id)
+#
+#     folder = client.blocks.create(space_id, block_type="folder", title="SDK E2E Folder")
+#     page_a = client.blocks.create(space_id, parent_id=folder.id, block_type="page", title="SDK E2E Page A")
+#     page_b = client.blocks.create(space_id, parent_id=folder.id, block_type="page", title="SDK E2E Page B")
+#     text_block = client.blocks.create(
+#         space_id,
+#         parent_id=page_a.id,
+#         block_type="text",
+#         title="Initial Block",
+#         props={"text": "Plan the sprint goals"},
+#     )
+#
+#     summary["text_block_properties"] = client.blocks.get_properties(space_id, text_block.id)
+#     client.blocks.update_properties(
+#         space_id,
+#         text_block.id,
+#         title="Updated Block",
+#         props={"text": "Updated block contents"},
+#     )
+#
+#     client.blocks.move(space_id, text_block.id, parent_id=page_b.id)
+#     client.blocks.update_sort(space_id, text_block.id, sort=0)
+#
+#     text_block_2 = client.blocks.create(space_id, 
+#         parent_id=page_b.id,
+#         block_type="text",
+#         title="Another Block",
+#         props={"text": "Another block contents"},
+#     )
+#     client.blocks.update_sort(space_id, text_block_2.id, sort=1)
+#
+#     summary["blocks_after_updates"] = client.blocks.list(space_id)
+#
+#     client.blocks.delete(space_id, text_block.id)
+#     client.blocks.delete(space_id, text_block_2.id)
+#     client.blocks.delete(space_id, page_b.id)
+#     client.blocks.delete(space_id, page_a.id)
+#     client.blocks.delete(space_id, folder.id)
+#     summary["final_blocks"] = client.blocks.list(space_id)
+#
+#     return summary
 
 
 def build_file_upload() -> tuple[str, bytes, str]:
@@ -256,7 +257,8 @@ def run() -> dict[str, Any]:
 
     with AcontextClient(api_key=api_key, base_url=base_url) as client:
         space_id, report["spaces"] = exercise_spaces(client)
-        report["blocks"] = exercise_blocks(client, space_id)
+        # NOTE: Block operations are commented out because API passes through to core
+        # report["blocks"] = exercise_blocks(client, space_id)
         report["sessions"] = exercise_sessions(client, space_id)
         report["disks"] = exercise_disks(client)
         client.spaces.delete(space_id)
