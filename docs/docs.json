@@ -48,7 +48,8 @@
             "icon": "sparkles",
             "pages": [
               "learn/skill-space",
-              "learn/search-skills"
+              "learn/search-skills",
+              "learn/tool"
             ]
           },
           {

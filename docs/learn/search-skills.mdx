@@ -245,3 +245,29 @@ const prompt = buildPromptWithContext(
 In agentic mode, you can use the `final_answer` directly instead of building your own prompt, as the AI has already synthesized the information.
 </Note>
 
+## Understanding SOP Blocks
+
+SOP (Standard Operating Procedure) blocks are structured skill components that contain actionable procedures and tool usage patterns. When you search for skills, the results include SOP blocks that define specific workflows and tool interactions.
+
+### SOP Block Structure
+
+Each skill block can contain `tool_sops` - an array of standard operating procedures that define:
+
+- **Action**: The specific action or step to perform
+- **Tool Name**: The tool or system to use for this action
+- **Context**: When and how to apply this procedure
+
+```json sop block example
+{
+    "use_when": "star a github repo",
+    "preferences": "use personal account. star but not fork",
+    "tool_sops": [
+        {"tool_name": "goto", "action": "goto the user given github repo url"},
+        {"tool_name": "click", "action": "find login button if any, and start to login first"},
+        ...
+    ]
+}
+```
+A SOP block has not only some text summaries about task and preferences, but also the exact tool chain to achieve that.
+
+We also prepare [some util sdks](/learn/tool) to manage the tools, in order you may change some tools and invalidate some sops.
