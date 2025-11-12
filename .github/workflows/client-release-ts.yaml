@@ -1,4 +1,4 @@
-name: TypeScript SDK Release
+name: TypeScript Client Release
 
 on:
   push:
@@ -34,7 +34,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body_path: ${{ github.workspace }}-CHANGELOG.txt
-          name: TypeScript SDK v${{ steps.version.outputs.version }}
 
   publish:
     name: Publish to npm
