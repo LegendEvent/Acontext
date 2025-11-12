@@ -433,6 +433,16 @@ graph TB
     I --> J[Available for Future Sessions]
 ```
 
+
+If you ran the above examples, you can find the learned skills in space(view it through the dashboard or API).
+You will see that the skill only have user preferences on collecting the product news, but no tool steps.
+
+That's because Acontext judges that the New Searching task is too easy, only the user preferences on this task is worthwhile to learn.
+
+<Frame caption="Skill viewer showing registered agent skills and their execution statistics">
+<img src="/images/dashboard/skill_viewer.png" alt="Skill viewer dashboard displaying a list of agent skills with usage metrics, success rates, and performance data" />
+</Frame>
+
 ### What Gets Learned
 
 Acontext analyzes the task execution to extract:
@@ -499,7 +509,7 @@ carol_session = client.sessions.create(space_id=team_space.id)
 Attach sessions to Spaces at creation time to ensure all completed tasks are learned, not after tasks start executing.
 </Card>
 
-<Card title="Organize by User" icon="folder-tree">
+<Card title="Organize by User" icon="user">
 Create separate Spaces for different users to maintain focused, relevant skill libraries.
 </Card>
 
