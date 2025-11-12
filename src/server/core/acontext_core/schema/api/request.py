@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal, Any
+from typing import Literal, Any, Optional
 from ..utils import asUUID
 
 
@@ -16,7 +16,7 @@ class ToolRenameRequest(BaseModel):
 
 
 class InsertBlockRequest(BaseModel):
-    parent_id: asUUID = Field(..., description="Parent block ID")
+    parent_id: Optional[asUUID] = Field(None, description="Parent block ID (optional for page/folder types)")
     props: dict[str, Any] = Field(..., description="Block properties")
     title: str = Field(..., description="Block title")
     type: str = Field(..., description="Block type")
