@@ -1,15 +1,6 @@
-import asyncio
-from ..env import LOG, DEFAULT_CORE_CONFIG
-from ..telemetry.log import bound_logging_vars
-from ..infra.redis import REDIS_CLIENT
+from ..env import LOG
 from ..infra.db import DB_CLIENT
-from ..infra.async_mq import (
-    register_consumer,
-    MQ_CLIENT,
-    Message,
-    ConsumerConfigData,
-    SpecialHandler,
-)
+from ..infra.async_mq import register_consumer, MQ_CLIENT, Message, ConsumerConfigData
 from ..schema.mq.space import NewTaskComplete
 from .constants import EX, RK
 from .data import project as PD

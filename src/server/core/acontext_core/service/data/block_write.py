@@ -1,25 +1,12 @@
-import numpy as np
-from sqlalchemy import String
-from typing import List, Optional
-from sqlalchemy import select, delete, update, func
-from sqlalchemy import select, delete, update
-from sqlalchemy.orm import selectinload
-from sqlalchemy.orm.attributes import flag_modified
+from typing import Optional
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from ...llm.embeddings import get_embedding
-from ...schema.orm.block import (
-    BLOCK_TYPE_FOLDER,
-    BLOCK_TYPE_ROOT,
-    BLOCK_TYPE_PAGE,
-    BLOCK_TYPE_SOP,
-    BLOCK_PARENT_ALLOW,
-)
-from ...schema.orm import Block, BlockEmbedding, ToolReference, ToolSOP, Space
+from ...schema.orm.block import BLOCK_TYPE_SOP
+from ...schema.orm import Block, ToolReference, ToolSOP, Space
 from ...schema.utils import asUUID
 from ...schema.result import Result
 from ...schema.block.sop_block import SOPData
 from ...schema.block.general import GeneralBlockData
-from .block_nav import assert_block_type, _normalize_path_block_title
 from .block import (
     _find_block_sort,
     create_new_block_embedding,
@@ -35,7 +22,7 @@ async def write_sop_block_to_parent(
     after_block_index: Optional[int] = None,
 ) -> Result[asUUID]:
     if not sop_data.tool_sops and not sop_data.preferences.strip():
-        return Result.reject(f"SOP data is empty")
+        return Result.reject("SOP data is empty")
     space = await db_session.get(Space, space_id)
     if space is None:
         raise ValueError(f"Space {space_id} not found")

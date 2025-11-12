@@ -22,3 +22,12 @@ class SpaceSearchResult(BaseModel):
     final_answer: Optional[str] = Field(
         ..., description="Final answer, not-null for 'agentic' mode."
     )
+
+
+class Flag(BaseModel):
+    status: int
+    errmsg: str
+
+
+class InsertBlockResponse(BaseModel):
+    id: asUUID = Field(..., description="Block ID")

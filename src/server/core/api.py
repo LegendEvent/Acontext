@@ -1,17 +1,32 @@
 import asyncio
 from contextlib import asynccontextmanager
-from re import search
+from pydantic import ValidationError
 from typing import Optional, List
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, Body
 from fastapi.exceptions import HTTPException
-from acontext_core.di import setup, cleanup, MQ_CLIENT, LOG, DB_CLIENT, S3_CLIENT
-from acontext_core.schema.api.request import SearchMode
-from acontext_core.schema.api.response import SearchResultBlockItem, SpaceSearchResult
+from acontext_core.di import setup, cleanup, MQ_CLIENT, LOG, DB_CLIENT
+from acontext_core.schema.api.request import (
+    SearchMode,
+    ToolRenameRequest,
+    InsertBlockRequest,
+)
+from acontext_core.schema.api.response import (
+    SearchResultBlockItem,
+    SpaceSearchResult,
+    InsertBlockResponse,
+    Flag,
+)
+from acontext_core.schema.tool.tool_reference import ToolReferenceData
 from acontext_core.schema.utils import asUUID
+from acontext_core.schema.block.sop_block import SOPData
+from acontext_core.schema.orm.block import BLOCK_TYPE_SOP
 from acontext_core.env import DEFAULT_CORE_CONFIG
 from acontext_core.llm.agent import space_search as SS
+from acontext_core.service.data import block_write as BW
 from acontext_core.service.data import block_search as BS
 from acontext_core.service.data import block_render as BR
+from acontext_core.service.data import tool as TT
+from acontext_core.service.session_message import flush_session_message_blocking
 
 
 @asynccontextmanager
@@ -221,3 +236,60 @@ async def search_space(
         return result
     else:
         raise HTTPException(status_code=400, detail=f"Invalid search mode: {mode}")
+
+
+@app.post("/api/v1/project/{project_id}/space/{space_id}/insert_block")
+async def insert_new_block(
+    project_id: asUUID = Path(..., description="Project ID to search within"),
+    space_id: asUUID = Path(..., description="Space ID to search within"),
+    request: InsertBlockRequest = Body(..., description="Request to insert new block"),
+) -> InsertBlockResponse:
+    if request.type != BLOCK_TYPE_SOP:
+        raise HTTPException(
+            status_code=500, detail=f"Invalid block type: {request.type}"
+        )
+    try:
+        sop_data = SOPData.model_validate({**request.props, "use_when": request.title})
+    except ValidationError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    async with DB_CLIENT.get_session_context() as db_session:
+        r = await BW.write_sop_block_to_parent(
+            db_session, space_id, request.parent_id, sop_data
+        )
+        if not r.ok():
+            raise HTTPException(status_code=500, detail=str(r.error))
+    return InsertBlockResponse(id=r.data)
+
+
+@app.post("/api/v1/project/{project_id}/session/{session_id}/flush")
+async def session_flush(
+    project_id: asUUID = Path(..., description="Project ID to search within"),
+    session_id: asUUID = Path(..., description="Session ID to flush"),
+) -> Flag:
+    """
+    Flush the session buffer for a given session.
+    """
+    r = await flush_session_message_blocking(project_id, session_id)
+    return Flag(status=r.error.status.value, errmsg=r.error.errmsg)
+
+
+@app.post("/api/v1/project/{project_id}/tool/rename")
+async def project_tool_rename(
+    project_id: asUUID = Path(..., description="Project ID to rename tool within"),
+    request: ToolRenameRequest = Body(..., description="Request to rename tool"),
+) -> Flag:
+    rename_list = [(t.old_name.strip(), t.new_name.strip()) for t in request.rename]
+    async with DB_CLIENT.get_session_context() as db_session:
+        r = await TT.rename_tool(db_session, project_id, rename_list)
+    return Flag(status=r.error.status.value, errmsg=r.error.errmsg)
+
+
+@app.get("/api/v1/project/{project_id}/tool/name")
+async def get_project_tool_names(
+    project_id: asUUID = Path(..., description="Project ID to get tool names within"),
+) -> List[ToolReferenceData]:
+    async with DB_CLIENT.get_session_context() as db_session:
+        r = await TT.get_tool_names(db_session, project_id)
+        if not r.ok():
+            raise HTTPException(status_code=500, detail=r.error)
+    return r.data

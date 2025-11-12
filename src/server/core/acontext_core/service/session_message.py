@@ -1,7 +1,5 @@
 import asyncio
 from ..env import LOG, DEFAULT_CORE_CONFIG
-from ..telemetry.log import bound_logging_vars
-from ..infra.redis import REDIS_CLIENT
 from ..infra.db import DB_CLIENT
 from ..infra.async_mq import (
     register_consumer,
@@ -11,7 +9,8 @@ from ..infra.async_mq import (
     SpecialHandler,
 )
 from ..schema.mq.session import InsertNewMessage
-from ..schema.config import ProjectConfig
+from ..schema.utils import asUUID
+from ..schema.result import Result
 from .constants import EX, RK
 from .data import message as MD
 from .data import project as PD
@@ -181,3 +180,34 @@ async def buffer_new_message(body: InsertNewMessage, message: Message):
         await release_redis_lock(
             body.project_id, f"session.message.insert.{body.session_id}"
         )
+
+
+async def flush_session_message_blocking(
+    project_id: asUUID, session_id: asUUID
+) -> Result[None]:
+    while True:
+        _l = await check_redis_lock_or_set(
+            project_id, f"session.message.insert.{session_id}"
+        )
+        if _l:
+            break
+        LOG.debug(
+            f"Current Session is locked. "
+            f"wait {DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds} seconds for next resend. "
+        )
+        await asyncio.sleep(
+            DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds
+        )
+
+    try:
+        async with DB_CLIENT.get_session_context() as read_session:
+            r = await PD.get_project_config(read_session, project_id)
+            project_config, eil = r.unpack()
+            if eil:
+                return r
+        r = await MC.process_session_pending_message(
+            project_config, project_id, session_id
+        )
+        return r
+    finally:
+        await release_redis_lock(project_id, f"session.message.insert.{session_id}")

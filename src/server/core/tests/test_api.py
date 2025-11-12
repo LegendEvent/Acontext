@@ -23,7 +23,6 @@ from api import app
 from acontext_core.schema.orm import Block, BlockEmbedding, Project, Space
 from acontext_core.schema.orm.block import (
     BLOCK_TYPE_PAGE,
-    BLOCK_TYPE_FOLDER,
     BLOCK_TYPE_TEXT,
     BLOCK_TYPE_SOP,
 )
@@ -282,7 +281,7 @@ class TestSemanticGlobEndpoint:
                 data = response.json()
                 assert isinstance(data, list)
 
-                print(f"✓ Custom threshold test passed")
+                print("✓ Custom threshold test passed")
 
         # Cleanup
         async with db_client.get_session_context() as session:
@@ -305,7 +304,7 @@ class TestSemanticGlobEndpoint:
 
             # FastAPI should return 422 for invalid UUID format
             assert response.status_code == 422
-            print(f"✓ Invalid space ID test passed")
+            print("✓ Invalid space ID test passed")
 
     @pytest.mark.asyncio
     async def test_semantic_glob_invalid_params(self):
@@ -343,7 +342,7 @@ class TestSemanticGlobEndpoint:
             )
             assert response.status_code == 422, "Should fail with threshold > 2.0"
 
-            print(f"✓ Invalid params test passed")
+            print("✓ Invalid params test passed")
 
 
 class TestSemanticGrepEndpoint:
@@ -547,7 +546,7 @@ class TestSemanticGrepEndpoint:
                 data = response.json()
                 assert isinstance(data, list)
 
-                print(f"✓ SOP block search test passed")
+                print("✓ SOP block search test passed")
 
         # Cleanup
         async with db_client.get_session_context() as session:
@@ -570,7 +569,7 @@ class TestSemanticGrepEndpoint:
 
             # FastAPI should return 422 for invalid UUID format
             assert response.status_code == 422
-            print(f"✓ Invalid space ID test passed")
+            print("✓ Invalid space ID test passed")
 
     @pytest.mark.asyncio
     async def test_semantic_grep_invalid_params(self):
@@ -608,4 +607,4 @@ class TestSemanticGrepEndpoint:
             )
             assert response.status_code == 422, "Should fail with threshold > 2.0"
 
-            print(f"✓ Invalid params test passed")
+            print("✓ Invalid params test passed")

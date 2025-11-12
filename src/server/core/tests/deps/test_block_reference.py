@@ -3,6 +3,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from acontext_core.infra.db import DatabaseClient
 from acontext_core.schema.orm import Project, Space, Block, BlockReference
+from acontext_core.service.data.block_write import write_sop_block_to_parent
+from acontext_core.service.data.tool import get_tool_names
+from acontext_core.service.data.block import create_new_path_block
+from acontext_core.schema.block.sop_block import SOPData, SOPStep
 
 FAKE_KEY = "b" * 32
 
@@ -122,7 +126,7 @@ async def test_block_reference_set_null_on_delete():
             assert br_after is not None
             assert br_after.block_id == reference_block_id
             assert br_after.reference_block_id is None  # SET NULL behavior
-            print(f"✓ BlockReference persists with NULL reference_block_id")
+            print("✓ BlockReference persists with NULL reference_block_id")
 
             # Verify relationship access
             result = await session.execute(
@@ -143,3 +147,83 @@ async def test_block_reference_set_null_on_delete():
             # Cleanup
             await session.delete(project)
             await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_tool_reference_sop_count():
+    """Test that sop_count is correctly calculated"""
+    db_client = DatabaseClient()
+    await db_client.create_tables()
+
+    async with db_client.get_session_context() as session:
+        # Create test project and space
+        project = Project(
+            secret_key_hmac="test_key_hmac", secret_key_hash_phc="test_key_hash"
+        )
+        session.add(project)
+        await session.flush()
+
+        space = Space(project_id=project.id)
+        session.add(space)
+        await session.flush()
+
+        # Create parent page for SOP
+        r = await create_new_path_block(session, space.id, "Parent Page")
+        assert r.ok()
+        parent_id = r.data.id
+
+        # Create first SOP with two tools
+        sop_data1 = SOPData(
+            use_when="First SOP",
+            preferences="Test preferences",
+            tool_sops=[
+                SOPStep(tool_name="tool_a", action="run with debug=true"),
+                SOPStep(tool_name="tool_b", action="execute with retries=3"),
+            ],
+        )
+
+        r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data1)
+        assert r.ok()
+
+        # Create second SOP that reuses tool_a and adds tool_c
+        sop_data2 = SOPData(
+            use_when="Second SOP",
+            preferences="More test preferences",
+            tool_sops=[
+                SOPStep(tool_name="tool_a", action="run with different params"),
+                SOPStep(tool_name="tool_c", action="new tool action"),
+            ],
+        )
+
+        r = await write_sop_block_to_parent(session, space.id, parent_id, sop_data2)
+        assert r.ok()
+
+        # Now test get_tool_names to see if sop_count is correct
+        r = await get_tool_names(session, project.id)
+        assert r.ok()
+
+        tool_data = r.data
+        print(f"Found {len(tool_data)} tools:")
+
+        # Convert to dict for easier testing
+        tools_by_name = {tool.name: tool for tool in tool_data}
+
+        for tool in tool_data:
+            print(f"  {tool.name}: sop_count={tool.sop_count}")
+
+        # Verify counts
+        assert "tool_a" in tools_by_name
+        assert "tool_b" in tools_by_name
+        assert "tool_c" in tools_by_name
+
+        # tool_a should appear in 2 SOPs
+        assert tools_by_name["tool_a"].sop_count == 2
+
+        # tool_b and tool_c should each appear in 1 SOP
+        assert tools_by_name["tool_b"].sop_count == 1
+        assert tools_by_name["tool_c"].sop_count == 1
+
+        print("✅ All tests passed! sop_count is working correctly.")
+
+        # Clean up
+        await session.delete(project)

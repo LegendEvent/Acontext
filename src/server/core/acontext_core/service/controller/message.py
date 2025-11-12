@@ -3,15 +3,15 @@ from ...infra.db import DB_CLIENT
 from ...schema.session.task import TaskStatus
 from ...schema.session.message import MessageBlob
 from ...schema.utils import asUUID
+from ...schema.result import Result
 from ...llm.agent import task as AT
-from ...schema.result import ResultError
-from ...env import LOG, DEFAULT_CORE_CONFIG
+from ...env import LOG
 from ...schema.config import ProjectConfig
 
 
 async def process_session_pending_message(
     project_config: ProjectConfig, project_id: asUUID, session_id: asUUID
-):
+) -> Result[None]:
     pending_message_ids = None
     try:
         async with DB_CLIENT.get_session_context() as session:
@@ -26,7 +26,9 @@ async def process_session_pending_message(
             )
             pending_message_ids, eil = r.unpack()
             if eil:
-                return
+                return r
+            if not pending_message_ids:
+                return Result.resolve(None)
             await MD.update_message_status_to(
                 session, pending_message_ids, TaskStatus.RUNNING
             )
@@ -36,7 +38,7 @@ async def process_session_pending_message(
             r = await MD.fetch_messages_data_by_ids(session, pending_message_ids)
             messages, eil = r.unpack()
             if eil:
-                return
+                return r
 
             r = await MD.fetch_previous_messages_by_datetime(
                 session,
@@ -46,7 +48,7 @@ async def process_session_pending_message(
             )
             previous_messages, eil = r.unpack()
             if eil:
-                return
+                return r
             messages_data = [
                 MessageBlob(
                     message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id
@@ -75,6 +77,7 @@ async def process_session_pending_message(
             await MD.update_message_status_to(
                 session, pending_message_ids, after_status
             )
+        return r
     except Exception as e:
         if pending_message_ids is None:
             raise e
