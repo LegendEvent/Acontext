@@ -23,7 +23,16 @@ Task extraction happens asynchronously with a small delay to optimize costs and 
 - This reduces the number of LLM calls needed for extraction, saving costs
 - The system waits a few seconds to collect messages before starting extraction
 
+You can use `flush` method for blocking and waiting for all the tasks to be extracted.
+<CodeGroup>
+```python Python
+client.sessions.flush(session.id)
+```
 
+```typescript TypeScript
+await client.sessions.flush(session.id);
+```
+</CodeGroup>
 ## Quick Start: Test Task Extraction
 
 This example demonstrates how to verify that Acontext correctly extracts tasks from your agent's messages. You'll send a conversation where the agent outlines a plan, then retrieve the extracted tasks to confirm they were detected.
@@ -70,20 +79,7 @@ for msg in messages:
     )
 
 # Wait for task extraction to complete
-# Poll until tasks are extracted (with timeout)
-max_attempts = 10
-tasks_response = None
-for attempt in range(max_attempts):
-    tasks_response = client.sessions.get_tasks(session.id)
-    if len(tasks_response.items) > 0:
-        break
-    time.sleep(1)  # Wait 1 second between attempts
-
-if not tasks_response or len(tasks_response.items) == 0:
-    print("No tasks extracted yet, extraction may still be in progress")
-else:
-    print(f"Successfully extracted {len(tasks_response.items)} tasks!")
-
+client.sessions.flush(session.id)
 # Display extracted tasks
 for task in tasks_response.items:
     print(f"\nTask #{task.order}:")
@@ -149,16 +145,8 @@ async function demonstrateTasks() {
     }
 
     // Wait for task extraction to complete
-    // Poll until tasks are extracted (with timeout)
-    const maxAttempts = 10;
-    let tasksResponse = null;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        tasksResponse = await client.sessions.getTasks(session.id);
-        if (tasksResponse.items.length > 0) {
-            break;
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-    }
+    await client.sessions.flush(session.id);
+    const tasksResponse = await client.sessions.getTasks(session.id);
 
     if (!tasksResponse || tasksResponse.items.length === 0) {
         console.log('No tasks extracted yet, extraction may still be in progress');

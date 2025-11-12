@@ -290,6 +290,7 @@ async def session_flush(
     """
     Flush the session buffer for a given session.
     """
+    LOG.info(f"Flushing session {session_id} for project {project_id}")
     r = await flush_session_message_blocking(project_id, session_id)
     return Flag(status=r.error.status.value, errmsg=r.error.errmsg)
 
