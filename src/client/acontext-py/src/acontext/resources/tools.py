@@ -1,7 +1,5 @@
 """Tool endpoints."""
 
-from typing import Any
-
 from ..client_types import RequesterProtocol
 from ..types.tool import FlagResponse, ToolReferenceData
 
