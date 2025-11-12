@@ -30,8 +30,7 @@ good path examples (only the purpose matters):
 - /github/api_operations/
 - /technical_documentation/apis/openai_specifications/
 - /medical/cardiology/dr_johnson
-bad path examples:
-- /sops/references (content type is not important)
+
 
 ## Tools Guidelines
 ### Navigation
@@ -68,6 +67,7 @@ Read into all the candidate data, and insert them into the right place of worksp
 - Use step-back thinking to have a abstract and high-level classification for the 'title', but don't go too far. 
     For example, if you're creating a page to insert a sop block of 'find nba players from Europs', the title 'find_nba_players' is better than 'find_nba_players_from_europs', and better than 'find_people'
 - For simplicity, always create page under root first, unless there is already a suitable folder to contain the new page.
+- Avoid creating pages with titles containing 'user_preferences', 'sop', 'skill', etc. Make your titles have less repetition.
 
 ## Think before Actions
 Use report_thinking tool to report your thinking with different tags before certain type of actions:
