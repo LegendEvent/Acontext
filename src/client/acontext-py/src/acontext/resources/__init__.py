@@ -4,10 +4,12 @@ from .async_blocks import AsyncBlocksAPI
 from .async_disks import AsyncDisksAPI, AsyncDiskArtifactsAPI
 from .async_sessions import AsyncSessionsAPI
 from .async_spaces import AsyncSpacesAPI
+from .async_tools import AsyncToolsAPI
 from .blocks import BlocksAPI
 from .disks import DisksAPI, DiskArtifactsAPI
 from .sessions import SessionsAPI
 from .spaces import SpacesAPI
+from .tools import ToolsAPI
 
 __all__ = [
     "DisksAPI",
@@ -15,9 +17,11 @@ __all__ = [
     "BlocksAPI",
     "SessionsAPI",
     "SpacesAPI",
+    "ToolsAPI",
     "AsyncDisksAPI",
     "AsyncDiskArtifactsAPI",
     "AsyncBlocksAPI",
     "AsyncSessionsAPI",
     "AsyncSpacesAPI",
+    "AsyncToolsAPI",
 ]

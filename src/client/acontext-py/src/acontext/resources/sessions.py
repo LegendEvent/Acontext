@@ -274,3 +274,15 @@ class SessionsAPI:
             "GET", f"/session/{session_id}/messages", params=params or None
         )
         return GetMessagesOutput.model_validate(data)
+
+    def flush(self, session_id: str) -> dict[str, Any]:
+        """Flush the session buffer for a given session.
+        
+        Args:
+            session_id: The UUID of the session.
+            
+        Returns:
+            Dictionary containing status and errmsg fields.
+        """
+        data = self._requester.request("POST", f"/session/{session_id}/flush")
+        return data  # type: ignore

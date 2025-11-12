@@ -27,6 +27,12 @@ from .space import (
     Space,
     SpaceSearchResult,
 )
+from .tool import (
+    FlagResponse,
+    InsertBlockResponse,
+    ToolReferenceData,
+    ToolRenameItem,
+)
 
 __all__ = [
     # Disk types
@@ -54,4 +60,9 @@ __all__ = [
     "SpaceSearchResult",
     # Block types
     "Block",
+    # Tool types
+    "FlagResponse",
+    "InsertBlockResponse",
+    "ToolReferenceData",
+    "ToolRenameItem",
 ]

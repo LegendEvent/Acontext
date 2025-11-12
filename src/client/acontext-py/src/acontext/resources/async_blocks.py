@@ -7,6 +7,7 @@ from typing import Any
 
 from ..client_types import AsyncRequesterProtocol
 from ..types.block import Block
+from ..types.tool import InsertBlockResponse
 
 
 class AsyncBlocksAPI:
@@ -46,7 +47,7 @@ class AsyncBlocksAPI:
         parent_id: str | None = None,
         title: str | None = None,
         props: Mapping[str, Any] | None = None,
-    ) -> Block:
+    ) -> InsertBlockResponse:
         """Create a new block in a space.
         
         Args:
@@ -57,7 +58,7 @@ class AsyncBlocksAPI:
             props: Optional block properties dictionary. Defaults to None.
             
         Returns:
-            The created Block object.
+            InsertBlockResponse containing the new block ID.
         """
         payload: dict[str, Any] = {"type": block_type}
         if parent_id is not None:
@@ -67,7 +68,7 @@ class AsyncBlocksAPI:
         if props is not None:
             payload["props"] = props
         data = await self._requester.request("POST", f"/space/{space_id}/block", json_data=payload)
-        return Block.model_validate(data)
+        return InsertBlockResponse.model_validate(data)
 
     async def delete(self, space_id: str, block_id: str) -> None:
         """Delete a block by its ID.

@@ -276,3 +276,15 @@ class AsyncSessionsAPI:
         )
         return GetMessagesOutput.model_validate(data)
 
+    async def flush(self, session_id: str) -> dict[str, Any]:
+        """Flush the session buffer for a given session.
+        
+        Args:
+            session_id: The UUID of the session.
+            
+        Returns:
+            Dictionary containing status and errmsg fields.
+        """
+        data = await self._requester.request("POST", f"/session/{session_id}/flush")
+        return data  # type: ignore
+
