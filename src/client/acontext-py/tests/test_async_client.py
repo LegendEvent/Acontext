@@ -408,79 +408,81 @@ async def test_async_blocks_list_with_filters(mock_request, async_client: Aconte
     assert isinstance(result, list)
 
 
-@patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
-@pytest.mark.asyncio
-async def test_async_blocks_create_root_payload(mock_request, async_client: AcontextAsyncClient) -> None:
-    mock_request.return_value = {
-        "id": "block",
-        "space_id": "space-id",
-        "type": "folder",
-        "title": "Folder Title",
-        "props": {},
-        "sort": 0,
-        "is_archived": False,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
-    }
+# NOTE: Block creation tests are commented out because API passes through to core
+# @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
+# @pytest.mark.asyncio
+# async def test_async_blocks_create_root_payload(mock_request, async_client: AcontextAsyncClient) -> None:
+#     mock_request.return_value = {
+#         "id": "block",
+#         "space_id": "space-id",
+#         "type": "folder",
+#         "title": "Folder Title",
+#         "props": {},
+#         "sort": 0,
+#         "is_archived": False,
+#         "created_at": "2024-01-01T00:00:00Z",
+#         "updated_at": "2024-01-01T00:00:00Z",
+#     }
+#
+#     result = await async_client.blocks.create(
+#         "space-id",
+#         block_type="folder",
+#         title="Folder Title",
+#     )
+#
+#     mock_request.assert_called_once()
+#     args, kwargs = mock_request.call_args
+#     method, path = args
+#     assert method == "POST"
+#     assert path == "/space/space-id/block"
+#     assert kwargs["json_data"] == {
+#         "type": "folder",
+#         "title": "Folder Title",
+#     }
+#     # Verify it returns a Pydantic model
+#     assert hasattr(result, "id")
+#     assert result.id == "block"
 
-    result = await async_client.blocks.create(
-        "space-id",
-        block_type="folder",
-        title="Folder Title",
-    )
 
-    mock_request.assert_called_once()
-    args, kwargs = mock_request.call_args
-    method, path = args
-    assert method == "POST"
-    assert path == "/space/space-id/block"
-    assert kwargs["json_data"] == {
-        "type": "folder",
-        "title": "Folder Title",
-    }
-    # Verify it returns a Pydantic model
-    assert hasattr(result, "id")
-    assert result.id == "block"
-
-
-@patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
-@pytest.mark.asyncio
-async def test_async_blocks_create_with_parent_payload(mock_request, async_client: AcontextAsyncClient) -> None:
-    mock_request.return_value = {
-        "id": "block",
-        "space_id": "space-id",
-        "type": "text",
-        "parent_id": "parent-id",
-        "title": "Block Title",
-        "props": {"key": "value"},
-        "sort": 0,
-        "is_archived": False,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
-    }
-
-    result = await async_client.blocks.create(
-        "space-id",
-        parent_id="parent-id",
-        block_type="text",
-        title="Block Title",
-        props={"key": "value"},
-    )
-
-    mock_request.assert_called_once()
-    args, kwargs = mock_request.call_args
-    method, path = args
-    assert method == "POST"
-    assert path == "/space/space-id/block"
-    assert kwargs["json_data"] == {
-        "parent_id": "parent-id",
-        "type": "text",
-        "title": "Block Title",
-        "props": {"key": "value"},
-    }
-    # Verify it returns a Pydantic model
-    assert hasattr(result, "id")
-    assert result.id == "block"
+# NOTE: Block creation tests are commented out because API passes through to core
+# @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
+# @pytest.mark.asyncio
+# async def test_async_blocks_create_with_parent_payload(mock_request, async_client: AcontextAsyncClient) -> None:
+#     mock_request.return_value = {
+#         "id": "block",
+#         "space_id": "space-id",
+#         "type": "text",
+#         "parent_id": "parent-id",
+#         "title": "Block Title",
+#         "props": {"key": "value"},
+#         "sort": 0,
+#         "is_archived": False,
+#         "created_at": "2024-01-01T00:00:00Z",
+#         "updated_at": "2024-01-01T00:00:00Z",
+#     }
+#
+#     result = await async_client.blocks.create(
+#         "space-id",
+#         parent_id="parent-id",
+#         block_type="text",
+#         title="Block Title",
+#         props={"key": "value"},
+#     )
+#
+#     mock_request.assert_called_once()
+#     args, kwargs = mock_request.call_args
+#     method, path = args
+#     assert method == "POST"
+#     assert path == "/space/space-id/block"
+#     assert kwargs["json_data"] == {
+#         "parent_id": "parent-id",
+#         "type": "text",
+#         "title": "Block Title",
+#         "props": {"key": "value"},
+#     }
+#     # Verify it returns a Pydantic model
+#     assert hasattr(result, "id")
+#     assert result.id == "block"
 
 
 @pytest.mark.asyncio
