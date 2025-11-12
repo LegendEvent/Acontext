@@ -44,7 +44,6 @@ jobs:
           TAG_NAME=${GITHUB_REF#refs/tags/sdk-py/v}
           echo "version=$TAG_NAME" >> $GITHUB_OUTPUT
 
-      # TODO: add changelog generation
       - name: Generate Changelog
         run: |
           echo "# Python SDK ${{ steps.version.outputs.version }}" > ${{ github.workspace }}-CHANGELOG.txt

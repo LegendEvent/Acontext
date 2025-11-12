@@ -45,3 +45,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha
+    
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/api/v}
+          echo "version=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Generate Changelog
+        run: |
+          echo "# API ${{ steps.version.outputs.version }}" > ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "Published to https://github.com/memodb-io/Acontext/pkgs/container/acontext-api" >> ${{ github.workspace }}-CHANGELOG.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: ${{ github.workspace }}-CHANGELOG.txt
+
