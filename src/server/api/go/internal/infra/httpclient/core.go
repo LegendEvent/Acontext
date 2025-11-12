@@ -210,7 +210,7 @@ func (c *CoreClient) ExperienceSearch(ctx context.Context, projectID, spaceID uu
 
 // InsertBlockRequest represents the request for inserting a block
 type InsertBlockRequest struct {
-	ParentID uuid.UUID      `json:"parent_id"`
+	ParentID *uuid.UUID     `json:"parent_id,omitempty"`
 	Props    map[string]any `json:"props"`
 	Title    string         `json:"title"`
 	Type     string         `json:"type"`

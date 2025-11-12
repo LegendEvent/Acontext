@@ -78,7 +78,7 @@ func (h *BlockHandler) CreateBlock(c *gin.Context) {
 
 	// Prepare request for Core service
 	coreReq := httpclient.InsertBlockRequest{
-		ParentID: *req.ParentID,
+		ParentID: req.ParentID,
 		Props:    req.Props,
 		Title:    req.Title,
 		Type:     req.Type,
