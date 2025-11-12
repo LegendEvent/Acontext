@@ -361,9 +361,13 @@ console.log(`Message with audio sent: ${message.id}`);
 ```
 </CodeGroup>
 
-## Sending PDF documents
+## Sending Files
 
-Anthropic supports sending PDF documents for analysis and understanding. PDFs must be base64-encoded and sent using the `document` content type:
+You can send files for analysis and understanding using base64-encoded content. Different formats handle files differently:
+
+<Tabs>
+<Tab title="Anthropic Format">
+Anthropic supports sending files using the `document` content type with base64-encoded data:
 
 <CodeGroup>
 ```python Python
@@ -442,20 +446,99 @@ const message = await client.sessions.sendMessage(session.id, {
 console.log(`Message with PDF sent: ${message.id}`);
 ```
 </CodeGroup>
+</Tab>
+
+<Tab title="OpenAI Format">
+OpenAI format supports base64 file uploads using the `file` content type with embedded `file_data`:
+
+<CodeGroup>
+```python Python
+import base64
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+session = client.sessions.create()
+
+# Read and encode PDF file as base64
+with open("document.pdf", "rb") as pdf_file:
+    pdf_data = base64.b64encode(pdf_file.read()).decode("utf-8")
+
+# Send message with PDF file (OpenAI format)
+message = client.sessions.send_message(
+    session_id=session.id,
+    blob={
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "What's in this PDF document?"
+            },
+            {
+                "type": "file",
+                "file": {
+                    "file_data": pdf_data,
+                    "filename": "document.pdf"
+                }
+            }
+        ]
+    },
+    format="openai"
+)
+
+print(f"Message with PDF sent: {message.id}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+import fs from 'fs';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+const session = await client.sessions.create();
+
+// Read and encode PDF file as base64
+const pdfBuffer = fs.readFileSync('document.pdf');
+const pdfData = pdfBuffer.toString('base64');
+
+// Send message with PDF file (OpenAI format)
+const message = await client.sessions.sendMessage(session.id, {
+  role: 'user',
+  content: [
+    {
+      type: 'text',
+      text: 'What\'s in this PDF document?'
+    },
+    {
+      type: 'file',
+      file: {
+        file_data: pdfData,
+        filename: 'document.pdf'
+      }
+    }
+  ]
+}, { format: 'openai' });
+
+console.log(`Message with PDF sent: ${message.id}`);
+```
+</CodeGroup>
+</Tab>
+</Tabs>
 
 <Note>
 When you send a PDF with base64 data, the base64 content is stored within the message parts JSON in S3. When you retrieve the message, the PDF is returned as base64 data again—not as a presigned URL. This keeps the PDF data inline with the message content.
 </Note>
 
 ### Supported document formats
+Acontext will not limit the document formats in the context, you can store any file type in Acontext.
+However, not every file type is supported by your LLM Provider. You may check their documentations to see if the file type is supported:
+- [OpenAI Files](https://platform.openai.com/docs/guides/pdf-files?api-mode=chat#page-top)
+- [Anthropic Files](https://docs.claude.com/en/docs/build-with-claude/pdf-support)
 
-Anthropic's document type primarily supports PDF files:
-
-- **application/pdf** - PDF documents for analysis, summarization, and question answering
-
-<Tip>
-You can include multiple content blocks in a single message, such as a PDF document followed by specific questions about the document's contents.
-</Tip>
 
 ## Retrieving multi-modal messages
 
@@ -880,16 +963,13 @@ processMultiModalMessage();
 
 ## Next steps
 
-<CardGroup cols={3}>
-<Card title="Multi-provider Messages" icon="shuffle" href="/store/messages/multi-provider">
-Learn about format compatibility between OpenAI and Anthropic
-</Card>
+<CardGroup cols={2}>
 
 <Card title="Store Artifacts" icon="box" href="/store/artifacts">
 Store and manage file artifacts alongside messages
 </Card>
 
-<Card title="API Reference" icon="code" href="/api-reference/sessions">
-Explore the complete Sessions API documentation
+<Card title="Dashboard" icon="robot" href="/observe/dashboard">
+View your messages in the dashboard
 </Card>
 </CardGroup>

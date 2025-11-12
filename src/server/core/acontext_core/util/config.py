@@ -21,8 +21,7 @@ def get_local_core_config() -> CoreConfig:
     _YAML_VARS = filter_value_from_yaml(CONFIG_YAML_STRING, CoreConfig)
 
     VARS = {**_ENV_VARS, **_YAML_VARS}
-    DEFAULT_CORE_CONFIG = CoreConfig(**VARS)
-    return DEFAULT_CORE_CONFIG
+    return CoreConfig(**VARS)
 
 
 def get_local_project_config() -> ProjectConfig:
@@ -39,8 +38,7 @@ def get_local_project_config() -> ProjectConfig:
     _YAML_VARS = filter_value_from_yaml(CONFIG_YAML_STRING, ProjectConfig)
 
     VARS = {**_ENV_VARS, **_YAML_VARS}
-    DEFAULT_CORE_CONFIG = ProjectConfig(**VARS)
-    return DEFAULT_CORE_CONFIG
+    return ProjectConfig(**VARS)
 
 
 DEFAULT_CORE_CONFIG = get_local_core_config()
