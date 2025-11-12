@@ -73,7 +73,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List disks\ndisks = client.disks.list(limit=10, time_desc=True)\nfor disk in disks.items:\n    print(f\"Disk: {disk.id}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List disks\nconst disks = await client.disks.list({ limit: 10, timeDesc: true });\nfor (const disk of disks.items) {\n  console.log(` + "`" + `Disk: ${disk.id}` + "`" + `);\n}\n"
+                    }
+                ]
             },
             "post": {
                 "security": [
@@ -111,7 +123,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a disk\ndisk = client.disks.create()\nprint(f\"Created disk: {disk.id}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a disk\nconst disk = await client.disks.create();\nconsole.log(` + "`" + `Created disk: ${disk.id}` + "`" + `);\n"
+                    }
+                ]
             }
         },
         "/disk/{disk_id}": {
@@ -150,7 +174,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a disk\nclient.disks.delete(disk_id='disk-uuid')\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a disk\nawait client.disks.delete('disk-uuid');\n"
+                    }
+                ]
             }
         },
         "/disk/{disk_id}/artifact": {
@@ -536,7 +572,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List sessions\nsessions = client.sessions.list(\n    space_id='space-uuid',\n    limit=20,\n    time_desc=True\n)\nfor session in sessions.items:\n    print(f\"{session.id}: {session.space_id}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List sessions\nconst sessions = await client.sessions.list({\n  spaceId: 'space-uuid',\n  limit: 20,\n  timeDesc: true\n});\nfor (const session of sessions.items) {\n  console.log(` + "`" + `${session.id}: ${session.space_id}` + "`" + `);\n}\n"
+                    }
+                ]
             },
             "post": {
                 "security": [
@@ -585,7 +633,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a session\nsession = client.sessions.create(\n    space_id='space-uuid',\n    configs={\"mode\": \"chat\"}\n)\nprint(f\"Created session: {session.id}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a session\nconst session = await client.sessions.create({\n  spaceId: 'space-uuid',\n  configs: { mode: 'chat' }\n});\nconsole.log(` + "`" + `Created session: ${session.id}` + "`" + `);\n"
+                    }
+                ]
             }
         },
         "/session/{session_id}": {
@@ -623,7 +683,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a session\nclient.sessions.delete(session_id='session-uuid')\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a session\nawait client.sessions.delete('session-uuid');\n"
+                    }
+                ]
             }
         },
         "/session/{session_id}/configs": {
@@ -673,7 +745,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get session configs\nsession = client.sessions.get_configs(session_id='session-uuid')\nprint(session.configs)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get session configs\nconst session = await client.sessions.getConfigs('session-uuid');\nconsole.log(session.configs);\n"
+                    }
+                ]
             },
             "put": {
                 "security": [
@@ -718,7 +802,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update session configs\nclient.sessions.update_configs(\n    session_id='session-uuid',\n    configs={\"mode\": \"updated-mode\"}\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update session configs\nawait client.sessions.updateConfigs('session-uuid', {\n  configs: { mode: 'updated-mode' }\n});\n"
+                    }
+                ]
             }
         },
         "/session/{session_id}/connect_to_space": {
@@ -765,7 +861,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Connect session to space\nclient.sessions.connect_to_space(\n    session_id='session-uuid',\n    space_id='space-uuid'\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Connect session to space\nawait client.sessions.connectToSpace('session-uuid', {\n  spaceId: 'space-uuid'\n});\n"
+                    }
+                ]
             }
         },
         "/session/{session_id}/flush": {
@@ -815,7 +923,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Flush session buffer\nresult = client.sessions.flush(session_id='session-uuid')\nprint(result.status)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Flush session buffer\nconst result = await client.sessions.flush('session-uuid');\nconsole.log(result.status);\n"
+                    }
+                ]
             }
         },
         "/session/{session_id}/messages": {
@@ -900,7 +1020,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get messages from session\nmessages = client.sessions.get_messages(\n    session_id='session-uuid',\n    limit=50,\n    format='acontext',\n    time_desc=True\n)\nfor message in messages.items:\n    print(f\"{message.role}: {message.parts}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get messages from session\nconst messages = await client.sessions.getMessages('session-uuid', {\n  limit: 50,\n  format: 'acontext',\n  timeDesc: true\n});\nfor (const message of messages.items) {\n  console.log(` + "`" + `${message.role}: ${JSON.stringify(message.parts)}` + "`" + `);\n}\n"
+                    }
+                ]
             },
             "post": {
                 "security": [
@@ -970,7 +1102,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\nfrom acontext.messages import build_acontext_message\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Send a message in Acontext format\nmessage = build_acontext_message(role='user', parts=['Hello!'])\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=message,\n    format='acontext'\n)\n\n# Send a message in OpenAI format\nopenai_message = {'role': 'user', 'content': 'Hello from OpenAI format!'}\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=openai_message,\n    format='openai'\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient, MessagePart } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Send a message in Acontext format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    parts: [MessagePart.textPart('Hello!')]\n  },\n  { format: 'acontext' }\n);\n\n// Send a message in OpenAI format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    content: 'Hello from OpenAI format!'\n  },\n  { format: 'openai' }\n);\n"
+                    }
+                ]
             }
         },
         "/session/{session_id}/task": {
@@ -1099,7 +1243,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List spaces\nspaces = client.spaces.list(limit=20, time_desc=True)\nfor space in spaces.items:\n    print(f\"{space.id}: {space.configs}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List spaces\nconst spaces = await client.spaces.list({ limit: 20, timeDesc: true });\nfor (const space of spaces.items) {\n  console.log(` + "`" + `${space.id}: ${JSON.stringify(space.configs)}` + "`" + `);\n}\n"
+                    }
+                ]
             },
             "post": {
                 "security": [
@@ -1148,7 +1304,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a space\nspace = client.spaces.create(configs={\"name\": \"My Space\"})\nprint(f\"Created space: {space.id}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a space\nconst space = await client.spaces.create({ configs: { name: 'My Space' } });\nconsole.log(` + "`" + `Created space: ${space.id}` + "`" + `);\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}": {
@@ -1187,7 +1355,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a space\nclient.spaces.delete(space_id='space-uuid')\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a space\nawait client.spaces.delete('space-uuid');\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/block": {
@@ -1259,7 +1439,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List blocks\nblocks = client.blocks.list(\n    space_id='space-uuid',\n    parent_id='parent-uuid',\n    block_type='page'\n)\nfor block in blocks:\n    print(f\"{block.id}: {block.title}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List blocks\nconst blocks = await client.blocks.list('space-uuid', {\n  parentId: 'parent-uuid',\n  type: 'page'\n});\nfor (const block of blocks) {\n  console.log(` + "`" + `${block.id}: ${block.title}` + "`" + `);\n}\n"
+                    }
+                ]
             },
             "post": {
                 "security": [
@@ -1316,7 +1508,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a page\npage = client.blocks.create(\n    space_id='space-uuid',\n    block_type='page',\n    title='My Page'\n)\n\n# Create a text block under the page\ntext_block = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=page['id'],\n    block_type='text',\n    title='Content',\n    props={\"text\": \"Block content here\"}\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a page\nconst page = await client.blocks.create('space-uuid', {\n  blockType: 'page',\n  title: 'My Page'\n});\n\n// Create a text block under the page\nconst textBlock = await client.blocks.create('space-uuid', {\n  parentId: page.id,\n  blockType: 'text',\n  title: 'Content',\n  props: { text: 'Block content here' }\n});\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/block/{block_id}": {
@@ -1362,7 +1566,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a block\nclient.blocks.delete(space_id='space-uuid', block_id='block-uuid')\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a block\nawait client.blocks.delete('space-uuid', 'block-uuid');\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/block/{block_id}/move": {
@@ -1417,7 +1633,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Move block to a different parent\nclient.blocks.move(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    parent_id='new-parent-uuid'\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Move block to a different parent\nawait client.blocks.move('space-uuid', 'block-uuid', {\n  parentId: 'new-parent-uuid'\n});\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/block/{block_id}/properties": {
@@ -1475,7 +1703,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get block properties\nblock = client.blocks.get_properties(\n    space_id='space-uuid',\n    block_id='block-uuid'\n)\nprint(f\"{block.title}: {block.props}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get block properties\nconst block = await client.blocks.getProperties('space-uuid', 'block-uuid');\nconsole.log(` + "`" + `${block.title}: ${JSON.stringify(block.props)}` + "`" + `);\n"
+                    }
+                ]
             },
             "put": {
                 "security": [
@@ -1528,7 +1768,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block properties\nclient.blocks.update_properties(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    title='Updated Title',\n    props={\"text\": \"Updated content\"}\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block properties\nawait client.blocks.updateProperties('space-uuid', 'block-uuid', {\n  title: 'Updated Title',\n  props: { text: 'Updated content' }\n});\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/block/{block_id}/sort": {
@@ -1583,7 +1835,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block sort order\nclient.blocks.update_sort(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    sort=5\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block sort order\nawait client.blocks.updateSort('space-uuid', 'block-uuid', {\n  sort: 5\n});\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/configs": {
@@ -1634,7 +1898,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get space configs\nspace = client.spaces.get_configs(space_id='space-uuid')\nprint(space.configs)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get space configs\nconst space = await client.spaces.getConfigs('space-uuid');\nconsole.log(space.configs);\n"
+                    }
+                ]
             },
             "put": {
                 "security": [
@@ -1680,7 +1956,19 @@ const docTemplate = `{
                             "$ref": "#/definitions/serializer.Response"
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update space configs\nclient.spaces.update_configs(\n    space_id='space-uuid',\n    configs={\"name\": \"Updated Name\", \"description\": \"New description\"}\n)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update space configs\nawait client.spaces.updateConfigs('space-uuid', {\n  configs: { name: 'Updated Name', description: 'New description' }\n});\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/experience_search": {
@@ -1763,7 +2051,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Experience search\nresult = client.spaces.experience_search(\n    space_id='space-uuid',\n    query='How to implement authentication?',\n    limit=10,\n    mode='agentic',\n    max_iterations=20\n)\nfor block in result.cited_blocks:\n    print(f\"{block.title} (distance: {block.distance})\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Experience search\nconst result = await client.spaces.experienceSearch('space-uuid', {\n  query: 'How to implement authentication?',\n  limit: 10,\n  mode: 'agentic',\n  maxIterations: 20\n});\nfor (const block of result.cited_blocks) {\n  console.log(` + "`" + `${block.title} (distance: ${block.distance})` + "`" + `);\n}\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/semantic_global": {
@@ -1837,7 +2137,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic global search\nresults = client.spaces.semantic_global(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic global search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(` + "`" + `${block.title} - ${block.type}` + "`" + `);\n}\n"
+                    }
+                ]
             }
         },
         "/space/{space_id}/semantic_grep": {
@@ -1911,7 +2223,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic grep search\nresults = client.spaces.semantic_grep(\n    space_id='space-uuid',\n    query='JWT token validation code examples',\n    limit=15,\n    threshold=0.7\n)\nfor block in results:\n    print(f\"{block.title} - distance: {block.distance}\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic grep search\nconst results = await client.spaces.semanticGrep('space-uuid', {\n  query: 'JWT token validation code examples',\n  limit: 15,\n  threshold: 0.7\n});\nfor (const block of results) {\n  console.log(` + "`" + `${block.title} - distance: ${block.distance}` + "`" + `);\n}\n"
+                    }
+                ]
             }
         },
         "/tool/name": {
@@ -1954,7 +2278,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get all tool names\ntools = client.tools.list()\nfor tool in tools:\n    print(f\"{tool.name}: {tool.sop_count} SOPs\")\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get all tool names\nconst tools = await client.tools.list();\nfor (const tool of tools) {\n  console.log(` + "`" + `${tool.name}: ${tool.sop_count} SOPs` + "`" + `);\n}\n"
+                    }
+                ]
             },
             "put": {
                 "security": [
@@ -2003,7 +2339,19 @@ const docTemplate = `{
                             ]
                         }
                     }
-                }
+                },
+                "x-code-samples": [
+                    {
+                        "label": "Python",
+                        "lang": "python",
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Rename tool names\nresult = client.tools.rename([\n    {\"old_name\": \"old_tool_name\", \"new_name\": \"new_tool_name\"}\n])\nprint(result.status)\n"
+                    },
+                    {
+                        "label": "JavaScript",
+                        "lang": "javascript",
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Rename tool names\nconst result = await client.tools.rename([\n  { oldName: 'old_tool_name', newName: 'new_tool_name' }\n]);\nconsole.log(result.status);\n"
+                    }
+                ]
             }
         }
     },

@@ -29,6 +29,7 @@ func NewDiskHandler(s service.DiskService) *DiskHandler {
 //	@Security		BearerAuth
 //	@Success		201	{object}	serializer.Response{data=model.Disk}
 //	@Router			/disk [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a disk\ndisk = client.disks.create()\nprint(f\"Created disk: {disk.id}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a disk\nconst disk = await client.disks.create();\nconsole.log(`Created disk: ${disk.id}`);\n","label":"JavaScript"}]
 func (h *DiskHandler) CreateDisk(c *gin.Context) {
 	project, ok := c.MustGet("project").(*model.Project)
 	if !ok {
@@ -64,6 +65,7 @@ type ListDisksReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=service.ListDisksOutput}
 //	@Router			/disk [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List disks\ndisks = client.disks.list(limit=10, time_desc=True)\nfor disk in disks.items:\n    print(f\"Disk: {disk.id}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List disks\nconst disks = await client.disks.list({ limit: 10, timeDesc: true });\nfor (const disk of disks.items) {\n  console.log(`Disk: ${disk.id}`);\n}\n","label":"JavaScript"}]
 func (h *DiskHandler) ListDisks(c *gin.Context) {
 	req := ListDisksReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -102,6 +104,7 @@ func (h *DiskHandler) ListDisks(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{}
 //	@Router			/disk/{disk_id} [delete]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a disk\nclient.disks.delete(disk_id='disk-uuid')\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a disk\nawait client.disks.delete('disk-uuid');\n","label":"JavaScript"}]
 func (h *DiskHandler) DeleteDisk(c *gin.Context) {
 	diskID, err := uuid.Parse(c.Param("disk_id"))
 	if err != nil {

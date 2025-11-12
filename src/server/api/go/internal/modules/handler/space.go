@@ -48,6 +48,7 @@ type GetSpacesReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=service.ListSpacesOutput}
 //	@Router			/space [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List spaces\nspaces = client.spaces.list(limit=20, time_desc=True)\nfor space in spaces.items:\n    print(f\"{space.id}: {space.configs}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List spaces\nconst spaces = await client.spaces.list({ limit: 20, timeDesc: true });\nfor (const space of spaces.items) {\n  console.log(`${space.id}: ${JSON.stringify(space.configs)}`);\n}\n","label":"JavaScript"}]
 func (h *SpaceHandler) GetSpaces(c *gin.Context) {
 	req := GetSpacesReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -86,6 +87,7 @@ func (h *SpaceHandler) GetSpaces(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		201	{object}	serializer.Response{data=model.Space}
 //	@Router			/space [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a space\nspace = client.spaces.create(configs={\"name\": \"My Space\"})\nprint(f\"Created space: {space.id}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a space\nconst space = await client.spaces.create({ configs: { name: 'My Space' } });\nconsole.log(`Created space: ${space.id}`);\n","label":"JavaScript"}]
 func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 	req := CreateSpaceReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -122,6 +124,7 @@ func (h *SpaceHandler) CreateSpace(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id} [delete]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a space\nclient.spaces.delete(space_id='space-uuid')\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a space\nawait client.spaces.delete('space-uuid');\n","label":"JavaScript"}]
 func (h *SpaceHandler) DeleteSpace(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {
@@ -159,6 +162,7 @@ type UpdateSpaceConfigsReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/configs [put]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update space configs\nclient.spaces.update_configs(\n    space_id='space-uuid',\n    configs={\"name\": \"Updated Name\", \"description\": \"New description\"}\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update space configs\nawait client.spaces.updateConfigs('space-uuid', {\n  configs: { name: 'Updated Name', description: 'New description' }\n});\n","label":"JavaScript"}]
 func (h *SpaceHandler) UpdateConfigs(c *gin.Context) {
 	req := UpdateSpaceConfigsReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -193,6 +197,7 @@ func (h *SpaceHandler) UpdateConfigs(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=model.Space}
 //	@Router			/space/{space_id}/configs [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get space configs\nspace = client.spaces.get_configs(space_id='space-uuid')\nprint(space.configs)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get space configs\nconst space = await client.spaces.getConfigs('space-uuid');\nconsole.log(space.configs);\n","label":"JavaScript"}]
 func (h *SpaceHandler) GetConfigs(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {
@@ -232,6 +237,7 @@ type GetExperienceSearchReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=httpclient.SpaceSearchResult}
 //	@Router			/space/{space_id}/experience_search [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Experience search\nresult = client.spaces.experience_search(\n    space_id='space-uuid',\n    query='How to implement authentication?',\n    limit=10,\n    mode='agentic',\n    max_iterations=20\n)\nfor block in result.cited_blocks:\n    print(f\"{block.title} (distance: {block.distance})\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Experience search\nconst result = await client.spaces.experienceSearch('space-uuid', {\n  query: 'How to implement authentication?',\n  limit: 10,\n  mode: 'agentic',\n  maxIterations: 20\n});\nfor (const block of result.cited_blocks) {\n  console.log(`${block.title} (distance: ${block.distance})`);\n}\n","label":"JavaScript"}]
 func (h *SpaceHandler) GetExperienceSearch(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {
@@ -291,6 +297,7 @@ type GetSemanticGlobalReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=[]httpclient.SearchResultBlockItem}
 //	@Router			/space/{space_id}/semantic_global [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic global search\nresults = client.spaces.semantic_global(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic global search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(`${block.title} - ${block.type}`);\n}\n","label":"JavaScript"}]
 func (h *SpaceHandler) GetSemanticGlobal(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {
@@ -346,6 +353,7 @@ type GetSemanticGrepReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=[]httpclient.SearchResultBlockItem}
 //	@Router			/space/{space_id}/semantic_grep [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic grep search\nresults = client.spaces.semantic_grep(\n    space_id='space-uuid',\n    query='JWT token validation code examples',\n    limit=15,\n    threshold=0.7\n)\nfor block in results:\n    print(f\"{block.title} - distance: {block.distance}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic grep search\nconst results = await client.spaces.semanticGrep('space-uuid', {\n  query: 'JWT token validation code examples',\n  limit: 15,\n  threshold: 0.7\n});\nfor (const block of results) {\n  console.log(`${block.title} - distance: ${block.distance}`);\n}\n","label":"JavaScript"}]
 func (h *SpaceHandler) GetSemanticGrep(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {

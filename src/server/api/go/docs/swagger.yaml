@@ -429,6 +429,30 @@ paths:
       summary: List disks
       tags:
       - disk
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # List disks
+          disks = client.disks.list(limit=10, time_desc=True)
+          for disk in disks.items:
+              print(f"Disk: {disk.id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // List disks
+          const disks = await client.disks.list({ limit: 10, timeDesc: true });
+          for (const disk of disks.items) {
+            console.log(`Disk: ${disk.id}`);
+          }
     post:
       consumes:
       - application/json
@@ -450,6 +474,27 @@ paths:
       summary: Create disk
       tags:
       - disk
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Create a disk
+          disk = client.disks.create()
+          print(f"Created disk: {disk.id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Create a disk
+          const disk = await client.disks.create();
+          console.log(`Created disk: ${disk.id}`);
   /disk/{disk_id}:
     delete:
       consumes:
@@ -475,6 +520,25 @@ paths:
       summary: Delete disk
       tags:
       - disk
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Delete a disk
+          client.disks.delete(disk_id='disk-uuid')
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Delete a disk
+          await client.disks.delete('disk-uuid');
   /disk/{disk_id}/artifact:
     delete:
       consumes:
@@ -718,6 +782,38 @@ paths:
       summary: Get sessions
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # List sessions
+          sessions = client.sessions.list(
+              space_id='space-uuid',
+              limit=20,
+              time_desc=True
+          )
+          for session in sessions.items:
+              print(f"{session.id}: {session.space_id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // List sessions
+          const sessions = await client.sessions.list({
+            spaceId: 'space-uuid',
+            limit: 20,
+            timeDesc: true
+          });
+          for (const session of sessions.items) {
+            console.log(`${session.id}: ${session.space_id}`);
+          }
     post:
       consumes:
       - application/json
@@ -746,6 +842,33 @@ paths:
       summary: Create session
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Create a session
+          session = client.sessions.create(
+              space_id='space-uuid',
+              configs={"mode": "chat"}
+          )
+          print(f"Created session: {session.id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Create a session
+          const session = await client.sessions.create({
+            spaceId: 'space-uuid',
+            configs: { mode: 'chat' }
+          });
+          console.log(`Created session: ${session.id}`);
   /session/{session_id}:
     delete:
       consumes:
@@ -770,6 +893,25 @@ paths:
       summary: Delete session
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Delete a session
+          client.sessions.delete(session_id='session-uuid')
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Delete a session
+          await client.sessions.delete('session-uuid');
   /session/{session_id}/configs:
     get:
       consumes:
@@ -799,6 +941,27 @@ paths:
       summary: Get session configs
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get session configs
+          session = client.sessions.get_configs(session_id='session-uuid')
+          print(session.configs)
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get session configs
+          const session = await client.sessions.getConfigs('session-uuid');
+          console.log(session.configs);
     put:
       consumes:
       - application/json
@@ -828,6 +991,30 @@ paths:
       summary: Update session configs
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Update session configs
+          client.sessions.update_configs(
+              session_id='session-uuid',
+              configs={"mode": "updated-mode"}
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Update session configs
+          await client.sessions.updateConfigs('session-uuid', {
+            configs: { mode: 'updated-mode' }
+          });
   /session/{session_id}/connect_to_space:
     post:
       consumes:
@@ -858,6 +1045,30 @@ paths:
       summary: Connect session to space
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Connect session to space
+          client.sessions.connect_to_space(
+              session_id='session-uuid',
+              space_id='space-uuid'
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Connect session to space
+          await client.sessions.connectToSpace('session-uuid', {
+            spaceId: 'space-uuid'
+          });
   /session/{session_id}/flush:
     post:
       consumes:
@@ -887,6 +1098,27 @@ paths:
       summary: Flush session
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Flush session buffer
+          result = client.sessions.flush(session_id='session-uuid')
+          print(result.status)
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Flush session buffer
+          const result = await client.sessions.flush('session-uuid');
+          console.log(result.status);
   /session/{session_id}/messages:
     get:
       consumes:
@@ -944,6 +1176,39 @@ paths:
       summary: Get messages from session
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get messages from session
+          messages = client.sessions.get_messages(
+              session_id='session-uuid',
+              limit=50,
+              format='acontext',
+              time_desc=True
+          )
+          for message in messages.items:
+              print(f"{message.role}: {message.parts}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get messages from session
+          const messages = await client.sessions.getMessages('session-uuid', {
+            limit: 50,
+            format: 'acontext',
+            timeDesc: true
+          });
+          for (const message of messages.items) {
+            console.log(`${message.role}: ${JSON.stringify(message.parts)}`);
+          }
     post:
       consumes:
       - application/json
@@ -993,6 +1258,56 @@ paths:
       summary: Send message to session
       tags:
       - session
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+          from acontext.messages import build_acontext_message
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Send a message in Acontext format
+          message = build_acontext_message(role='user', parts=['Hello!'])
+          client.sessions.send_message(
+              session_id='session-uuid',
+              blob=message,
+              format='acontext'
+          )
+
+          # Send a message in OpenAI format
+          openai_message = {'role': 'user', 'content': 'Hello from OpenAI format!'}
+          client.sessions.send_message(
+              session_id='session-uuid',
+              blob=openai_message,
+              format='openai'
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient, MessagePart } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Send a message in Acontext format
+          await client.sessions.sendMessage(
+            'session-uuid',
+            {
+              role: 'user',
+              parts: [MessagePart.textPart('Hello!')]
+            },
+            { format: 'acontext' }
+          );
+
+          // Send a message in OpenAI format
+          await client.sessions.sendMessage(
+            'session-uuid',
+            {
+              role: 'user',
+              content: 'Hello from OpenAI format!'
+            },
+            { format: 'openai' }
+          );
   /session/{session_id}/task:
     get:
       consumes:
@@ -1074,6 +1389,30 @@ paths:
       summary: Get spaces
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # List spaces
+          spaces = client.spaces.list(limit=20, time_desc=True)
+          for space in spaces.items:
+              print(f"{space.id}: {space.configs}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // List spaces
+          const spaces = await client.spaces.list({ limit: 20, timeDesc: true });
+          for (const space of spaces.items) {
+            console.log(`${space.id}: ${JSON.stringify(space.configs)}`);
+          }
     post:
       consumes:
       - application/json
@@ -1102,6 +1441,27 @@ paths:
       summary: Create space
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Create a space
+          space = client.spaces.create(configs={"name": "My Space"})
+          print(f"Created space: {space.id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Create a space
+          const space = await client.spaces.create({ configs: { name: 'My Space' } });
+          console.log(`Created space: ${space.id}`);
   /space/{space_id}:
     delete:
       consumes:
@@ -1127,6 +1487,25 @@ paths:
       summary: Delete space
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Delete a space
+          client.spaces.delete(space_id='space-uuid')
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Delete a space
+          await client.spaces.delete('space-uuid');
   /space/{space_id}/block:
     get:
       consumes:
@@ -1175,6 +1554,37 @@ paths:
       summary: List blocks
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # List blocks
+          blocks = client.blocks.list(
+              space_id='space-uuid',
+              parent_id='parent-uuid',
+              block_type='page'
+          )
+          for block in blocks:
+              print(f"{block.id}: {block.title}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // List blocks
+          const blocks = await client.blocks.list('space-uuid', {
+            parentId: 'parent-uuid',
+            type: 'page'
+          });
+          for (const block of blocks) {
+            console.log(`${block.id}: ${block.title}`);
+          }
     post:
       consumes:
       - application/json
@@ -1211,6 +1621,49 @@ paths:
       summary: Create block
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Create a page
+          page = client.blocks.create(
+              space_id='space-uuid',
+              block_type='page',
+              title='My Page'
+          )
+
+          # Create a text block under the page
+          text_block = client.blocks.create(
+              space_id='space-uuid',
+              parent_id=page['id'],
+              block_type='text',
+              title='Content',
+              props={"text": "Block content here"}
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Create a page
+          const page = await client.blocks.create('space-uuid', {
+            blockType: 'page',
+            title: 'My Page'
+          });
+
+          // Create a text block under the page
+          const textBlock = await client.blocks.create('space-uuid', {
+            parentId: page.id,
+            blockType: 'text',
+            title: 'Content',
+            props: { text: 'Block content here' }
+          });
   /space/{space_id}/block/{block_id}:
     delete:
       consumes:
@@ -1242,6 +1695,25 @@ paths:
       summary: Delete block
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Delete a block
+          client.blocks.delete(space_id='space-uuid', block_id='block-uuid')
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Delete a block
+          await client.blocks.delete('space-uuid', 'block-uuid');
   /space/{space_id}/block/{block_id}/move:
     put:
       consumes:
@@ -1280,6 +1752,31 @@ paths:
       summary: Move block
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Move block to a different parent
+          client.blocks.move(
+              space_id='space-uuid',
+              block_id='block-uuid',
+              parent_id='new-parent-uuid'
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Move block to a different parent
+          await client.blocks.move('space-uuid', 'block-uuid', {
+            parentId: 'new-parent-uuid'
+          });
   /space/{space_id}/block/{block_id}/properties:
     get:
       consumes:
@@ -1316,6 +1813,30 @@ paths:
       summary: Get block properties
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get block properties
+          block = client.blocks.get_properties(
+              space_id='space-uuid',
+              block_id='block-uuid'
+          )
+          print(f"{block.title}: {block.props}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get block properties
+          const block = await client.blocks.getProperties('space-uuid', 'block-uuid');
+          console.log(`${block.title}: ${JSON.stringify(block.props)}`);
     put:
       consumes:
       - application/json
@@ -1352,6 +1873,33 @@ paths:
       summary: Update block properties
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Update block properties
+          client.blocks.update_properties(
+              space_id='space-uuid',
+              block_id='block-uuid',
+              title='Updated Title',
+              props={"text": "Updated content"}
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Update block properties
+          await client.blocks.updateProperties('space-uuid', 'block-uuid', {
+            title: 'Updated Title',
+            props: { text: 'Updated content' }
+          });
   /space/{space_id}/block/{block_id}/sort:
     put:
       consumes:
@@ -1389,6 +1937,31 @@ paths:
       summary: Update block sort
       tags:
       - block
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Update block sort order
+          client.blocks.update_sort(
+              space_id='space-uuid',
+              block_id='block-uuid',
+              sort=5
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Update block sort order
+          await client.blocks.updateSort('space-uuid', 'block-uuid', {
+            sort: 5
+          });
   /space/{space_id}/configs:
     get:
       consumes:
@@ -1419,6 +1992,27 @@ paths:
       summary: Get space configs
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get space configs
+          space = client.spaces.get_configs(space_id='space-uuid')
+          print(space.configs)
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get space configs
+          const space = await client.spaces.getConfigs('space-uuid');
+          console.log(space.configs);
     put:
       consumes:
       - application/json
@@ -1449,6 +2043,30 @@ paths:
       summary: Update space configs
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Update space configs
+          client.spaces.update_configs(
+              space_id='space-uuid',
+              configs={"name": "Updated Name", "description": "New description"}
+          )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Update space configs
+          await client.spaces.updateConfigs('space-uuid', {
+            configs: { name: 'Updated Name', description: 'New description' }
+          });
   /space/{space_id}/experience_search:
     get:
       consumes:
@@ -1503,6 +2121,41 @@ paths:
       summary: Get experience search
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Experience search
+          result = client.spaces.experience_search(
+              space_id='space-uuid',
+              query='How to implement authentication?',
+              limit=10,
+              mode='agentic',
+              max_iterations=20
+          )
+          for block in result.cited_blocks:
+              print(f"{block.title} (distance: {block.distance})")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Experience search
+          const result = await client.spaces.experienceSearch('space-uuid', {
+            query: 'How to implement authentication?',
+            limit: 10,
+            mode: 'agentic',
+            maxIterations: 20
+          });
+          for (const block of result.cited_blocks) {
+            console.log(`${block.title} (distance: ${block.distance})`);
+          }
   /space/{space_id}/semantic_global:
     get:
       consumes:
@@ -1550,6 +2203,39 @@ paths:
       summary: Get semantic global
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Semantic global search
+          results = client.spaces.semantic_global(
+              space_id='space-uuid',
+              query='authentication and authorization pages',
+              limit=10,
+              threshold=1.0
+          )
+          for block in results:
+              print(f"{block.title} - {block.type}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Semantic global search
+          const results = await client.spaces.semanticGlobal('space-uuid', {
+            query: 'authentication and authorization pages',
+            limit: 10,
+            threshold: 1.0
+          });
+          for (const block of results) {
+            console.log(`${block.title} - ${block.type}`);
+          }
   /space/{space_id}/semantic_grep:
     get:
       consumes:
@@ -1597,6 +2283,39 @@ paths:
       summary: Get semantic grep
       tags:
       - space
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Semantic grep search
+          results = client.spaces.semantic_grep(
+              space_id='space-uuid',
+              query='JWT token validation code examples',
+              limit=15,
+              threshold=0.7
+          )
+          for block in results:
+              print(f"{block.title} - distance: {block.distance}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Semantic grep search
+          const results = await client.spaces.semanticGrep('space-uuid', {
+            query: 'JWT token validation code examples',
+            limit: 15,
+            threshold: 0.7
+          });
+          for (const block of results) {
+            console.log(`${block.title} - distance: ${block.distance}`);
+          }
   /tool/name:
     get:
       consumes:
@@ -1621,6 +2340,30 @@ paths:
       summary: Get tool names
       tags:
       - tool
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get all tool names
+          tools = client.tools.list()
+          for tool in tools:
+              print(f"{tool.name}: {tool.sop_count} SOPs")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get all tool names
+          const tools = await client.tools.list();
+          for (const tool of tools) {
+            console.log(`${tool.name}: ${tool.sop_count} SOPs`);
+          }
     put:
       consumes:
       - application/json
@@ -1649,6 +2392,31 @@ paths:
       summary: Rename tool names
       tags:
       - tool
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Rename tool names
+          result = client.tools.rename([
+              {"old_name": "old_tool_name", "new_name": "new_tool_name"}
+          ])
+          print(result.status)
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Rename tool names
+          const result = await client.tools.rename([
+            { oldName: 'old_tool_name', newName: 'new_tool_name' }
+          ]);
+          console.log(result.status);
 schemes:
 - http
 - https

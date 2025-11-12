@@ -45,6 +45,7 @@ type CreateBlockReq struct {
 //	@Security		BearerAuth
 //	@Success		201	{object}	serializer.Response{data=httpclient.InsertBlockResponse}
 //	@Router			/space/{space_id}/block [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a page\npage = client.blocks.create(\n    space_id='space-uuid',\n    block_type='page',\n    title='My Page'\n)\n\n# Create a text block under the page\ntext_block = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=page['id'],\n    block_type='text',\n    title='Content',\n    props={\"text\": \"Block content here\"}\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a page\nconst page = await client.blocks.create('space-uuid', {\n  blockType: 'page',\n  title: 'My Page'\n});\n\n// Create a text block under the page\nconst textBlock = await client.blocks.create('space-uuid', {\n  parentId: page.id,\n  blockType: 'text',\n  title: 'Content',\n  props: { text: 'Block content here' }\n});\n","label":"JavaScript"}]
 func (h *BlockHandler) CreateBlock(c *gin.Context) {
 	// Get project from context
 	project, ok := c.MustGet("project").(*model.Project)
@@ -105,6 +106,7 @@ func (h *BlockHandler) CreateBlock(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/block/{block_id} [delete]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a block\nclient.blocks.delete(space_id='space-uuid', block_id='block-uuid')\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a block\nawait client.blocks.delete('space-uuid', 'block-uuid');\n","label":"JavaScript"}]
 func (h *BlockHandler) DeleteBlock(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {
@@ -138,6 +140,7 @@ func (h *BlockHandler) DeleteBlock(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=model.Block}
 //	@Router			/space/{space_id}/block/{block_id}/properties [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get block properties\nblock = client.blocks.get_properties(\n    space_id='space-uuid',\n    block_id='block-uuid'\n)\nprint(f\"{block.title}: {block.props}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get block properties\nconst block = await client.blocks.getProperties('space-uuid', 'block-uuid');\nconsole.log(`${block.title}: ${JSON.stringify(block.props)}`);\n","label":"JavaScript"}]
 func (h *BlockHandler) GetBlockProperties(c *gin.Context) {
 	blockID, err := uuid.Parse(c.Param("block_id"))
 	if err != nil {
@@ -172,6 +175,7 @@ type UpdateBlockPropertiesReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/block/{block_id}/properties [put]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block properties\nclient.blocks.update_properties(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    title='Updated Title',\n    props={\"text\": \"Updated content\"}\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block properties\nawait client.blocks.updateProperties('space-uuid', 'block-uuid', {\n  title: 'Updated Title',\n  props: { text: 'Updated content' }\n});\n","label":"JavaScript"}]
 func (h *BlockHandler) UpdateBlockProperties(c *gin.Context) {
 	blockID, err := uuid.Parse(c.Param("block_id"))
 	if err != nil {
@@ -221,6 +225,7 @@ type ListBlocksReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=[]model.Block}
 //	@Router			/space/{space_id}/block [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List blocks\nblocks = client.blocks.list(\n    space_id='space-uuid',\n    parent_id='parent-uuid',\n    block_type='page'\n)\nfor block in blocks:\n    print(f\"{block.id}: {block.title}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List blocks\nconst blocks = await client.blocks.list('space-uuid', {\n  parentId: 'parent-uuid',\n  type: 'page'\n});\nfor (const block of blocks) {\n  console.log(`${block.id}: ${block.title}`);\n}\n","label":"JavaScript"}]
 func (h *BlockHandler) ListBlocks(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {
@@ -273,6 +278,7 @@ type MoveBlockReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/block/{block_id}/move [put]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Move block to a different parent\nclient.blocks.move(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    parent_id='new-parent-uuid'\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Move block to a different parent\nawait client.blocks.move('space-uuid', 'block-uuid', {\n  parentId: 'new-parent-uuid'\n});\n","label":"JavaScript"}]
 func (h *BlockHandler) MoveBlock(c *gin.Context) {
 	blockID, err := uuid.Parse(c.Param("block_id"))
 	if err != nil {
@@ -318,6 +324,7 @@ type UpdateBlockSortReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response
 //	@Router			/space/{space_id}/block/{block_id}/sort [put]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block sort order\nclient.blocks.update_sort(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    sort=5\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block sort order\nawait client.blocks.updateSort('space-uuid', 'block-uuid', {\n  sort: 5\n});\n","label":"JavaScript"}]
 func (h *BlockHandler) UpdateBlockSort(c *gin.Context) {
 	blockID, err := uuid.Parse(c.Param("block_id"))
 	if err != nil {

@@ -40,6 +40,7 @@ type RenameToolNameReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=httpclient.FlagResponse}
 //	@Router			/tool/name [put]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Rename tool names\nresult = client.tools.rename([\n    {\"old_name\": \"old_tool_name\", \"new_name\": \"new_tool_name\"}\n])\nprint(result.status)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Rename tool names\nconst result = await client.tools.rename([\n  { oldName: 'old_tool_name', newName: 'new_tool_name' }\n]);\nconsole.log(result.status);\n","label":"JavaScript"}]
 func (h *ToolHandler) RenameToolName(c *gin.Context) {
 	// Get project from context
 	project, ok := c.MustGet("project").(*model.Project)
@@ -83,6 +84,7 @@ func (h *ToolHandler) RenameToolName(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=[]httpclient.ToolReferenceData}
 //	@Router			/tool/name [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get all tool names\ntools = client.tools.list()\nfor tool in tools:\n    print(f\"{tool.name}: {tool.sop_count} SOPs\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get all tool names\nconst tools = await client.tools.list();\nfor (const tool of tools) {\n  console.log(`${tool.name}: ${tool.sop_count} SOPs`);\n}\n","label":"JavaScript"}]
 func (h *ToolHandler) GetToolName(c *gin.Context) {
 	// Get project from context
 	project, ok := c.MustGet("project").(*model.Project)

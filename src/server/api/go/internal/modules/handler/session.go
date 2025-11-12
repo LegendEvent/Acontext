@@ -60,6 +60,7 @@ type GetSessionsReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=service.ListSessionsOutput}
 //	@Router			/session [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List sessions\nsessions = client.sessions.list(\n    space_id='space-uuid',\n    limit=20,\n    time_desc=True\n)\nfor session in sessions.items:\n    print(f\"{session.id}: {session.space_id}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List sessions\nconst sessions = await client.sessions.list({\n  spaceId: 'space-uuid',\n  limit: 20,\n  timeDesc: true\n});\nfor (const session of sessions.items) {\n  console.log(`${session.id}: ${session.space_id}`);\n}\n","label":"JavaScript"}]
 func (h *SessionHandler) GetSessions(c *gin.Context) {
 	req := GetSessionsReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -111,6 +112,7 @@ func (h *SessionHandler) GetSessions(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		201	{object}	serializer.Response{data=model.Session}
 //	@Router			/session [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a session\nsession = client.sessions.create(\n    space_id='space-uuid',\n    configs={\"mode\": \"chat\"}\n)\nprint(f\"Created session: {session.id}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a session\nconst session = await client.sessions.create({\n  spaceId: 'space-uuid',\n  configs: { mode: 'chat' }\n});\nconsole.log(`Created session: ${session.id}`);\n","label":"JavaScript"}]
 func (h *SessionHandler) CreateSession(c *gin.Context) {
 	req := CreateSessionReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -155,6 +157,7 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{}
 //	@Router			/session/{session_id} [delete]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a session\nclient.sessions.delete(session_id='session-uuid')\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a session\nawait client.sessions.delete('session-uuid');\n","label":"JavaScript"}]
 func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("session_id"))
 	if err != nil {
@@ -192,6 +195,7 @@ type UpdateSessionConfigsReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{}
 //	@Router			/session/{session_id}/configs [put]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update session configs\nclient.sessions.update_configs(\n    session_id='session-uuid',\n    configs={\"mode\": \"updated-mode\"}\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update session configs\nawait client.sessions.updateConfigs('session-uuid', {\n  configs: { mode: 'updated-mode' }\n});\n","label":"JavaScript"}]
 func (h *SessionHandler) UpdateConfigs(c *gin.Context) {
 	req := UpdateSessionConfigsReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -226,6 +230,7 @@ func (h *SessionHandler) UpdateConfigs(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=model.Session}
 //	@Router			/session/{session_id}/configs [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get session configs\nsession = client.sessions.get_configs(session_id='session-uuid')\nprint(session.configs)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get session configs\nconst session = await client.sessions.getConfigs('session-uuid');\nconsole.log(session.configs);\n","label":"JavaScript"}]
 func (h *SessionHandler) GetConfigs(c *gin.Context) {
 	sessionID, err := uuid.Parse(c.Param("session_id"))
 	if err != nil {
@@ -257,6 +262,7 @@ type ConnectToSpaceReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{}
 //	@Router			/session/{session_id}/connect_to_space [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Connect session to space\nclient.sessions.connect_to_space(\n    session_id='session-uuid',\n    space_id='space-uuid'\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Connect session to space\nawait client.sessions.connectToSpace('session-uuid', {\n  spaceId: 'space-uuid'\n});\n","label":"JavaScript"}]
 func (h *SessionHandler) ConnectToSpace(c *gin.Context) {
 	req := ConnectToSpaceReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -310,6 +316,7 @@ type SendMessageReq struct {
 //	@Security		BearerAuth
 //	@Success		201	{object}	serializer.Response{data=model.Message}
 //	@Router			/session/{session_id}/messages [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\nfrom acontext.messages import build_acontext_message\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Send a message in Acontext format\nmessage = build_acontext_message(role='user', parts=['Hello!'])\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=message,\n    format='acontext'\n)\n\n# Send a message in OpenAI format\nopenai_message = {'role': 'user', 'content': 'Hello from OpenAI format!'}\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=openai_message,\n    format='openai'\n)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient, MessagePart } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Send a message in Acontext format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    parts: [MessagePart.textPart('Hello!')]\n  },\n  { format: 'acontext' }\n);\n\n// Send a message in OpenAI format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    content: 'Hello from OpenAI format!'\n  },\n  { format: 'openai' }\n);\n","label":"JavaScript"}]
 func (h *SessionHandler) SendMessage(c *gin.Context) {
 	req := SendMessageReq{}
 
@@ -478,6 +485,7 @@ type GetMessagesReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=service.GetMessagesOutput}
 //	@Router			/session/{session_id}/messages [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get messages from session\nmessages = client.sessions.get_messages(\n    session_id='session-uuid',\n    limit=50,\n    format='acontext',\n    time_desc=True\n)\nfor message in messages.items:\n    print(f\"{message.role}: {message.parts}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get messages from session\nconst messages = await client.sessions.getMessages('session-uuid', {\n  limit: 50,\n  format: 'acontext',\n  timeDesc: true\n});\nfor (const message of messages.items) {\n  console.log(`${message.role}: ${JSON.stringify(message.parts)}`);\n}\n","label":"JavaScript"}]
 func (h *SessionHandler) GetMessages(c *gin.Context) {
 	req := GetMessagesReq{}
 	if err := c.ShouldBind(&req); err != nil {
@@ -541,6 +549,7 @@ func (h *SessionHandler) GetMessages(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=httpclient.FlagResponse}
 //	@Router			/session/{session_id}/flush [post]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Flush session buffer\nresult = client.sessions.flush(session_id='session-uuid')\nprint(result.status)\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Flush session buffer\nconst result = await client.sessions.flush('session-uuid');\nconsole.log(result.status);\n","label":"JavaScript"}]
 func (h *SessionHandler) SessionFlush(c *gin.Context) {
 	project, ok := c.MustGet("project").(*model.Project)
 	if !ok {
