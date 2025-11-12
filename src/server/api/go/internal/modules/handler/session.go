@@ -11,6 +11,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/memodb-io/Acontext/internal/infra/httpclient"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/serializer"
 	"github.com/memodb-io/Acontext/internal/modules/service"
@@ -20,11 +21,15 @@ import (
 )
 
 type SessionHandler struct {
-	svc service.SessionService
+	svc        service.SessionService
+	coreClient *httpclient.CoreClient
 }
 
-func NewSessionHandler(s service.SessionService) *SessionHandler {
-	return &SessionHandler{svc: s}
+func NewSessionHandler(s service.SessionService, coreClient *httpclient.CoreClient) *SessionHandler {
+	return &SessionHandler{
+		svc:        s,
+		coreClient: coreClient,
+	}
 }
 
 type CreateSessionReq struct {
@@ -523,4 +528,37 @@ func (h *SessionHandler) GetMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, serializer.Response{Data: convertedOut})
+}
+
+// SessionFlush godoc
+//
+//	@Summary		Flush session
+//	@Description	Flush the session buffer for a given session
+//	@Tags			session
+//	@Accept			json
+//	@Produce		json
+//	@Param			session_id	path	string	true	"Session ID"	format(uuid)
+//	@Security		BearerAuth
+//	@Success		200	{object}	serializer.Response{data=httpclient.FlagResponse}
+//	@Router			/session/{session_id}/flush [post]
+func (h *SessionHandler) SessionFlush(c *gin.Context) {
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
+	sessionID, err := uuid.Parse(c.Param("session_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	result, err := h.coreClient.SessionFlush(c.Request.Context(), project.ID, sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.Err(http.StatusInternalServerError, "failed to flush session", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, serializer.Response{Data: result})
 }

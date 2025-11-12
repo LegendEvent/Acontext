@@ -12,6 +12,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/memodb-io/Acontext/internal/infra/httpclient"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/service"
 	"github.com/stretchr/testify/assert"
@@ -75,6 +76,16 @@ func (m *MockSessionService) List(ctx context.Context, in service.ListSessionsIn
 func setupSessionRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
+}
+
+// getMockSessionCoreClient returns a mock CoreClient for testing
+func getMockSessionCoreClient() *httpclient.CoreClient {
+	// Create a minimal CoreClient with invalid URL
+	// This will cause network errors when called, which is expected in tests
+	return &httpclient.CoreClient{
+		BaseURL:    "http://invalid-test-url:99999",
+		HTTPClient: &http.Client{},
+	}
 }
 
 func TestSessionHandler_GetSessions(t *testing.T) {
@@ -179,7 +190,7 @@ func TestSessionHandler_GetSessions(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.GET("/session", func(c *gin.Context) {
 				project := &model.Project{ID: projectID}
@@ -268,7 +279,7 @@ func TestSessionHandler_CreateSession(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.POST("/session", func(c *gin.Context) {
 				// Simulate middleware setting project information
@@ -329,7 +340,7 @@ func TestSessionHandler_DeleteSession(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.DELETE("/session/:session_id", func(c *gin.Context) {
 				project := &model.Project{ID: projectID}
@@ -401,7 +412,7 @@ func TestSessionHandler_UpdateConfigs(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.PUT("/session/:session_id/configs", handler.UpdateConfigs)
 
@@ -462,7 +473,7 @@ func TestSessionHandler_GetConfigs(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.GET("/session/:session_id/configs", handler.GetConfigs)
 
@@ -537,7 +548,7 @@ func TestSessionHandler_ConnectToSpace(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.POST("/session/:session_id/connect_to_space", handler.ConnectToSpace)
 
@@ -939,7 +950,7 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 							"type": "file",
 							"file": map[string]interface{}{
 								"file_data": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkcyBbMyAwIFJdPj4KZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94IFswIDAgMzAgMzBdL1BhcmVudCAyIDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNCAwIFI+Pj4+L0NvbnRlbnRzIDUgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvVGltZXMtUm9tYW4+PgplbmRvYmoKNSAwIG9iago8PC9MZW5ndGggNDQ+PgpzdHJlYW0KQlQKL0YxIDEyIFRmCjEwIDEwIFRkCihUZXN0KSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY0IDAwMDAwIG4gCjAwMDAwMDAxMjEgMDAwMDAgbiAKMDAwMDAwMDIzOSAwMDAwMCBuIAowMDAwMDAwMzE5IDAwMDAwIG4gCnRyYWlsZXIKPDwvU2l6ZSA2L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKNDExCiUlRU9G",
-								"filename": "test.pdf",
+								"filename":  "test.pdf",
 							},
 						},
 						{
@@ -1852,7 +1863,7 @@ func TestSessionHandler_SendMessage(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.POST("/session/:session_id/messages", func(c *gin.Context) {
 				project := &model.Project{ID: projectID}
@@ -2214,7 +2225,7 @@ func TestSessionHandler_GetMessages(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.GET("/session/:session_id/messages", handler.GetMessages)
 
@@ -2404,7 +2415,7 @@ func TestSessionHandler_SendMessage_Multipart(t *testing.T) {
 			mockService := &MockSessionService{}
 			tt.setup(mockService)
 
-			handler := NewSessionHandler(mockService)
+			handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 			router := setupSessionRouter()
 			router.POST("/session/:session_id/messages", func(c *gin.Context) {
 				project := &model.Project{ID: projectID}
@@ -2450,7 +2461,7 @@ func TestSessionHandler_SendMessage_InvalidJSON(t *testing.T) {
 		mockService := &MockSessionService{}
 		// No setup needed as the request should fail before reaching the service
 
-		handler := NewSessionHandler(mockService)
+		handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 		router := setupSessionRouter()
 		router.POST("/session/:session_id/messages", func(c *gin.Context) {
 			project := &model.Project{ID: projectID}
@@ -2508,7 +2519,7 @@ func TestOpenAI_ToolCalls_FieldPreservation(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {
@@ -2663,7 +2674,7 @@ func TestOpenAIToAnthropic_FieldMapping(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {
@@ -2787,7 +2798,7 @@ func TestAnthropicToOpenAI_FieldMapping(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {
@@ -2893,7 +2904,7 @@ func TestToolResult_OpenAIToAnthropic(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {
@@ -3006,7 +3017,7 @@ func TestToolResult_AnthropicToOpenAI(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {
@@ -3104,7 +3115,7 @@ func TestAnthropic_CacheControl_Preservation(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {
@@ -3230,7 +3241,7 @@ func TestMultipleToolCalls_Conversion(t *testing.T) {
 		HasMore: false,
 	}, nil)
 
-	handler := NewSessionHandler(mockService)
+	handler := NewSessionHandler(mockService, getMockSessionCoreClient())
 	router := setupSessionRouter()
 
 	router.POST("/session/:session_id/messages", func(c *gin.Context) {

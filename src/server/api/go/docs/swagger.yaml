@@ -121,6 +121,13 @@ definitions:
     required:
     - configs
     type: object
+  httpclient.FlagResponse:
+    properties:
+      errmsg:
+        type: string
+      status:
+        type: integer
+    type: object
   httpclient.InsertBlockResponse:
     properties:
       id:
@@ -822,6 +829,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Connect session to space
+      tags:
+      - session
+  /session/{session_id}/flush:
+    post:
+      consumes:
+      - application/json
+      description: Flush the session buffer for a given session
+      parameters:
+      - description: Session ID
+        format: uuid
+        in: path
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/serializer.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/httpclient.FlagResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Flush session
       tags:
       - session
   /session/{session_id}/messages:

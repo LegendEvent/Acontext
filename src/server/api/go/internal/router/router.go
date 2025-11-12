@@ -151,6 +151,8 @@ func NewRouter(d RouterDeps) *gin.Engine {
 			session.POST("/:session_id/messages", d.SessionHandler.SendMessage)
 			session.GET("/:session_id/messages", d.SessionHandler.GetMessages)
 
+			session.POST("/:session_id/flush", d.SessionHandler.SessionFlush)
+
 			task := session.Group("/:session_id/task")
 			{
 				task.GET("", d.TaskHandler.GetTasks)

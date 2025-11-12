@@ -262,3 +262,44 @@ func (c *CoreClient) InsertBlock(ctx context.Context, projectID, spaceID uuid.UU
 
 	return &result, nil
 }
+
+// FlagResponse represents the response with status and error message
+type FlagResponse struct {
+	Status int    `json:"status"`
+	Errmsg string `json:"errmsg"`
+}
+
+// SessionFlush calls the session flush endpoint
+func (c *CoreClient) SessionFlush(ctx context.Context, projectID, sessionID uuid.UUID) (*FlagResponse, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/project/%s/session/%s/flush", c.BaseURL, projectID.String(), sessionID.String())
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.Logger.Error("session_flush request failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("body", string(respBody)))
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result FlagResponse
+	if err := sonic.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return &result, nil
+}

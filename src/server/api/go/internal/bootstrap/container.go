@@ -188,7 +188,10 @@ func BuildContainer() *do.Injector {
 		), nil
 	})
 	do.Provide(inj, func(i *do.Injector) (*handler.SessionHandler, error) {
-		return handler.NewSessionHandler(do.MustInvoke[service.SessionService](i)), nil
+		return handler.NewSessionHandler(
+			do.MustInvoke[service.SessionService](i),
+			do.MustInvoke[*httpclient.CoreClient](i),
+		), nil
 	})
 	do.Provide(inj, func(i *do.Injector) (*handler.BlockHandler, error) {
 		return handler.NewBlockHandler(
