@@ -1,7 +1,8 @@
 import json
 from pydantic import BaseModel
 from typing import List, Optional
-from ..orm import Part, ToolCallMeta
+from ..orm import Part, ToolCallMeta, ToolResultMeta
+from ...env import LOG
 from ..utils import asUUID
 
 STRING_TYPES = {"text", "tool-call", "tool-result"}
@@ -25,8 +26,18 @@ def pack_part_line(role: str, part: Part, truncate_chars: int = None) -> str:
             }
         )
         r = f"{header} {tool_data}"
+    elif part.type == "tool-result":
+        tool_result_meta = ToolResultMeta(**part.meta)
+        tool_data = json.dumps(
+            {
+                "tool_name": tool_result_meta.name,
+                "result": tool_result_meta.result,
+            }
+        )
+        r = f"{header} {tool_data}"
     else:
-        raise TypeError(f"Unknown message part type: {part.type}")
+        LOG.warning(f"Unknown message part type: {part.type}")
+        r = f"{header} {part.text} {part.meta}"
     if truncate_chars is None or len(r) < truncate_chars:
         return r
     return r[:truncate_chars] + "[...truncated]"

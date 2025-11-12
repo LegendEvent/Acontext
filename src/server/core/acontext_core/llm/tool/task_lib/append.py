@@ -13,7 +13,7 @@ async def _append_messages_to_task_handler(
     task_order: int = llm_arguments.get("task_order", None)
     message_order_indexes = llm_arguments.get("message_ids", [])
     progress_note = llm_arguments.get("progress", None)
-    user_preference = llm_arguments.get("user_preference", "").strip()
+    user_preference = llm_arguments.get("user_preference_and_infos", "").strip()
 
     if not task_order:
         return Result.resolve(
@@ -77,9 +77,9 @@ _append_messages_to_task_tool = (
                             "type": "string",
                             "description": "The progress and learnings from relevant messages. Narrate progress in the first person as the agent.",
                         },
-                        "user_preference": {
+                        "user_preference_and_infos": {
                             "type": "string",
-                            "description": "Any user-mentioned preference on this task. If None, an empty string is expected.",
+                            "description": "Any user-mentioned preference and infos to complete this task. If None, an empty string is expected.",
                         },
                         "message_ids": {
                             "type": "array",

@@ -1,4 +1,3 @@
-from sqlalchemy.sql.functions import user
 from .base import BasePrompt, ToolSchema
 from ..tool.sop_tools import SOP_TOOLS
 
@@ -20,18 +19,22 @@ class TaskSOPPrompt(BasePrompt):
 If a task's complexity score is < 2, then skip the task because it's too easy.
 
 ### Tool-calling SOP Abstraction
-If the task is not an easy task,
-abstract a template SOP from complex task for a certain scenario, using 'submit_sop' tool:
-- Template SOP must be the shortest possible too-calls to achieve the goal, remove all the redundancies.
+If the task is not an easy task, abstract a template SOP from complex task for a certain scenario, using 'submit_sop' tool:
 - When generate `tool_sops`, use the exact tool_name from <agent_action>, and keep the most necessary and generalizable arguments in 'action'.
     - `tool_sops` can be an empty list if the task itself is a easy task.
 - If this task involves repetitive workflows applied to different inputs, only retain the most concise SOP from a single workflow.
+#### Templatized Tool Action 
+- Template SOP must be the shortest possible too-calls to achieve the goal, remove all the redundancies.
+- Template tool sops: remove those parameters that may vary in different user input in tool 'action', only keep the parameters that are critical to the sop case.
+For example, if the sop is 'star a github repo', 
+then the detailed repo url should be removed because next time user may input a new repo url.
+But use `click` tool to click a 'Star' button, this can keep in action because the 'Star' button is a universal step and unrelated to the user's input.
 
 ## Input Format
 ### Task Description
 What the task is and its purpose.
-### User Preferences
-Extracted user preferences for this task.
+### User Preferences and Infos
+Extracted user preferences and personal infos for this task.
 ### Raw Working History
 Format:
 ```
@@ -47,10 +50,11 @@ Format:
 You must report your thinkings (using extrmaly brief wordings) first using the 'report_thinking' tool:
 1. What's tools have been used?
 2. In which scenarios should we use this SOP? (3~5 words for `use_when`)
-3. Any user preferences on this scenarios? (short sentences for `preferences`) If not, 'preferences' field should be empty string
+3. Any user preferences and personal infos can help this scenarios? (short sentences for `preferences`) If not, 'preferences' field should be empty string
 4. Give your judgement on (c.1), (c.2), (c.3), (c.4) and for each term, what's the scores?, then sum them and score the task complexity.
 5. If it's an easy task, confirm you will only submit the `use_when` and `preferences` field and an empty `tool_sops list and skip step 6
 6. How to reduce the tool-calls to build a shortest path to achieve the goal?
+7. Which parameters are related to the future user input and should be removed in 'action'?
 Then decide if you should submit the SOP.
 """
 
@@ -60,7 +64,7 @@ Then decide if you should submit the SOP.
     ) -> str:
         return f"""### Task Description
 {task_description}
-### User Preferences
+### User Preferences and Infos
 {user_preferences}
 ### Raw History Input
 {history_messages}

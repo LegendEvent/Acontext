@@ -1,4 +1,3 @@
-from typing import Optional
 from .base import BasePrompt
 from ...schema.llm import ToolSchema
 from ...llm.tool.task_tools import TASK_TOOLS
@@ -8,7 +7,7 @@ class TaskPrompt(BasePrompt):
 
     @classmethod
     def system_prompt(cls) -> str:
-        return f"""You are a Task Management Agent that analyzes user/agent conversations to manage task statuses.
+        return """You are a Task Management Agent that analyzes user/agent conversations to manage task statuses.
 
 ## Core Responsibilities
 1. **Task Tracking**: Collect planned tasks/steps from converations.
@@ -52,7 +51,8 @@ class TaskPrompt(BasePrompt):
     - You should include necessary infos/numbers that may help the following tasks
     - Narrate progress in the first person as the agent.
     - Facts over General. Don't say "I encountered many errors", say "I encountered python syntax error then the compiling error."
-- If user mentioned any preference on this task, extract in the clean format 'user expects/wants...' in 'user_preference' field.
+- If user mentioned any preference on this task, extract in the clean format 'user expects/wants...' in 'user_preference_and_infos' field.
+- If user mentioned any infos(address, email,... etc) so that the task can be completed, extract it and fill it in 'user_preference_and_infos' field.
 
 ## Update Task Status 
 - `pending`: For tasks not yet started
@@ -75,9 +75,10 @@ Use extremely brief wordings to report using the 'report_thinking' tool before c
 3. How existing tasks are related to current conversation? 
 4. Any new task should be created?
 5. Which Messages are contributed to planning? Not the execution.
-6. Which Messages are contributed to which task? Any progress or user preference?
-7. Which task's status need to be updated?
-8. Briefly describe your tool-call actions to correctly manage the tasks.
+6. Which Messages are contributed to which task? What the progress of the messages brough to the task?
+7. Any user preferences and personal infos in Current Message section related to complete which tasks?
+8. Which task's status need to be updated?
+9. Briefly describe your tool-call actions to correctly manage the tasks.
 Make sure your will call `finish` tool after every tools are called
 """
 
