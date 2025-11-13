@@ -41,6 +41,14 @@ class CoreConfig(BaseModel):
     # MQ Configuration
     mq_url: str = "amqp://acontext:helloworld@127.0.0.1:15672/"
     mq_connection_name: str = "acontext_core"
+    mq_heartbeat: int = (
+        60  # Heartbeat interval in seconds (should match or be less than RabbitMQ server timeout)
+    )
+    mq_blocked_connection_timeout: int = (
+        300  # Timeout for blocked connections in seconds
+    )
+    mq_max_reconnect_attempts: int = 5
+    mq_reconnect_delay: float = 5.0
     mq_global_qos: int = 32
     mq_consumer_handler_timeout: float = 96
     mq_default_message_ttl_seconds: int = 7 * 24 * 60 * 60

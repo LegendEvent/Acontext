@@ -1,3 +1,4 @@
+# FIXME: mq may be closed after a long time idle, around 2 hours!
 import asyncio
 import json
 import traceback
@@ -6,12 +7,7 @@ from pydantic import ValidationError, BaseModel
 from dataclasses import dataclass, field
 from typing import Callable, Awaitable, Any, Dict, Optional, List, Set
 from aio_pika import connect_robust, ExchangeType, Message
-from aio_pika.abc import (
-    AbstractConnection,
-    AbstractChannel,
-    AbstractQueue,
-    AbstractExchange,
-)
+from aio_pika.abc import AbstractConnection, AbstractChannel, AbstractQueue
 from ..env import LOG, DEFAULT_CORE_CONFIG, bound_logging_vars
 from ..util.handler_spec import check_handler_function_sanity, get_handler_body_type
 from time import perf_counter
@@ -76,8 +72,8 @@ class ConnectionConfig:
 
     url: str
     connection_name: str = DEFAULT_CORE_CONFIG.mq_connection_name
-    heartbeat: int = 32
-    blocked_connection_timeout: int = 300
+    heartbeat: int = DEFAULT_CORE_CONFIG.mq_heartbeat
+    blocked_connection_timeout: int = DEFAULT_CORE_CONFIG.mq_blocked_connection_timeout
 
 
 class AsyncSingleThreadMQConsumer:
@@ -235,42 +231,86 @@ class AsyncSingleThreadMQConsumer:
             return f"Special consumer - queue: {config.queue_name} <- ({config.exchange_name}, {config.routing_key}), {config.handler}."
         raise RuntimeError(f"Special handler {config.handler} not implemented")
 
-    # TODO: add channel recovery logic
     async def _consume_queue(self, config: ConsumerConfig) -> str:
-        """Consume messages from a specific queue"""
+        """Consume messages from a specific queue with automatic channel reconnection"""
 
-        consumer_channel: AbstractChannel | None = None
-        try:
-            # Set QoS for this consumer
-            consumer_channel = await self.connection.channel()
-            await consumer_channel.set_qos(prefetch_count=config.prefetch_count)
-            queue = await self._setup_consumer_on_channel(config, consumer_channel)
+        max_reconnect_attempts = DEFAULT_CORE_CONFIG.mq_max_reconnect_attempts
+        reconnect_delay = DEFAULT_CORE_CONFIG.mq_reconnect_delay
+        attempt = 0
 
-            if isinstance(config.handler, SpecialHandler):
-                hint = await self._special_queue(config)
-                return hint
-            LOG.info(
-                f"Looping consumer - queue: {config.queue_name} <- ({config.exchange_name}, {config.routing_key})"
-            )
+        while not self._shutdown_event.is_set():
+            consumer_channel: AbstractChannel | None = None
+            try:
+                # Ensure connection is alive
+                if not self.connection or self.connection.is_closed:
+                    LOG.warning(
+                        f"Connection lost for queue {config.queue_name}, reconnecting..."
+                    )
+                    await self.connect()
 
-            async with queue.iterator() as queue_iter:
-                async for message in queue_iter:
-                    if self._shutdown_event.is_set():
-                        break
+                # Create a new channel for this consumer
+                consumer_channel = await self.connection.channel()
+                await consumer_channel.set_qos(prefetch_count=config.prefetch_count)
+                queue = await self._setup_consumer_on_channel(config, consumer_channel)
 
-                    # Process message in background task for concurrency
-                    task = asyncio.create_task(self._process_message(config, message))
+                # Reset reconnect counter on successful setup
+                attempt = 0
 
-                    self._processing_tasks.add(task)
-                    task.add_done_callback(self.cleanup_message_task)
+                if isinstance(config.handler, SpecialHandler):
+                    hint = await self._special_queue(config)
+                    return hint
 
-        except Exception as e:
-            LOG.error(f"Consumer error - queue: {config.queue_name}, error: {str(e)}")
-            raise e
-        finally:
-            if consumer_channel and not consumer_channel.is_closed:
-                LOG.info(f"Closing consumer channel - queue: {config.queue_name}")
-                await consumer_channel.close()
+                LOG.info(
+                    f"Looping consumer - queue: {config.queue_name} <- ({config.exchange_name}, {config.routing_key})"
+                )
+
+                async with queue.iterator() as queue_iter:
+                    async for message in queue_iter:
+                        if self._shutdown_event.is_set():
+                            break
+
+                        # Process message in background task for concurrency
+                        task = asyncio.create_task(
+                            self._process_message(config, message)
+                        )
+                        self._processing_tasks.add(task)
+                        task.add_done_callback(self.cleanup_message_task)
+
+                # If we exit the loop normally (shutdown), break the reconnect loop
+                if self._shutdown_event.is_set():
+                    break
+
+            except asyncio.CancelledError:
+                LOG.info(f"Consumer cancelled - queue: {config.queue_name}")
+                raise  # Re-raise to allow proper cancellation
+            except Exception as e:
+                attempt += 1
+                if attempt > max_reconnect_attempts:
+                    LOG.error(
+                        f"Consumer failed after {max_reconnect_attempts} reconnection attempts - "
+                        f"queue: {config.queue_name}, error: {str(e)}"
+                    )
+                    raise e
+                _delay_seconds = reconnect_delay * (attempt**2)
+                LOG.warning(
+                    f"Consumer error - queue: {config.queue_name}, error: {str(e)}, "
+                    f"attempt: {attempt}/{max_reconnect_attempts}, "
+                    f"reconnecting in {_delay_seconds}s..."
+                )
+                await asyncio.sleep(_delay_seconds)
+
+            finally:
+                if consumer_channel and not consumer_channel.is_closed:
+                    try:
+                        await consumer_channel.close()
+                        LOG.debug(
+                            f"Closed consumer channel - queue: {config.queue_name}"
+                        )
+                    except Exception as e:
+                        LOG.warning(
+                            f"Error closing channel - queue: {config.queue_name}: {e}"
+                        )
+                LOG.info(f"Consumer channel closed - queue: {config.queue_name}")
 
     async def _setup_consumer_on_channel(
         self,
@@ -463,7 +503,7 @@ MQ_CLIENT = AsyncSingleThreadMQConsumer(
 async def init_mq() -> None:
     """Initialize MQ connection (perform health check)."""
     if await MQ_CLIENT.health_check():
-        LOG.info(f"MQ connection initialized successfully")
+        LOG.info("MQ connection initialized successfully")
     else:
         LOG.error("Failed to initialize MQ connection")
         raise ConnectionError("Could not connect to MQ")
