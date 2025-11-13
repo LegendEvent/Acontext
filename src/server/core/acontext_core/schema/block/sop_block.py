@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List
 from ..utils import asUUID
 
 
@@ -10,7 +10,7 @@ class SOPStep(BaseModel):
     )
     action: str = Field(
         ...,
-        description="only describe necessary arguments' VALUEs to proceed the SOP. If not arguments are needed, an empty string is expected.",
+        description="what to do with this tool",
     )
 
 
@@ -24,6 +24,13 @@ class SOPData(BaseModel):
         description="User preferences on this SOP if any.",
     )
     tool_sops: List[SOPStep]
+
+
+class SubmitSOPData(SOPData):
+    is_easy_task: bool = Field(
+        ...,
+        description="If the task is easy or not",
+    )
 
 
 class SOPBlock(SOPData):

@@ -1,18 +1,17 @@
 from pydantic import ValidationError
-from ..base import Tool, ToolPool
+from ..base import Tool
 from ....service.constants import EX, RK
 from ....infra.async_mq import MQ_CLIENT
 from ....schema.llm import ToolSchema
 from ....schema.result import Result
-from ....schema.block.sop_block import SOPData
+from ....schema.block.sop_block import SubmitSOPData, SOPData
 from ....schema.mq.sop import SOPComplete
-from ....service.data import task as TD
 from ....env import LOG
 from .ctx import SOPCtx
 
 
 async def submit_sop_handler(ctx: SOPCtx, llm_arguments: dict) -> Result[str]:
-
+    is_easy_task = llm_arguments.pop("is_easy_task", False)
     try:
         sop_data = SOPData.model_validate(llm_arguments)
     except ValidationError as e:
@@ -20,6 +19,9 @@ async def submit_sop_handler(ctx: SOPCtx, llm_arguments: dict) -> Result[str]:
     if not len(sop_data.tool_sops) and not len(sop_data.preferences.strip()):
         LOG.info("Agent submitted an empty SOP, drop")
         return Result.resolve("SOP submitted")
+    if is_easy_task:
+        # easy task should not have any tool_sops
+        sop_data.tool_sops = []
     sop_complete_message = SOPComplete(
         project_id=ctx.project_id,
         space_id=ctx.space_id,
@@ -41,7 +43,7 @@ _submit_sop_tool = (
             function={
                 "name": "submit_sop",
                 "description": "Submit a new tool-calling SOP.",
-                "parameters": SOPData.model_json_schema(),
+                "parameters": SubmitSOPData.model_json_schema(),
             }
         )
     )
