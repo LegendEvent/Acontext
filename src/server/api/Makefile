@@ -1,12 +1,13 @@
 GO_DIR := ./go
 GO_BIN := $(shell go env GOPATH)/bin
 SWAG := $(GO_BIN)/swag
+OPENAPI_GENERATOR := openapi-generator-cli
 
 # Test parameters
 TEST_TIMEOUT=30m
 COVERAGE_DIR=$(GO_DIR)/coverage
 
-.PHONY: help ensure-tools swag swag-clean run doctor test test-unit test-integration test-e2e test-all test-coverage lint format tidy clean
+.PHONY: help ensure-tools ensure-openapi-generator swag swag-clean openapi run doctor test test-unit test-integration test-e2e test-all test-coverage lint format tidy clean
 
 # Default target
 help: ## Show available commands
@@ -22,16 +23,40 @@ ensure-tools:
 		echo "swag found at $(SWAG)"; \
 	fi
 
+ensure-openapi-generator:
+	@if ! command -v $(OPENAPI_GENERATOR) >/dev/null 2>&1; then \
+		echo "Installing @openapitools/openapi-generator-cli..."; \
+		npm install -g @openapitools/openapi-generator-cli@2.25.0; \
+	else \
+		echo "$(OPENAPI_GENERATOR) found"; \
+	fi
+
 # swagger docs
 swag: ensure-tools swag-clean
 	cd $(GO_DIR) && $(SWAG) init \
 		-g main.go \
 		-d ./cmd/server,./internal \
 		-o ./docs
+	@$(MAKE) openapi
 
 # swagger clean
 swag-clean:
 	rm -rf $(GO_DIR)/docs
+
+# generate openapi 3.0 from swagger.json
+openapi: ensure-openapi-generator ## Generate OpenAPI 3.0 from swagger.json
+	@if [ -f $(GO_DIR)/docs/swagger.json ]; then \
+		cd $(GO_DIR)/docs && $(OPENAPI_GENERATOR) generate \
+			-g openapi \
+			-i ./swagger.json --skip-validate-spec \
+			-o out; \
+		echo "OpenAPI 3.0 generated in $(GO_DIR)/docs/out"; \
+		cd - && cp $(GO_DIR)/docs/out/openapi.json ../../../docs/api-reference/openapi.json; \
+		rm -rf $(GO_DIR)/docs/out; \
+	else \
+		echo "Error: swagger.json not found. Run 'make swag' first."; \
+		exit 1; \
+	fi
 
 # swagger fmt
 swag-fmt:
