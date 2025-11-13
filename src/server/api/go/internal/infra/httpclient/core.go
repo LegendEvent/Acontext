@@ -45,7 +45,6 @@ type SearchResultBlockItem struct {
 // SpaceSearchResult represents the result of a space search
 type SpaceSearchResult struct {
 	CitedBlocks []SearchResultBlockItem `json:"cited_blocks"`
-	FinalAnswer *string                 `json:"final_answer"`
 }
 
 // SemanticGrepRequest represents the request for semantic grep

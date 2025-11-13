@@ -173,8 +173,6 @@ definitions:
         items:
           $ref: '#/definitions/httpclient.SearchResultBlockItem'
         type: array
-      final_answer:
-        type: string
     type: object
   httpclient.ToolReferenceData:
     properties:
@@ -569,6 +567,32 @@ paths:
       summary: Delete artifact
       tags:
       - artifact
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Delete an artifact
+          client.disks.delete_artifact(
+              disk_id='disk-uuid',
+              file_path='/documents/report.pdf'
+          )
+          print('Artifact deleted successfully')
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Delete an artifact
+          await client.disks.deleteArtifact('disk-uuid', {
+            filePath: '/documents/report.pdf'
+          });
+          console.log('Artifact deleted successfully');
     get:
       consumes:
       - application/json
@@ -616,6 +640,48 @@ paths:
       summary: Get artifact
       tags:
       - artifact
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get artifact information
+          artifact_info = client.disks.get_artifact(
+              disk_id='disk-uuid',
+              file_path='/documents/report.pdf',
+              with_public_url=True,
+              with_content=True,
+              expire=3600
+          )
+          print(f"Artifact: {artifact_info.artifact.filename}")
+          if artifact_info.public_url:
+              print(f"Download URL: {artifact_info.public_url}")
+          if artifact_info.content:
+              print(f"Content: {artifact_info.content.text[:100]}...")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get artifact information
+          const artifactInfo = await client.disks.getArtifact('disk-uuid', {
+            filePath: '/documents/report.pdf',
+            withPublicUrl: true,
+            withContent: true,
+            expire: 3600
+          });
+          console.log(`Artifact: ${artifactInfo.artifact.filename}`);
+          if (artifactInfo.publicUrl) {
+            console.log(`Download URL: ${artifactInfo.publicUrl}`);
+          }
+          if (artifactInfo.content) {
+            console.log(`Content: ${artifactInfo.content.text.substring(0, 100)}...`);
+          }
     post:
       consumes:
       - multipart/form-data
@@ -659,6 +725,39 @@ paths:
       summary: Upsert artifact
       tags:
       - artifact
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Upload a file to disk
+          with open('report.pdf', 'rb') as f:
+              artifact = client.disks.upload_artifact(
+                  disk_id='disk-uuid',
+                  file=f,
+                  file_path='/documents/',
+                  meta={'category': 'reports', 'year': 2024}
+              )
+          print(f"Uploaded artifact: {artifact.id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+          import fs from 'fs';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Upload a file to disk
+          const fileBuffer = fs.readFileSync('report.pdf');
+          const artifact = await client.disks.uploadArtifact('disk-uuid', {
+            file: fileBuffer,
+            filePath: '/documents/',
+            meta: { category: 'reports', year: 2024 }
+          });
+          console.log(`Uploaded artifact: ${artifact.id}`);
     put:
       consumes:
       - application/json
@@ -701,6 +800,34 @@ paths:
       summary: Update artifact meta
       tags:
       - artifact
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Update artifact metadata
+          artifact = client.disks.update_artifact(
+              disk_id='disk-uuid',
+              file_path='/documents/report.pdf',
+              meta={'category': 'updated', 'reviewed': True, 'version': 2}
+          )
+          print(f"Updated artifact: {artifact.artifact.id}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Update artifact metadata
+          const artifact = await client.disks.updateArtifact('disk-uuid', {
+            filePath: '/documents/report.pdf',
+            meta: { category: 'updated', reviewed: true, version: 2 }
+          });
+          console.log(`Updated artifact: ${artifact.artifact.id}`);
   /disk/{disk_id}/artifact/ls:
     get:
       consumes:
@@ -735,6 +862,39 @@ paths:
       summary: List artifacts
       tags:
       - artifact
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # List artifacts in a path
+          result = client.disks.list_artifacts(
+              disk_id='disk-uuid',
+              path='/documents/'
+          )
+          print(f"Found {len(result.artifacts)} artifacts")
+          for artifact in result.artifacts:
+              print(f"  - {artifact.path}{artifact.filename}")
+          print(f"Subdirectories: {', '.join(result.directories)}")
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // List artifacts in a path
+          const result = await client.disks.listArtifacts('disk-uuid', {
+            path: '/documents/'
+          });
+          console.log(`Found ${result.artifacts.length} artifacts`);
+          for (const artifact of result.artifacts) {
+            console.log(`  - ${artifact.path}${artifact.filename}`);
+          }
+          console.log(`Subdirectories: ${result.directories.join(', ')}`);
   /session:
     get:
       consumes:
@@ -1352,6 +1512,55 @@ paths:
       summary: Get tasks from session
       tags:
       - task
+      x-code-samples:
+      - label: Python
+        lang: python
+        source: |
+          from acontext import AcontextClient
+
+          client = AcontextClient(api_key='sk_project_token')
+
+          # Get tasks from a session
+          tasks = client.sessions.get_tasks(
+              session_id='session-uuid',
+              limit=20,
+              time_desc=False
+          )
+          print(f"Found {len(tasks.items)} tasks")
+          for task in tasks.items:
+              print(f"Task {task.id}: {task.status}")
+
+          # If there are more tasks, use the cursor for pagination
+          if tasks.has_more:
+              next_tasks = client.sessions.get_tasks(
+                  session_id='session-uuid',
+                  limit=20,
+                  cursor=tasks.next_cursor
+              )
+      - label: JavaScript
+        lang: javascript
+        source: |
+          import { AcontextClient } from '@acontext/acontext';
+
+          const client = new AcontextClient({ apiKey: 'sk_project_token' });
+
+          // Get tasks from a session
+          const tasks = await client.sessions.getTasks('session-uuid', {
+            limit: 20,
+            timeDesc: false
+          });
+          console.log(`Found ${tasks.items.length} tasks`);
+          for (const task of tasks.items) {
+            console.log(`Task ${task.id}: ${task.status}`);
+          }
+
+          // If there are more tasks, use the cursor for pagination
+          if (tasks.hasMore) {
+            const nextTasks = await client.sessions.getTasks('session-uuid', {
+              limit: 20,
+              cursor: tasks.nextCursor
+            });
+          }
   /space:
     get:
       consumes:

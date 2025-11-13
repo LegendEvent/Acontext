@@ -76,6 +76,42 @@ func (h *BlockHandler) CreateBlock(c *gin.Context) {
 		return
 	}
 
+	// Pre-validation before calling Core service
+	// 1. Create a temporary block for validation
+	tempBlock := &model.Block{
+		SpaceID:  spaceID,
+		Type:     req.Type,
+		Title:    req.Title,
+		ParentID: req.ParentID,
+	}
+
+	// 2. Validate basic block constraints
+	if err := tempBlock.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	// 3. If parent_id is provided, validate parent-child relationship
+	if req.ParentID != nil {
+		parent, err := h.svc.GetBlockProperties(c.Request.Context(), *req.ParentID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent block not found")))
+			return
+		}
+
+		// Check if parent can have children
+		if !parent.CanHaveChildren() {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", errors.New("parent cannot have children")))
+			return
+		}
+
+		// Validate parent type compatibility
+		if err := tempBlock.ValidateParentType(parent); err != nil {
+			c.JSON(http.StatusBadRequest, serializer.ParamErr("parent_id", err))
+			return
+		}
+	}
+
 	// Prepare request for Core service
 	coreReq := httpclient.InsertBlockRequest{
 		ParentID: req.ParentID,
