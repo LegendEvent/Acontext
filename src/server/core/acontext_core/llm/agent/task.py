@@ -1,11 +1,9 @@
-import re
 from typing import List
-from urllib import response
-from ...env import LOG, DEFAULT_CORE_CONFIG, bound_logging_vars
+from ...env import LOG, bound_logging_vars
 from ...infra.db import AsyncSession, DB_CLIENT
 from ...schema.result import Result
 from ...schema.utils import asUUID
-from ...schema.session.task import TaskSchema, TaskStatus
+from ...schema.session.task import TaskSchema
 from ...schema.session.message import MessageBlob
 from ...service.data import task as TD
 from ..complete import llm_complete, response_to_sendable_message
@@ -13,9 +11,11 @@ from ..prompt.task import TaskPrompt, TASK_TOOLS
 from ...util.generate_ids import track_process
 from ..tool.task_lib.ctx import TaskCtx
 from ..tool.task_lib.insert import _insert_task_tool
+from ..tool.task_lib.update import _update_task_tool
 
 NEED_UPDATE_CTX = {
     _insert_task_tool.schema.function.name,
+    _update_task_tool.schema.function.name,
 }
 
 

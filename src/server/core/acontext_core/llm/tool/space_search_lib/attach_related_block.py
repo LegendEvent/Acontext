@@ -1,17 +1,10 @@
-from ..base import Tool, ToolPool
-from ....env import DEFAULT_CORE_CONFIG
+from ..base import Tool
 from ....schema.block.general import LocatedContentBlock
 from ....schema.llm import ToolSchema
-from ....schema.orm.block import BLOCK_TYPE_FOLDER, BLOCK_TYPE_PAGE
-from ....schema.utils import asUUID
+from ....schema.orm.block import BLOCK_TYPE_PAGE
 from ....schema.result import Result
-from ....schema.orm import Task
-from ....schema.block.path_node import repr_path_tree
-from ....service.data import block_search as BS
 from ....service.data import block_nav as BN
 from ....service.data import block_render as BR
-from ....service.data import block as BD
-from ....schema.session.task import TaskStatus
 from .ctx import SpaceSearchCtx
 
 
@@ -50,10 +43,6 @@ async def _attach_related_block_handler(
             render_block=rendered_block,
         )
     )
-    if len(ctx.located_content_blocks) >= ctx.block_limit:
-        return Result.resolve(
-            f"You have reached the limit to attach more blocks, you have to stop search and submit final answer right now!"
-        )
 
     return Result.resolve(
         f"Attached the block, you have attached {len(ctx.located_content_blocks)} blocks now"

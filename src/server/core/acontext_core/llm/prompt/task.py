@@ -57,9 +57,12 @@ class TaskPrompt(BasePrompt):
 ## Update Task Status 
 - `pending`: For tasks not yet started
 - `running`: When task work begins, or re-run because the previous works were failed or wrong.
-- `failed`: When explicit errors occur or tasks are abandoned, or user directly tell that some tasks are failed or wrong.
+- `failed`: When explicit errors occur or tasks are abandoned by user, or user directly tell that some tasks are failed or wrong.
 - `success`: Only when task's completion is confirmed by user, or agent starts to process the next task without explicitly report errors or failure.
 
+## Rules
+- If a task's status is 'success', then you can't append messages to it.
+- If a task's status is 'failed' and the agent/user is tring to fix the process, you should update the task status to 'running' first then append messages to it.
 
 ## Input Format
 - Input will be markdown-formatted text, with the following sections:

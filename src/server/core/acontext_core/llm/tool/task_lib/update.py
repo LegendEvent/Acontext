@@ -1,15 +1,11 @@
 import asyncio
-from typing import Any
 from ....infra.async_mq import MQ_CLIENT
-from ..base import Tool, ToolPool
+from ..base import Tool
 from ....schema.llm import ToolSchema
-from ....schema.utils import asUUID
 from ....schema.result import Result
-from ....schema.orm import Task
 from ....schema.mq.space import NewTaskComplete
 from ....schema.session.task import TaskStatus
 from ....service.data import task as TD
-from ....env import LOG
 from ....service.constants import EX, RK
 from .ctx import TaskCtx
 
@@ -29,7 +25,7 @@ async def update_task_handler(
     task_order = llm_arguments.get("task_order", None)
     if not task_order:
         return Result.resolve(
-            f"You must provide a task order argument, so that we can update the task. Updating failed."
+            "You must provide a task order argument, so that we can update the task. Updating failed."
         )
     if task_order > len(ctx.task_ids_index) or task_order < 1:
         return Result.resolve(

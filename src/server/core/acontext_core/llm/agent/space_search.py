@@ -1,11 +1,7 @@
-from typing import List, Dict, Any
-
-from ...schema.block.general import GeneralBlockData
 from ...env import LOG, bound_logging_vars
 from ...infra.db import AsyncSession, DB_CLIENT
 from ..complete import llm_complete, response_to_sendable_message
 from ...util.generate_ids import track_process
-from ...schema.block.sop_block import SOPData
 from ...schema.result import Result
 from ...schema.utils import asUUID
 from ..prompt.space_search import SpaceSearchPrompt
@@ -68,6 +64,9 @@ async def space_agent_search(
                 tool_name = tool_call.function.name
                 tool_arguments = tool_call.function.arguments
                 tool = SPACE_SEARCH_TOOLS[tool_name]
+                if tool_name == "finish":
+                    just_finish = True
+                    continue
                 with bound_logging_vars(tool=tool_name):
                     async with DB_CLIENT.get_session_context() as db_session:
                         USE_CTX = await build_space_search_ctx(
@@ -83,9 +82,6 @@ async def space_agent_search(
                         return r
                 if tool_name != "report_thinking":
                     LOG.info(f"Tool Call: {tool_name} - {tool_arguments} -> {t}")
-                if tool_name == "submit_final_answer":
-                    just_finish = True
-                    continue
                 tool_response.append(
                     {
                         "role": "tool",
@@ -99,7 +95,10 @@ async def space_agent_search(
                 return Result.reject(f"Tool {tool_name} error: {str(e)}")
         _messages.extend(tool_response)
         if just_finish:
-            LOG.info("submit_answer tool called, exit the loop")
+            LOG.info("finish tool called, exit the loop")
+            break
+        if len(USE_CTX.located_content_blocks) >= limit:
+            LOG.info("Reached the limit to attach more blocks, exit the loop")
             break
         already_iterations += 1
     USE_CTX.db_session = None  # remove the out-dated session

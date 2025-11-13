@@ -16,7 +16,8 @@ class TaskSOPPrompt(BasePrompt):
 (c.2) Imagine that agent can do it second time, if it can reduce tons of tool-calls, + 1 point.
 (c.3) If agent done something wrong decision before, then user offers some feedbacks to correct the agent's wrong decision, + 2 points
 (c.4) User explicitly emphasized saving this workflow or experience, + 5 points
-If a task's complexity score is < 2, then skip the task because it's too easy.
+If a task's complexity score is < 2, then skip the task because it's too easy, and you should submit a empty SOP with `is_easy_task` set to True.
+else, set `is_easy_task` to False.
 
 ### Tool-calling SOP Abstraction
 If the task is not an easy task, abstract a template SOP from complex task for a certain scenario, using 'submit_sop' tool:
@@ -29,12 +30,14 @@ If the task is not an easy task, abstract a template SOP from complex task for a
 For example, if the sop is 'star a github repo', 
 then the detailed repo url should be removed because next time user may input a new repo url.
 But use `click` tool to click a 'Star' button, this can keep in action because the 'Star' button is a universal step and unrelated to the user's input.
+#### Preferences
+- remove those preferences or infos that are may vary in different user input.
 
 ## Input Format
 ### Task Description
 What the task is and its purpose.
 ### User Preferences and Infos
-Extracted user preferences and personal infos for this task.
+User preferences and personal infos for this task.
 ### Raw Working History
 Format:
 ```
@@ -49,12 +52,12 @@ Format:
 ## Report before Submit
 You must report your thinkings (using extrmaly brief wordings) first using the 'report_thinking' tool:
 1. What's tools have been used?
-2. In which scenarios should we use this SOP? (3~5 words for `use_when`)
-3. Any user preferences and personal infos can help this scenarios? (short sentences for `preferences`) If not, 'preferences' field should be empty string
-4. Give your judgement on (c.1), (c.2), (c.3), (c.4) and for each term, what's the scores?, then sum them and score the task complexity.
-5. If it's an easy task, confirm you will only submit the `use_when` and `preferences` field and an empty `tool_sops list and skip step 6
-6. How to reduce the tool-calls to build a shortest path to achieve the goal?
-7. Which parameters are related to the future user input and should be removed in 'action'?
+2. Give your judgement on (c.1), (c.2), (c.3), (c.4) and for each term, what's the scores?, then sum them and score the task complexity.
+3. If it's an easy task, confirm you will set `is_easy_task` to True and only submit the `use_when` and `preferences` field and an empty `tool_sops list and skip step 5
+4. How to reduce the tool-calls to build a shortest path to achieve the goal?
+5. Which parameters/values are related to the future user input and should be removed in 'action' and 'preferences'?
+6. In which general scenarios should we use this SOP? (3~5 words for `use_when`)
+7. Any user preferences can help this general scenarios? (short sentenqces for `preferences`) If not, 'preferences' field should be empty string
 Then decide if you should submit the SOP.
 """
 
