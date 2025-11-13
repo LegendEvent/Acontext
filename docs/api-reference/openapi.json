@@ -186,6 +186,386 @@
         ]
       }
     },
+    "/disk/{disk_id}/artifact": {
+      "get": {
+        "tags": [
+          "artifact"
+        ],
+        "summary": "Get artifact",
+        "description": "Get artifact information by path and filename. Optionally include a presigned URL for downloading and parsed file content.",
+        "parameters": [
+          {
+            "name": "disk_id",
+            "in": "path",
+            "required": true,
+            "description": "Disk ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          },
+          {
+            "name": "file_path",
+            "in": "query",
+            "required": true,
+            "description": "File path including filename",
+            "schema": {
+              "type": "string"
+            },
+            "example": "/documents/report.pdf"
+          },
+          {
+            "name": "with_public_url",
+            "in": "query",
+            "description": "Whether to return public URL, default is true",
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "with_content",
+            "in": "query",
+            "description": "Whether to return parsed file content, default is true",
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "expire",
+            "in": "query",
+            "description": "Expire time in seconds for presigned URL (default: 3600)",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 3600
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/GetArtifactResp"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "label": "Python",
+            "lang": "python",
+            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get artifact information\nartifact_info = client.disks.get_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf',\n    with_public_url=True,\n    with_content=True,\n    expire=3600\n)\nprint(f\"Artifact: {artifact_info.artifact.filename}\")\nif artifact_info.public_url:\n    print(f\"Download URL: {artifact_info.public_url}\")\nif artifact_info.content:\n    print(f\"Content: {artifact_info.content.text[:100]}...\")\n"
+          },
+          {
+            "label": "JavaScript",
+            "lang": "javascript",
+            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get artifact information\nconst artifactInfo = await client.disks.getArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf',\n  withPublicUrl: true,\n  withContent: true,\n  expire: 3600\n});\nconsole.log(`Artifact: ${artifactInfo.artifact.filename}`);\nif (artifactInfo.publicUrl) {\n  console.log(`Download URL: ${artifactInfo.publicUrl}`);\n}\nif (artifactInfo.content) {\n  console.log(`Content: ${artifactInfo.content.text.substring(0, 100)}...`);\n}\n"
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "artifact"
+        ],
+        "summary": "Update artifact meta",
+        "description": "Update an artifact's metadata (user-defined metadata only)",
+        "parameters": [
+          {
+            "name": "disk_id",
+            "in": "path",
+            "required": true,
+            "description": "Disk ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file_path",
+                  "meta"
+                ],
+                "properties": {
+                  "file_path": {
+                    "type": "string",
+                    "description": "File path including filename",
+                    "example": "/documents/report.pdf"
+                  },
+                  "meta": {
+                    "type": "string",
+                    "description": "Custom metadata as JSON string (system metadata '__artifact_info__' cannot be modified)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/UpdateArtifactResp"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "label": "Python",
+            "lang": "python",
+            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update artifact metadata\nartifact = client.disks.update_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf',\n    meta={'category': 'updated', 'reviewed': True, 'version': 2}\n)\nprint(f\"Updated artifact: {artifact.artifact.id}\")\n"
+          },
+          {
+            "label": "JavaScript",
+            "lang": "javascript",
+            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update artifact metadata\nconst artifact = await client.disks.updateArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf',\n  meta: { category: 'updated', reviewed: true, version: 2 }\n});\nconsole.log(`Updated artifact: ${artifact.artifact.id}`);\n"
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "artifact"
+        ],
+        "summary": "Upsert artifact",
+        "description": "Upload a file and create or update an artifact record under a disk",
+        "parameters": [
+          {
+            "name": "disk_id",
+            "in": "path",
+            "required": true,
+            "description": "Disk ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file_path": {
+                    "type": "string",
+                    "description": "File path in the disk storage (optional, defaults to '/')"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload"
+                  },
+                  "meta": {
+                    "type": "string",
+                    "description": "Custom metadata as JSON string (optional, system metadata will be stored under '__artifact_info__' key)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Artifact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "label": "Python",
+            "lang": "python",
+            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Upload a file to disk\nwith open('report.pdf', 'rb') as f:\n    artifact = client.disks.upload_artifact(\n        disk_id='disk-uuid',\n        file=f,\n        file_path='/documents/',\n        meta={'category': 'reports', 'year': 2024}\n    )\nprint(f\"Uploaded artifact: {artifact.id}\")\n"
+          },
+          {
+            "label": "JavaScript",
+            "lang": "javascript",
+            "source": "import { AcontextClient } from '@acontext/acontext';\nimport fs from 'fs';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Upload a file to disk\nconst fileBuffer = fs.readFileSync('report.pdf');\nconst artifact = await client.disks.uploadArtifact('disk-uuid', {\n  file: fileBuffer,\n  filePath: '/documents/',\n  meta: { category: 'reports', year: 2024 }\n});\nconsole.log(`Uploaded artifact: ${artifact.id}`);\n"
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "artifact"
+        ],
+        "summary": "Delete artifact",
+        "description": "Delete an artifact by path and filename",
+        "parameters": [
+          {
+            "name": "disk_id",
+            "in": "path",
+            "required": true,
+            "description": "Disk ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          },
+          {
+            "name": "file_path",
+            "in": "query",
+            "required": true,
+            "description": "File path including filename",
+            "schema": {
+              "type": "string"
+            },
+            "example": "/documents/report.pdf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "label": "Python",
+            "lang": "python",
+            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete an artifact\nclient.disks.delete_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf'\n)\nprint('Artifact deleted successfully')\n"
+          },
+          {
+            "label": "JavaScript",
+            "lang": "javascript",
+            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete an artifact\nawait client.disks.deleteArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf'\n});\nconsole.log('Artifact deleted successfully');\n"
+          }
+        ]
+      }
+    },
+    "/disk/{disk_id}/artifact/ls": {
+      "get": {
+        "tags": [
+          "artifact"
+        ],
+        "summary": "List artifacts",
+        "description": "List artifacts in a specific path or all artifacts in a disk",
+        "parameters": [
+          {
+            "name": "disk_id",
+            "in": "path",
+            "required": true,
+            "description": "Disk ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Path filter (optional, defaults to root '/')",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ListArtifactsResp"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "label": "Python",
+            "lang": "python",
+            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List artifacts in a path\nresult = client.disks.list_artifacts(\n    disk_id='disk-uuid',\n    path='/documents/'\n)\nprint(f\"Found {len(result.artifacts)} artifacts\")\nfor artifact in result.artifacts:\n    print(f\"  - {artifact.path}{artifact.filename}\")\nprint(f\"Subdirectories: {', '.join(result.directories)}\")\n"
+          },
+          {
+            "label": "JavaScript",
+            "lang": "javascript",
+            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List artifacts in a path\nconst result = await client.disks.listArtifacts('disk-uuid', {\n  path: '/documents/'\n});\nconsole.log(`Found ${result.artifacts.length} artifacts`);\nfor (const artifact of result.artifacts) {\n  console.log(`  - ${artifact.path}${artifact.filename}`);\n}\nconsole.log(`Subdirectories: ${result.directories.join(', ')}`);\n"
+          }
+        ]
+      }
+    },
     "/session": {
       "get": {
         "tags": [
@@ -774,6 +1154,88 @@
             "label": "JavaScript",
             "lang": "javascript",
             "source": "import { AcontextClient, MessagePart } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Send a message in Acontext format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    parts: [MessagePart.textPart('Hello!')]\n  },\n  { format: 'acontext' }\n);\n\n// Send a message in OpenAI format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    content: 'Hello from OpenAI format!'\n  },\n  { format: 'openai' }\n);\n"
+          }
+        ]
+      }
+    },
+    "/session/{session_id}/task": {
+      "get": {
+        "tags": [
+          "task"
+        ],
+        "summary": "Get tasks from session",
+        "description": "Get tasks from session with cursor-based pagination",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "description": "Session ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit of tasks to return, default 20. Max 200.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "time_desc",
+            "in": "query",
+            "description": "Order by created_at descending if true, ascending if false (default false)",
+            "schema": {
+              "type": "boolean",
+              "example": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/GetTasksOutput"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "label": "Python",
+            "lang": "python",
+            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get tasks from a session\ntasks = client.sessions.get_tasks(\n    session_id='session-uuid',\n    limit=20,\n    time_desc=False\n)\nprint(f\"Found {len(tasks.items)} tasks\")\nfor task in tasks.items:\n    print(f\"Task {task.id}: {task.status}\")\n\n# If there are more tasks, use the cursor for pagination\nif tasks.has_more:\n    next_tasks = client.sessions.get_tasks(\n        session_id='session-uuid',\n        limit=20,\n        cursor=tasks.next_cursor\n    )\n"
+          },
+          {
+            "label": "JavaScript",
+            "lang": "javascript",
+            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get tasks from a session\nconst tasks = await client.sessions.getTasks('session-uuid', {\n  limit: 20,\n  timeDesc: false\n});\nconsole.log(`Found ${tasks.items.length} tasks`);\nfor (const task of tasks.items) {\n  console.log(`Task ${task.id}: ${task.status}`);\n}\n\n// If there are more tasks, use the cursor for pagination\nif (tasks.hasMore) {\n  const nextTasks = await client.sessions.getTasks('session-uuid', {\n    limit: 20,\n    cursor: tasks.nextCursor\n  });\n}\n"
           }
         ]
       }
@@ -1940,6 +2402,81 @@
           }
         }
       },
+      "Artifact": {
+        "type": "object",
+        "properties": {
+          "disk_id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "meta": {
+            "type": "object"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "FileContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "\"text\", \"json\", \"csv\", \"code\""
+          },
+          "raw": {
+            "type": "string",
+            "description": "Raw text content"
+          }
+        }
+      },
+      "GetArtifactResp": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "$ref": "#/components/schemas/Artifact"
+          },
+          "public_url": {
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/FileContent"
+          }
+        }
+      },
+      "UpdateArtifactResp": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "$ref": "#/components/schemas/Artifact"
+          }
+        }
+      },
+      "ListArtifactsResp": {
+        "type": "object",
+        "properties": {
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Artifact"
+            }
+          },
+          "directories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ListDisksOutput": {
         "type": "object",
         "properties": {
@@ -2200,9 +2737,6 @@
             "items": {
               "$ref": "#/components/schemas/SearchResultBlockItem"
             }
-          },
-          "final_answer": {
-            "type": "string"
           }
         }
       },
@@ -2360,6 +2894,58 @@
             "type": "string"
           },
           "new_name": {
+            "type": "string"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "is_planning": {
+            "type": "boolean"
+          },
+          "space_digested": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "GetTasksOutput": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
             "type": "string"
           }
         }
