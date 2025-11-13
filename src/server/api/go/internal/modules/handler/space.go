@@ -285,8 +285,8 @@ type GetSemanticGlobalReq struct {
 
 // GetSemanticGlobal godoc
 //
-//	@Summary		Get semantic global
-//	@Description	Retrieve the semantic global (glob) search results for page/folder titles within a space by its ID
+//	@Summary		Get semantic glob
+//	@Description	Retrieve the semantic glob (glob) search results for page/folder titles within a space by its ID
 //	@Tags			space
 //	@Accept			json
 //	@Produce		json
@@ -297,7 +297,7 @@ type GetSemanticGlobalReq struct {
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=[]httpclient.SearchResultBlockItem}
 //	@Router			/space/{space_id}/semantic_glob [get]
-//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic global search\nresults = client.spaces.semantic_glob(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic global search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(`${block.title} - ${block.type}`);\n}\n","label":"JavaScript"}]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic glob search\nresults = client.spaces.semantic_glob(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic glob search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(`${block.title} - ${block.type}`);\n}\n","label":"JavaScript"}]
 func (h *SpaceHandler) GetSemanticGlobal(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("space_id"))
 	if err != nil {

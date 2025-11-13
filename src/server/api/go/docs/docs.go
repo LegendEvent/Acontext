@@ -2073,7 +2073,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve the semantic global (glob) search results for page/folder titles within a space by its ID",
+                "description": "Retrieve the semantic glob (glob) search results for page/folder titles within a space by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2083,7 +2083,7 @@ const docTemplate = `{
                 "tags": [
                     "space"
                 ],
-                "summary": "Get semantic global",
+                "summary": "Get semantic glob",
                 "parameters": [
                     {
                         "type": "string",
@@ -2142,12 +2142,12 @@ const docTemplate = `{
                     {
                         "label": "Python",
                         "lang": "python",
-                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic global search\nresults = client.spaces.semantic_glob(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n"
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic glob search\nresults = client.spaces.semantic_glob(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n"
                     },
                     {
                         "label": "JavaScript",
                         "lang": "javascript",
-                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic global search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(` + "`" + `${block.title} - ${block.type}` + "`" + `);\n}\n"
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic glob search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(` + "`" + `${block.title} - ${block.type}` + "`" + `);\n}\n"
                     }
                 ]
             }

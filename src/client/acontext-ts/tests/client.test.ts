@@ -123,7 +123,7 @@ describe('AcontextClient Integration Tests', () => {
     //   expect(result.cited_blocks).toBeInstanceOf(Array);
     // });
 
-    // test('should perform semantic global search', async () => {
+    // test('should perform semantic glob search', async () => {
     //   if (!createdSpaceId) {
     //     throw new Error('Space not created');
     //   }

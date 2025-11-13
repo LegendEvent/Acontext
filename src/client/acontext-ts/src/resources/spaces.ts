@@ -105,7 +105,7 @@ export class SpacesAPI {
   }
 
   /**
-   * Perform semantic global (glob) search for page/folder titles.
+   * Perform semantic glob (glob) search for page/folder titles.
    * 
    * Searches specifically for page/folder titles using semantic similarity,
    * similar to a semantic version of the glob command.

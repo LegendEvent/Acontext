@@ -68,12 +68,12 @@ def example_experience_search(client: AcontextClient, space_id: str) -> None:
 
 def example_semantic_glob(client: AcontextClient, space_id: str) -> None:
     """
-    Example: Semantic Global Search
+    Example: Semantic Glob Search
 
     Search for page/folder titles using semantic similarity.
     Like a semantic version of the 'glob' command.
     """
-    print("\n=== Semantic Global (Title Search) ===\n")
+    print("\n=== Semantic Glob (Title Search) ===\n")
 
     result = client.spaces.semantic_glob(
         space_id,
@@ -159,7 +159,7 @@ async def example_async_search() -> None:
         )
 
         print(f"Experience search: {len(exp_result.cited_blocks)} blocks")
-        print(f"Semantic global: {len(glob_result)} titles")
+        print(f"Semantic glob: {len(glob_result)} titles")
         print(f"Semantic grep: {len(grep_result)} content blocks")
 
 

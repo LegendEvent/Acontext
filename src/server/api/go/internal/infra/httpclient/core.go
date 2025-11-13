@@ -55,7 +55,7 @@ type SemanticGrepRequest struct {
 	Threshold *float64 `json:"threshold"`
 }
 
-// SemanticGlobalRequest represents the request for semantic global (glob)
+// SemanticGlobalRequest represents the request for semantic glob (glob)
 type SemanticGlobalRequest struct {
 	Query     string   `json:"query"`
 	Limit     int      `json:"limit"`

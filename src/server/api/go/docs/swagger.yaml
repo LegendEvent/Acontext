@@ -2186,7 +2186,7 @@ paths:
       consumes:
         - application/json
       description:
-        Retrieve the semantic global (glob) search results for page/folder
+        Retrieve the semantic glob (glob) search results for page/folder
         titles within a space by its ID
       parameters:
         - description: Space ID
@@ -2226,7 +2226,7 @@ paths:
                 type: object
       security:
         - BearerAuth: []
-      summary: Get semantic global
+      summary: Get semantic glob
       tags:
         - space
       x-code-samples:
@@ -2237,7 +2237,7 @@ paths:
 
             client = AcontextClient(api_key='sk_project_token')
 
-            # Semantic global search
+            # Semantic glob search
             results = client.spaces.semantic_glob(
                 space_id='space-uuid',
                 query='authentication and authorization pages',
@@ -2253,7 +2253,7 @@ paths:
 
             const client = new AcontextClient({ apiKey: 'sk_project_token' });
 
-            // Semantic global search
+            // Semantic glob search
             const results = await client.spaces.semanticGlobal('space-uuid', {
               query: 'authentication and authorization pages',
               limit: 10,

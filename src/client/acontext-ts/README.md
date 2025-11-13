@@ -156,7 +156,7 @@ if (result.final_answer) {
 }
 ```
 
-### 2. Semantic Global (Search page/folder titles)
+### 2. Semantic Glob (Search page/folder titles)
 
 Search for pages and folders by their titles using semantic similarity (like a semantic version of `glob`):
 
