@@ -4,7 +4,7 @@ title: "Search Skills"
 
 Experience Search is Acontext's advanced search abilty to find the revelant skills for Agent.
 It can use Embedding or Agent 
-to find relevant content and optionally generate synthesized answers from your knowledge spaces.
+to find relevant content from skills space.
 
 ## Quick Start
 
@@ -28,8 +28,6 @@ result = client.spaces.experience_search(
 # Access results
 for block in result.cited_blocks:
     print(f"{block.title} (distance: {block.distance})")
-
-# Note: final_answer is typically None in fast mode
 ```
 
 ```typescript TypeScript
@@ -51,8 +49,6 @@ const result = await client.spaces.experienceSearch('space-uuid', {
 for (const block of result.cited_blocks) {
     console.log(`${block.title} (distance: ${block.distance})`);
 }
-
-// Note: final_answer is typically null in fast mode
 ```
 </CodeGroup>
 
@@ -60,23 +56,23 @@ for (const block of result.cited_blocks) {
 
 <CardGroup cols={2}>
 <Card title="Fast Mode" icon="bolt" iconType="duotone">
-Quick semantic search using embeddings. Returns blocks only, no answers.
+Quick semantic search using embeddings.
 </Card>
 
 <Card title="Agentic Mode" icon="brain" iconType="duotone">
-Agentic iterative search with refinement. Can generate synthesized answers.
+Agentic iterative search using space agent.
 </Card>
 </CardGroup>
 
 ### Fast Mode Details
 - **Speed**: ~100-500ms response time
-- **Output**: Relevant blocks only (`final_answer` is null)
+- **Output**: Relevant blocks only
 - **Best for**: Simple lookups, known information retrieval
 - **Use when**: You need quickly search the skills and latency matters.
 
 ### Agentic Mode Details  
 - **Speed**: ~2-10s depending on iterations
-- **Output**: Blocks + optional synthesized answer
+- **Output**: Relevant blocks with iterative refinement
 - **Best for**: Complex queries, research, analysis
 - **Use when**: You want AI to deeply understand it's own past and go through its skills like human.
 
@@ -120,8 +116,7 @@ const result = await client.spaces.experienceSearch('space-uuid', {
         "tool_sops": [{"action": "...", "tool_name": "..."}]},
       "distance": 0.23
     }
-  ],
-  "final_answer": null  // null in fast mode, string in agentic mode
+  ]
 }
 ```
 
@@ -240,10 +235,6 @@ const prompt = buildPromptWithContext(
 // const response = await openai.chat.completions.create(...)
 ```
 </CodeGroup>
-
-<Note>
-In agentic mode, you can use the `final_answer` directly instead of building your own prompt, as the AI has already synthesized the information.
-</Note>
 
 ## Understanding SOP Blocks
 
