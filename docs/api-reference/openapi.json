@@ -1,2955 +1,2713 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Acontext API",
-    "description": "API for Acontext.",
-    "version": "1.0.0",
-    "contact": {},
-    "license": {
-      "name": "MIT"
-    }
+  "openapi" : "3.0.1",
+  "info" : {
+    "contact" : { },
+    "description" : "API for Acontext.",
+    "title" : "Acontext API",
+    "version" : "1.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:8029/api/v1",
-      "description": "Local development server"
-    },
-    {
-      "url": "https://api.acontext.com/api/v1",
-      "description": "Production server"
-    }
-  ],
-  "security": [
-    {
-      "BearerAuth": []
-    }
-  ],
-  "paths": {
-    "/disk": {
-      "get": {
-        "tags": [
-          "disk"
-        ],
-        "summary": "List disks",
-        "description": "List all disks under a project",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Limit of disks to return, default 20. Max 200.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "time_desc",
-            "in": "query",
-            "description": "Order by created_at descending if true, ascending if false (default false)",
-            "schema": {
-              "type": "boolean",
-              "example": false
-            }
+  "servers" : [ {
+    "url" : "/api/v1"
+  } ],
+  "paths" : {
+    "/disk" : {
+      "get" : {
+        "description" : "List all disks under a project",
+        "parameters" : [ {
+          "description" : "Limit of disks to return, default 20. Max 200.",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ListDisksOutput"
-                        }
-                      }
-                    }
-                  ]
+        }, {
+          "description" : "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+          "in" : "query",
+          "name" : "cursor",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order by created_at descending if true, ascending if false (default false)",
+          "in" : "query",
+          "name" : "time_desc",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_disk_get_200_response"
                 }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List disks\ndisks = client.disks.list(limit=10, time_desc=True)\nfor disk in disks.items:\n    print(f\"Disk: {disk.id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List disks\nconst disks = await client.disks.list({ limit: 10, timeDesc: true });\nfor (const disk of disks.items) {\n  console.log(`Disk: ${disk.id}`);\n}\n"
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "disk"
-        ],
-        "summary": "Create disk",
-        "description": "Create a disk group under a project",
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Disk"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a disk\ndisk = client.disks.create()\nprint(f\"Created disk: {disk.id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a disk\nconst disk = await client.disks.create();\nconsole.log(`Created disk: ${disk.id}`);\n"
-          }
-        ]
-      }
-    },
-    "/disk/{disk_id}": {
-      "delete": {
-        "tags": [
-          "disk"
-        ],
-        "summary": "Delete disk",
-        "description": "Delete a disk by its UUID",
-        "parameters": [
-          {
-            "name": "disk_id",
-            "in": "path",
-            "required": true,
-            "description": "Disk ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a disk\nclient.disks.delete(disk_id='disk-uuid')\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a disk\nawait client.disks.delete('disk-uuid');\n"
-          }
-        ]
-      }
-    },
-    "/disk/{disk_id}/artifact": {
-      "get": {
-        "tags": [
-          "artifact"
-        ],
-        "summary": "Get artifact",
-        "description": "Get artifact information by path and filename. Optionally include a presigned URL for downloading and parsed file content.",
-        "parameters": [
-          {
-            "name": "disk_id",
-            "in": "path",
-            "required": true,
-            "description": "Disk ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          },
-          {
-            "name": "file_path",
-            "in": "query",
-            "required": true,
-            "description": "File path including filename",
-            "schema": {
-              "type": "string"
-            },
-            "example": "/documents/report.pdf"
-          },
-          {
-            "name": "with_public_url",
-            "in": "query",
-            "description": "Whether to return public URL, default is true",
-            "schema": {
-              "type": "boolean"
-            },
-            "example": true
-          },
-          {
-            "name": "with_content",
-            "in": "query",
-            "description": "Whether to return parsed file content, default is true",
-            "schema": {
-              "type": "boolean"
-            },
-            "example": true
-          },
-          {
-            "name": "expire",
-            "in": "query",
-            "description": "Expire time in seconds for presigned URL (default: 3600)",
-            "schema": {
-              "type": "integer"
-            },
-            "example": 3600
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/GetArtifactResp"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get artifact information\nartifact_info = client.disks.get_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf',\n    with_public_url=True,\n    with_content=True,\n    expire=3600\n)\nprint(f\"Artifact: {artifact_info.artifact.filename}\")\nif artifact_info.public_url:\n    print(f\"Download URL: {artifact_info.public_url}\")\nif artifact_info.content:\n    print(f\"Content: {artifact_info.content.text[:100]}...\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get artifact information\nconst artifactInfo = await client.disks.getArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf',\n  withPublicUrl: true,\n  withContent: true,\n  expire: 3600\n});\nconsole.log(`Artifact: ${artifactInfo.artifact.filename}`);\nif (artifactInfo.publicUrl) {\n  console.log(`Download URL: ${artifactInfo.publicUrl}`);\n}\nif (artifactInfo.content) {\n  console.log(`Content: ${artifactInfo.content.text.substring(0, 100)}...`);\n}\n"
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "artifact"
-        ],
-        "summary": "Update artifact meta",
-        "description": "Update an artifact's metadata (user-defined metadata only)",
-        "parameters": [
-          {
-            "name": "disk_id",
-            "in": "path",
-            "required": true,
-            "description": "Disk ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "file_path",
-                  "meta"
-                ],
-                "properties": {
-                  "file_path": {
-                    "type": "string",
-                    "description": "File path including filename",
-                    "example": "/documents/report.pdf"
-                  },
-                  "meta": {
-                    "type": "string",
-                    "description": "Custom metadata as JSON string (system metadata '__artifact_info__' cannot be modified)"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/UpdateArtifactResp"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update artifact metadata\nartifact = client.disks.update_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf',\n    meta={'category': 'updated', 'reviewed': True, 'version': 2}\n)\nprint(f\"Updated artifact: {artifact.artifact.id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update artifact metadata\nconst artifact = await client.disks.updateArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf',\n  meta: { category: 'updated', reviewed: true, version: 2 }\n});\nconsole.log(`Updated artifact: ${artifact.artifact.id}`);\n"
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "artifact"
-        ],
-        "summary": "Upsert artifact",
-        "description": "Upload a file and create or update an artifact record under a disk",
-        "parameters": [
-          {
-            "name": "disk_id",
-            "in": "path",
-            "required": true,
-            "description": "Disk ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "file"
-                ],
-                "properties": {
-                  "file_path": {
-                    "type": "string",
-                    "description": "File path in the disk storage (optional, defaults to '/')"
-                  },
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "File to upload"
-                  },
-                  "meta": {
-                    "type": "string",
-                    "description": "Custom metadata as JSON string (optional, system metadata will be stored under '__artifact_info__' key)"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Artifact"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Upload a file to disk\nwith open('report.pdf', 'rb') as f:\n    artifact = client.disks.upload_artifact(\n        disk_id='disk-uuid',\n        file=f,\n        file_path='/documents/',\n        meta={'category': 'reports', 'year': 2024}\n    )\nprint(f\"Uploaded artifact: {artifact.id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\nimport fs from 'fs';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Upload a file to disk\nconst fileBuffer = fs.readFileSync('report.pdf');\nconst artifact = await client.disks.uploadArtifact('disk-uuid', {\n  file: fileBuffer,\n  filePath: '/documents/',\n  meta: { category: 'reports', year: 2024 }\n});\nconsole.log(`Uploaded artifact: ${artifact.id}`);\n"
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "artifact"
-        ],
-        "summary": "Delete artifact",
-        "description": "Delete an artifact by path and filename",
-        "parameters": [
-          {
-            "name": "disk_id",
-            "in": "path",
-            "required": true,
-            "description": "Disk ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          },
-          {
-            "name": "file_path",
-            "in": "query",
-            "required": true,
-            "description": "File path including filename",
-            "schema": {
-              "type": "string"
-            },
-            "example": "/documents/report.pdf"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete an artifact\nclient.disks.delete_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf'\n)\nprint('Artifact deleted successfully')\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete an artifact\nawait client.disks.deleteArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf'\n});\nconsole.log('Artifact deleted successfully');\n"
-          }
-        ]
-      }
-    },
-    "/disk/{disk_id}/artifact/ls": {
-      "get": {
-        "tags": [
-          "artifact"
-        ],
-        "summary": "List artifacts",
-        "description": "List artifacts in a specific path or all artifacts in a disk",
-        "parameters": [
-          {
-            "name": "disk_id",
-            "in": "path",
-            "required": true,
-            "description": "Disk ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          },
-          {
-            "name": "path",
-            "in": "query",
-            "description": "Path filter (optional, defaults to root '/')",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ListArtifactsResp"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List artifacts in a path\nresult = client.disks.list_artifacts(\n    disk_id='disk-uuid',\n    path='/documents/'\n)\nprint(f\"Found {len(result.artifacts)} artifacts\")\nfor artifact in result.artifacts:\n    print(f\"  - {artifact.path}{artifact.filename}\")\nprint(f\"Subdirectories: {', '.join(result.directories)}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List artifacts in a path\nconst result = await client.disks.listArtifacts('disk-uuid', {\n  path: '/documents/'\n});\nconsole.log(`Found ${result.artifacts.length} artifacts`);\nfor (const artifact of result.artifacts) {\n  console.log(`  - ${artifact.path}${artifact.filename}`);\n}\nconsole.log(`Subdirectories: ${result.directories.join(', ')}`);\n"
-          }
-        ]
-      }
-    },
-    "/session": {
-      "get": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Get sessions",
-        "description": "Get all sessions under a project, optionally filtered by space_id",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "query",
-            "description": "Space ID to filter sessions",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "not_connected",
-            "in": "query",
-            "description": "Filter sessions not connected to any space (default false)",
-            "schema": {
-              "type": "boolean",
-              "example": false
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Limit of sessions to return, default 20. Max 200.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "time_desc",
-            "in": "query",
-            "description": "Order by created_at descending if true, ascending if false (default false)",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ListSessionsOutput"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List sessions\nsessions = client.sessions.list(\n    space_id='space-uuid',\n    limit=20,\n    time_desc=True\n)\nfor session in sessions.items:\n    print(f\"{session.id}: {session.space_id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List sessions\nconst sessions = await client.sessions.list({\n  spaceId: 'space-uuid',\n  limit: 20,\n  timeDesc: true\n});\nfor (const session of sessions.items) {\n  console.log(`${session.id}: ${session.space_id}`);\n}\n"
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Create session",
-        "description": "Create a new session under a space",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSessionReq"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Session"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a session\nsession = client.sessions.create(\n    space_id='space-uuid',\n    configs={\"mode\": \"chat\"}\n)\nprint(f\"Created session: {session.id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a session\nconst session = await client.sessions.create({\n  spaceId: 'space-uuid',\n  configs: { mode: 'chat' }\n});\nconsole.log(`Created session: ${session.id}`);\n"
-          }
-        ]
-      }
-    },
-    "/session/{session_id}": {
-      "delete": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Delete session",
-        "description": "Delete a session by id",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a session\nclient.sessions.delete(session_id='session-uuid')\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a session\nawait client.sessions.delete('session-uuid');\n"
-          }
-        ]
-      }
-    },
-    "/session/{session_id}/configs": {
-      "get": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Get session configs",
-        "description": "Get session configs by id",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Session"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get session configs\nsession = client.sessions.get_configs(session_id='session-uuid')\nprint(session.configs)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get session configs\nconst session = await client.sessions.getConfigs('session-uuid');\nconsole.log(session.configs);\n"
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Update session configs",
-        "description": "Update session configs by id",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSessionConfigsReq"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update session configs\nclient.sessions.update_configs(\n    session_id='session-uuid',\n    configs={\"mode\": \"updated-mode\"}\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update session configs\nawait client.sessions.updateConfigs('session-uuid', {\n  configs: { mode: 'updated-mode' }\n});\n"
-          }
-        ]
-      }
-    },
-    "/session/{session_id}/connect_to_space": {
-      "post": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Connect session to space",
-        "description": "Connect a session to a space by id",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConnectToSpaceReq"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Connect session to space\nclient.sessions.connect_to_space(\n    session_id='session-uuid',\n    space_id='space-uuid'\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Connect session to space\nawait client.sessions.connectToSpace('session-uuid', {\n  spaceId: 'space-uuid'\n});\n"
-          }
-        ]
-      }
-    },
-    "/session/{session_id}/flush": {
-      "post": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Flush session",
-        "description": "Flush the session buffer for a given session",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/FlagResponse"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Flush session buffer\nresult = client.sessions.flush(session_id='session-uuid')\nprint(result.status)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Flush session buffer\nconst result = await client.sessions.flush('session-uuid');\nconsole.log(result.status);\n"
-          }
-        ]
-      }
-    },
-    "/session/{session_id}/messages": {
-      "get": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Get messages from session",
-        "description": "Get messages from session. Default format is openai. Can convert to acontext (original) or anthropic format.",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Limit of messages to return, default 20. Max 200.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "with_asset_public_url",
-            "in": "query",
-            "description": "Whether to return asset public url, default is true",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "description": "Format to convert messages to: acontext (original), openai (default), anthropic.",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "acontext",
-                "openai",
-                "anthropic"
-              ]
-            }
-          },
-          {
-            "name": "time_desc",
-            "in": "query",
-            "description": "Order by created_at descending if true, ascending if false (default false)",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/GetMessagesOutput"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get messages from session\nmessages = client.sessions.get_messages(\n    session_id='session-uuid',\n    limit=50,\n    format='acontext',\n    time_desc=True\n)\nfor message in messages.items:\n    print(f\"{message.role}: {message.parts}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get messages from session\nconst messages = await client.sessions.getMessages('session-uuid', {\n  limit: 50,\n  format: 'acontext',\n  timeDesc: true\n});\nfor (const message of messages.items) {\n  console.log(`${message.role}: ${JSON.stringify(message.parts)}`);\n}\n"
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "session"
-        ],
-        "summary": "Send message to session",
-        "description": "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field. The format parameter indicates the format of the input message (default: openai, same as GET). The blob field should be a complete message object: for openai, use OpenAI ChatCompletionMessageParam format (with role and content); for anthropic, use Anthropic MessageParam format (with role and content); for acontext (internal), use {role, parts} format.",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendMessageReq"
               }
             },
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "payload": {
-                    "type": "string",
-                    "description": "SendMessage payload (Content-Type: multipart/form-data)"
-                  },
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "When uploading files, the field name must correspond to parts[*].file_field."
-                  }
-                }
-              }
-            }
+            "description" : "OK"
           }
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Message"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\nfrom acontext.messages import build_acontext_message\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Send a message in Acontext format\nmessage = build_acontext_message(role='user', parts=['Hello!'])\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=message,\n    format='acontext'\n)\n\n# Send a message in OpenAI format\nopenai_message = {'role': 'user', 'content': 'Hello from OpenAI format!'}\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=openai_message,\n    format='openai'\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient, MessagePart } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Send a message in Acontext format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    parts: [MessagePart.textPart('Hello!')]\n  },\n  { format: 'acontext' }\n);\n\n// Send a message in OpenAI format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    content: 'Hello from OpenAI format!'\n  },\n  { format: 'openai' }\n);\n"
-          }
-        ]
-      }
-    },
-    "/session/{session_id}/task": {
-      "get": {
-        "tags": [
-          "task"
-        ],
-        "summary": "Get tasks from session",
-        "description": "Get tasks from session with cursor-based pagination",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "description": "Session ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Limit of tasks to return, default 20. Max 200.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "time_desc",
-            "in": "query",
-            "description": "Order by created_at descending if true, ascending if false (default false)",
-            "schema": {
-              "type": "boolean",
-              "example": false
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/GetTasksOutput"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get tasks from a session\ntasks = client.sessions.get_tasks(\n    session_id='session-uuid',\n    limit=20,\n    time_desc=False\n)\nprint(f\"Found {len(tasks.items)} tasks\")\nfor task in tasks.items:\n    print(f\"Task {task.id}: {task.status}\")\n\n# If there are more tasks, use the cursor for pagination\nif tasks.has_more:\n    next_tasks = client.sessions.get_tasks(\n        session_id='session-uuid',\n        limit=20,\n        cursor=tasks.next_cursor\n    )\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get tasks from a session\nconst tasks = await client.sessions.getTasks('session-uuid', {\n  limit: 20,\n  timeDesc: false\n});\nconsole.log(`Found ${tasks.items.length} tasks`);\nfor (const task of tasks.items) {\n  console.log(`Task ${task.id}: ${task.status}`);\n}\n\n// If there are more tasks, use the cursor for pagination\nif (tasks.hasMore) {\n  const nextTasks = await client.sessions.getTasks('session-uuid', {\n    limit: 20,\n    cursor: tasks.nextCursor\n  });\n}\n"
-          }
-        ]
-      }
-    },
-    "/space": {
-      "get": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Get spaces",
-        "description": "Get all spaces under a project",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Limit of spaces to return, default 20. Max 200.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Cursor for pagination. Use the cursor from the previous response to get the next page.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "time_desc",
-            "in": "query",
-            "description": "Order by created_at descending if true, ascending if false (default false)",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ListSpacesOutput"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List spaces\nspaces = client.spaces.list(limit=20, time_desc=True)\nfor space in spaces.items:\n    print(f\"{space.id}: {space.configs}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List spaces\nconst spaces = await client.spaces.list({ limit: 20, timeDesc: true });\nfor (const space of spaces.items) {\n  console.log(`${space.id}: ${JSON.stringify(space.configs)}`);\n}\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "List disks",
+        "tags" : [ "disk" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List disks\ndisks = client.disks.list(limit=10, time_desc=True)\nfor disk in disks.items:\n    print(f\"Disk: {disk.id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List disks\nconst disks = await client.disks.list({ limit: 10, timeDesc: true });\nfor (const disk of disks.items) {\n  console.log(`Disk: ${disk.id}`);\n}\n"
+        } ]
       },
-      "post": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Create space",
-        "description": "Create a new space under a project",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSpaceReq"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Space"
-                        }
-                      }
-                    }
-                  ]
+      "post" : {
+        "description" : "Create a disk group under a project",
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_disk_post_201_response"
                 }
               }
-            }
+            },
+            "description" : "Created"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a space\nspace = client.spaces.create(configs={\"name\": \"My Space\"})\nprint(f\"Created space: {space.id}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a space\nconst space = await client.spaces.create({ configs: { name: 'My Space' } });\nconsole.log(`Created space: ${space.id}`);\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Create disk",
+        "tags" : [ "disk" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a disk\ndisk = client.disks.create()\nprint(f\"Created disk: {disk.id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a disk\nconst disk = await client.disks.create();\nconsole.log(`Created disk: ${disk.id}`);\n"
+        } ]
       }
     },
-    "/space/{space_id}": {
-      "delete": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Delete space",
-        "description": "Delete a space by its ID",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
+    "/disk/{disk_id}" : {
+      "delete" : {
+        "description" : "Delete a disk by its UUID",
+        "parameters" : [ {
+          "description" : "Disk ID",
+          "in" : "path",
+          "name" : "disk_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
                 }
               }
-            }
+            },
+            "description" : "OK"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a space\nclient.spaces.delete(space_id='space-uuid')\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a space\nawait client.spaces.delete('space-uuid');\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Delete disk",
+        "tags" : [ "disk" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a disk\nclient.disks.delete(disk_id='disk-uuid')\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a disk\nawait client.disks.delete('disk-uuid');\n"
+        } ]
       }
     },
-    "/space/{space_id}/configs": {
-      "get": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Get space configs",
-        "description": "Retrieve the configurations of a space by its ID",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
+    "/disk/{disk_id}/artifact" : {
+      "delete" : {
+        "description" : "Delete an artifact by path and filename",
+        "parameters" : [ {
+          "description" : "Disk ID",
+          "in" : "path",
+          "name" : "disk_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Space"
-                        }
-                      }
-                    }
-                  ]
+        }, {
+          "description" : "File path including filename",
+          "in" : "query",
+          "name" : "file_path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
                 }
               }
-            }
+            },
+            "description" : "OK"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get space configs\nspace = client.spaces.get_configs(space_id='space-uuid')\nprint(space.configs)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get space configs\nconst space = await client.spaces.getConfigs('space-uuid');\nconsole.log(space.configs);\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Delete artifact",
+        "tags" : [ "artifact" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete an artifact\nclient.disks.delete_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf'\n)\nprint('Artifact deleted successfully')\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete an artifact\nawait client.disks.deleteArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf'\n});\nconsole.log('Artifact deleted successfully');\n"
+        } ]
       },
-      "put": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Update space configs",
-        "description": "Update the configurations of a space by its ID",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
+      "get" : {
+        "description" : "Get artifact information by path and filename. Optionally include a presigned URL for downloading and parsed file content.",
+        "parameters" : [ {
+          "description" : "Disk ID",
+          "in" : "path",
+          "name" : "disk_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSpaceConfigsReq"
-              }
-            }
+        }, {
+          "description" : "File path including filename",
+          "in" : "query",
+          "name" : "file_path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
           }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
+        }, {
+          "description" : "Whether to return public URL, default is true",
+          "in" : "query",
+          "name" : "with_public_url",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Whether to return parsed file content, default is true",
+          "in" : "query",
+          "name" : "with_content",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Expire time in seconds for presigned URL (default: 3600)",
+          "in" : "query",
+          "name" : "expire",
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_disk__disk_id__artifact_get_200_response"
                 }
               }
-            }
+            },
+            "description" : "OK"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update space configs\nclient.spaces.update_configs(\n    space_id='space-uuid',\n    configs={\"name\": \"Updated Name\", \"description\": \"New description\"}\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update space configs\nawait client.spaces.updateConfigs('space-uuid', {\n  configs: { name: 'Updated Name', description: 'New description' }\n});\n"
-          }
-        ]
-      }
-    },
-    "/space/{space_id}/experience_search": {
-      "get": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Get experience search",
-        "description": "Retrieve the experience search results for a given query within a space by its ID",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          },
-          {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "description": "Search query for page/folder titles",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Maximum number of results to return (1-50, default 10)",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "mode",
-            "in": "query",
-            "description": "Search mode: fast or agentic (default fast)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "semantic_threshold",
-            "in": "query",
-            "description": "Cosine distance threshold (0=identical, 2=opposite)",
-            "schema": {
-              "type": "number",
-              "format": "float"
-            }
-          },
-          {
-            "name": "max_iterations",
-            "in": "query",
-            "description": "Maximum number of iterations for agentic search (1-100, default 16)",
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/SpaceSearchResult"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Experience search\nresult = client.spaces.experience_search(\n    space_id='space-uuid',\n    query='How to implement authentication?',\n    limit=10,\n    mode='agentic',\n    max_iterations=20\n)\nfor block in result.cited_blocks:\n    print(f\"{block.title} (distance: {block.distance})\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Experience search\nconst result = await client.spaces.experienceSearch('space-uuid', {\n  query: 'How to implement authentication?',\n  limit: 10,\n  mode: 'agentic',\n  maxIterations: 20\n});\nfor (const block of result.cited_blocks) {\n  console.log(`${block.title} (distance: ${block.distance})`);\n}\n"
-          }
-        ]
-      }
-    },
-    "/space/{space_id}/semantic_glob": {
-      "get": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Get semantic glob",
-        "description": "Retrieve the semantic glob (glob) search results for page/folder titles within a space by its ID",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          },
-          {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "description": "Search query for page/folder titles",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Maximum number of results to return (1-50, default 10)",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "threshold",
-            "in": "query",
-            "description": "Cosine distance threshold (0=identical, 2=opposite)",
-            "schema": {
-              "type": "number",
-              "format": "float"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/SearchResultBlockItem"
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic glob search\nresults = client.spaces.semantic_glob(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic glob search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(`${block.title} - ${block.type}`);\n}\n"
-          }
-        ]
-      }
-    },
-    "/space/{space_id}/semantic_grep": {
-      "get": {
-        "tags": [
-          "space"
-        ],
-        "summary": "Get semantic grep",
-        "description": "Retrieve the semantic grep search results for content blocks within a space by its ID",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
-            }
-          },
-          {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "description": "Search query for content blocks",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Maximum number of results to return (1-50, default 10)",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "threshold",
-            "in": "query",
-            "description": "Cosine distance threshold (0=identical, 2=opposite)",
-            "schema": {
-              "type": "number",
-              "format": "float"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/SearchResultBlockItem"
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic grep search\nresults = client.spaces.semantic_grep(\n    space_id='space-uuid',\n    query='JWT token validation code examples',\n    limit=15,\n    threshold=0.7\n)\nfor block in results:\n    print(f\"{block.title} - distance: {block.distance}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic grep search\nconst results = await client.spaces.semanticGrep('space-uuid', {\n  query: 'JWT token validation code examples',\n  limit: 15,\n  threshold: 0.7\n});\nfor (const block of results) {\n  console.log(`${block.title} - distance: ${block.distance}`);\n}\n"
-          }
-        ]
-      }
-    },
-    "/space/{space_id}/block": {
-      "get": {
-        "tags": [
-          "block"
-        ],
-        "summary": "List blocks",
-        "description": "List blocks in a space. Use type query parameter to filter by block type (page, folder, text, sop, etc.). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "type",
-            "in": "query",
-            "description": "Block type",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "page",
-                "folder",
-                "text",
-                "sop"
-              ]
-            }
-          },
-          {
-            "name": "parent_id",
-            "in": "query",
-            "description": "Parent ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/Block"
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List blocks\nblocks = client.blocks.list(\n    space_id='space-uuid',\n    parent_id='parent-uuid',\n    block_type='page'\n)\nfor block in blocks:\n    print(f\"{block.id}: {block.title}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List blocks\nconst blocks = await client.blocks.list('space-uuid', {\n  parentId: 'parent-uuid',\n  type: 'page'\n});\nfor (const block of blocks) {\n  console.log(`${block.id}: ${block.title}`);\n}\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get artifact",
+        "tags" : [ "artifact" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get artifact information\nartifact_info = client.disks.get_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf',\n    with_public_url=True,\n    with_content=True,\n    expire=3600\n)\nprint(f\"Artifact: {artifact_info.artifact.filename}\")\nif artifact_info.public_url:\n    print(f\"Download URL: {artifact_info.public_url}\")\nif artifact_info.content:\n    print(f\"Content: {artifact_info.content.text[:100]}...\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get artifact information\nconst artifactInfo = await client.disks.getArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf',\n  withPublicUrl: true,\n  withContent: true,\n  expire: 3600\n});\nconsole.log(`Artifact: ${artifactInfo.artifact.filename}`);\nif (artifactInfo.publicUrl) {\n  console.log(`Download URL: ${artifactInfo.publicUrl}`);\n}\nif (artifactInfo.content) {\n  console.log(`Content: ${artifactInfo.content.text.substring(0, 100)}...`);\n}\n"
+        } ]
       },
-      "post": {
-        "tags": [
-          "block"
-        ],
-        "summary": "Create block",
-        "description": "Create a new block (supports all types: page, folder, text, sop, etc.). For page and folder types, parent_id is optional. For other types, parent_id is required.",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+      "post" : {
+        "description" : "Upload a file and create or update an artifact record under a disk",
+        "parameters" : [ {
+          "description" : "Disk ID",
+          "in" : "path",
+          "name" : "disk_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBlockReq"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/_disk__disk_id__artifact_post_request"
               }
             }
-          }
+          },
+          "required" : true
         },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/InsertBlockResponse"
-                        }
-                      }
-                    }
-                  ]
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_disk__disk_id__artifact_post_201_response"
                 }
               }
-            }
+            },
+            "description" : "Created"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a page\npage = client.blocks.create(\n    space_id='space-uuid',\n    block_type='page',\n    title='My Page'\n)\n\n# Create a text block under the page\ntext_block = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=page['id'],\n    block_type='text',\n    title='Content',\n    props={\"text\": \"Block content here\"}\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a page\nconst page = await client.blocks.create('space-uuid', {\n  blockType: 'page',\n  title: 'My Page'\n});\n\n// Create a text block under the page\nconst textBlock = await client.blocks.create('space-uuid', {\n  parentId: page.id,\n  blockType: 'text',\n  title: 'Content',\n  props: { text: 'Block content here' }\n});\n"
-          }
-        ]
-      }
-    },
-    "/space/{space_id}/block/{block_id}": {
-      "delete": {
-        "tags": [
-          "block"
-        ],
-        "summary": "Delete block",
-        "description": "Delete a block by its ID (works for all block types: page, folder, text, sop, etc.)",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "block_id",
-            "in": "path",
-            "required": true,
-            "description": "Block ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a block\nclient.blocks.delete(space_id='space-uuid', block_id='block-uuid')\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a block\nawait client.blocks.delete('space-uuid', 'block-uuid');\n"
-          }
-        ]
-      }
-    },
-    "/space/{space_id}/block/{block_id}/properties": {
-      "get": {
-        "tags": [
-          "block"
-        ],
-        "summary": "Get block properties",
-        "description": "Get a block's properties by its ID (works for all block types: page, folder, text, sop, etc.)",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "block_id",
-            "in": "path",
-            "required": true,
-            "description": "Block ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Block"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get block properties\nblock = client.blocks.get_properties(\n    space_id='space-uuid',\n    block_id='block-uuid'\n)\nprint(f\"{block.title}: {block.props}\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get block properties\nconst block = await client.blocks.getProperties('space-uuid', 'block-uuid');\nconsole.log(`${block.title}: ${JSON.stringify(block.props)}`);\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Upsert artifact",
+        "tags" : [ "artifact" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Upload a file to disk\nwith open('report.pdf', 'rb') as f:\n    artifact = client.disks.upload_artifact(\n        disk_id='disk-uuid',\n        file=f,\n        file_path='/documents/',\n        meta={'category': 'reports', 'year': 2024}\n    )\nprint(f\"Uploaded artifact: {artifact.id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\nimport fs from 'fs';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Upload a file to disk\nconst fileBuffer = fs.readFileSync('report.pdf');\nconst artifact = await client.disks.uploadArtifact('disk-uuid', {\n  file: fileBuffer,\n  filePath: '/documents/',\n  meta: { category: 'reports', year: 2024 }\n});\nconsole.log(`Uploaded artifact: ${artifact.id}`);\n"
+        } ]
       },
-      "put": {
-        "tags": [
-          "block"
-        ],
-        "summary": "Update block properties",
-        "description": "Update a block's title and properties by its ID (works for all block types: page, folder, text, sop, etc.)",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "block_id",
-            "in": "path",
-            "required": true,
-            "description": "Block ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+      "put" : {
+        "description" : "Update an artifact's metadata (user-defined metadata only)",
+        "parameters" : [ {
+          "description" : "Disk ID",
+          "in" : "path",
+          "name" : "disk_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBlockPropertiesReq"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.UpdateArtifactReq"
               }
             }
-          }
+          },
+          "description" : "Update artifact request",
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_disk__disk_id__artifact_put_200_response"
                 }
               }
-            }
+            },
+            "description" : "OK"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block properties\nclient.blocks.update_properties(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    title='Updated Title',\n    props={\"text\": \"Updated content\"}\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block properties\nawait client.blocks.updateProperties('space-uuid', 'block-uuid', {\n  title: 'Updated Title',\n  props: { text: 'Updated content' }\n});\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Update artifact meta",
+        "tags" : [ "artifact" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update artifact metadata\nartifact = client.disks.update_artifact(\n    disk_id='disk-uuid',\n    file_path='/documents/report.pdf',\n    meta={'category': 'updated', 'reviewed': True, 'version': 2}\n)\nprint(f\"Updated artifact: {artifact.artifact.id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update artifact metadata\nconst artifact = await client.disks.updateArtifact('disk-uuid', {\n  filePath: '/documents/report.pdf',\n  meta: { category: 'updated', reviewed: true, version: 2 }\n});\nconsole.log(`Updated artifact: ${artifact.artifact.id}`);\n"
+        } ],
+        "x-codegen-request-body-name" : "request"
       }
     },
-    "/space/{space_id}/block/{block_id}/move": {
-      "put": {
-        "tags": [
-          "block"
-        ],
-        "summary": "Move block",
-        "description": "Move block by updating its parent_id. Works for all block types (page, folder, text, sop, etc.). For page and folder types, parent_id can be null (root level).",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "block_id",
-            "in": "path",
-            "required": true,
-            "description": "Block ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+    "/disk/{disk_id}/artifact/ls" : {
+      "get" : {
+        "description" : "List artifacts in a specific path or all artifacts in a disk",
+        "parameters" : [ {
+          "description" : "Disk ID",
+          "in" : "path",
+          "name" : "disk_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MoveBlockReq"
-              }
-            }
+        }, {
+          "description" : "Path filter (optional, defaults to root '/')",
+          "in" : "query",
+          "name" : "path",
+          "schema" : {
+            "type" : "string"
           }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_disk__disk_id__artifact_ls_get_200_response"
                 }
               }
-            }
+            },
+            "description" : "OK"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Move block to a different parent\nclient.blocks.move(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    parent_id='new-parent-uuid'\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Move block to a different parent\nawait client.blocks.move('space-uuid', 'block-uuid', {\n  parentId: 'new-parent-uuid'\n});\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "List artifacts",
+        "tags" : [ "artifact" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List artifacts in a path\nresult = client.disks.list_artifacts(\n    disk_id='disk-uuid',\n    path='/documents/'\n)\nprint(f\"Found {len(result.artifacts)} artifacts\")\nfor artifact in result.artifacts:\n    print(f\"  - {artifact.path}{artifact.filename}\")\nprint(f\"Subdirectories: {', '.join(result.directories)}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List artifacts in a path\nconst result = await client.disks.listArtifacts('disk-uuid', {\n  path: '/documents/'\n});\nconsole.log(`Found ${result.artifacts.length} artifacts`);\nfor (const artifact of result.artifacts) {\n  console.log(`  - ${artifact.path}${artifact.filename}`);\n}\nconsole.log(`Subdirectories: ${result.directories.join(', ')}`);\n"
+        } ]
       }
     },
-    "/space/{space_id}/block/{block_id}/sort": {
-      "put": {
-        "tags": [
-          "block"
-        ],
-        "summary": "Update block sort",
-        "description": "Update block sort value (works for all block types: page, folder, text, sop, etc.)",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "required": true,
-            "description": "Space ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "block_id",
-            "in": "path",
-            "required": true,
-            "description": "Block ID",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+    "/session" : {
+      "get" : {
+        "description" : "Get all sessions under a project, optionally filtered by space_id",
+        "parameters" : [ {
+          "description" : "Space ID to filter sessions",
+          "in" : "query",
+          "name" : "space_id",
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
           }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBlockSortReq"
-              }
-            }
+        }, {
+          "description" : "Filter sessions not connected to any space (default false)",
+          "in" : "query",
+          "name" : "not_connected",
+          "schema" : {
+            "type" : "boolean"
           }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Response"
+        }, {
+          "description" : "Limit of sessions to return, default 20. Max 200.",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+          "in" : "query",
+          "name" : "cursor",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order by created_at descending if true, ascending if false (default false)",
+          "in" : "query",
+          "name" : "time_desc",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session_get_200_response"
                 }
               }
-            }
+            },
+            "description" : "OK"
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block sort order\nclient.blocks.update_sort(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    sort=5\n)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block sort order\nawait client.blocks.updateSort('space-uuid', 'block-uuid', {\n  sort: 5\n});\n"
-          }
-        ]
-      }
-    },
-    "/tool/name": {
-      "get": {
-        "tags": [
-          "tool"
-        ],
-        "summary": "Get tool names",
-        "description": "Get all tool names within a project",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/ToolReferenceData"
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get all tool names\ntools = client.tools.list()\nfor tool in tools:\n    print(f\"{tool.name}: {tool.sop_count} SOPs\")\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get all tool names\nconst tools = await client.tools.list();\nfor (const tool of tools) {\n  console.log(`${tool.name}: ${tool.sop_count} SOPs`);\n}\n"
-          }
-        ]
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get sessions",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List sessions\nsessions = client.sessions.list(\n    space_id='space-uuid',\n    limit=20,\n    time_desc=True\n)\nfor session in sessions.items:\n    print(f\"{session.id}: {session.space_id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List sessions\nconst sessions = await client.sessions.list({\n  spaceId: 'space-uuid',\n  limit: 20,\n  timeDesc: true\n});\nfor (const session of sessions.items) {\n  console.log(`${session.id}: ${session.space_id}`);\n}\n"
+        } ]
       },
-      "put": {
-        "tags": [
-          "tool"
-        ],
-        "summary": "Rename tool names",
-        "description": "Rename one or more tool names within a project",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RenameToolNameReq"
+      "post" : {
+        "description" : "Create a new session under a space",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.CreateSessionReq"
               }
             }
-          }
+          },
+          "description" : "CreateSession payload",
+          "required" : true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/FlagResponse"
-                        }
-                      }
-                    }
-                  ]
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session_post_201_response"
                 }
               }
+            },
+            "description" : "Created"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Create session",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a session\nsession = client.sessions.create(\n    space_id='space-uuid',\n    configs={\"mode\": \"chat\"}\n)\nprint(f\"Created session: {session.id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a session\nconst session = await client.sessions.create({\n  spaceId: 'space-uuid',\n  configs: { mode: 'chat' }\n});\nconsole.log(`Created session: ${session.id}`);\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/session/{session_id}" : {
+      "delete" : {
+        "description" : "Delete a session by id",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Delete session",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a session\nclient.sessions.delete(session_id='session-uuid')\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a session\nawait client.sessions.delete('session-uuid');\n"
+        } ]
+      }
+    },
+    "/session/{session_id}/configs" : {
+      "get" : {
+        "description" : "Get session configs by id",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session_post_201_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get session configs",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get session configs\nsession = client.sessions.get_configs(session_id='session-uuid')\nprint(session.configs)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get session configs\nconst session = await client.sessions.getConfigs('session-uuid');\nconsole.log(session.configs);\n"
+        } ]
+      },
+      "put" : {
+        "description" : "Update session configs by id",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.UpdateSessionConfigsReq"
+              }
+            }
+          },
+          "description" : "UpdateSessionConfigs payload",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Update session configs",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update session configs\nclient.sessions.update_configs(\n    session_id='session-uuid',\n    configs={\"mode\": \"updated-mode\"}\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update session configs\nawait client.sessions.updateConfigs('session-uuid', {\n  configs: { mode: 'updated-mode' }\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/session/{session_id}/connect_to_space" : {
+      "post" : {
+        "description" : "Connect a session to a space by id",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.ConnectToSpaceReq"
+              }
+            }
+          },
+          "description" : "ConnectToSpace payload",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Connect session to space",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Connect session to space\nclient.sessions.connect_to_space(\n    session_id='session-uuid',\n    space_id='space-uuid'\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Connect session to space\nawait client.sessions.connectToSpace('session-uuid', {\n  spaceId: 'space-uuid'\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/session/{session_id}/flush" : {
+      "post" : {
+        "description" : "Flush the session buffer for a given session",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session__session_id__flush_post_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Flush session",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Flush session buffer\nresult = client.sessions.flush(session_id='session-uuid')\nprint(result.status)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Flush session buffer\nconst result = await client.sessions.flush('session-uuid');\nconsole.log(result.status);\n"
+        } ]
+      }
+    },
+    "/session/{session_id}/messages" : {
+      "get" : {
+        "description" : "Get messages from session. Default format is openai. Can convert to acontext (original) or anthropic format.",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Limit of messages to return, default 20. Max 200.",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+          "in" : "query",
+          "name" : "cursor",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Whether to return asset public url, default is true",
+          "in" : "query",
+          "name" : "with_asset_public_url",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Format to convert messages to: acontext (original), openai (default), anthropic.",
+          "in" : "query",
+          "name" : "format",
+          "schema" : {
+            "enum" : [ "acontext", "openai", "anthropic" ],
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order by created_at descending if true, ascending if false (default false)",
+          "in" : "query",
+          "name" : "time_desc",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session__session_id__messages_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get messages from session",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get messages from session\nmessages = client.sessions.get_messages(\n    session_id='session-uuid',\n    limit=50,\n    format='acontext',\n    time_desc=True\n)\nfor message in messages.items:\n    print(f\"{message.role}: {message.parts}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get messages from session\nconst messages = await client.sessions.getMessages('session-uuid', {\n  limit: 50,\n  format: 'acontext',\n  timeDesc: true\n});\nfor (const message of messages.items) {\n  console.log(`${message.role}: ${JSON.stringify(message.parts)}`);\n}\n"
+        } ]
+      },
+      "post" : {
+        "description" : "Supports JSON and multipart/form-data. In multipart mode: the payload is a JSON string placed in a form field. The format parameter indicates the format of the input message (default: openai, same as GET). The blob field should be a complete message object: for openai, use OpenAI ChatCompletionMessageParam format (with role and content); for anthropic, use Anthropic MessageParam format (with role and content); for acontext (internal), use {role, parts} format.",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/_session__session_id__messages_post_request"
+              }
+            },
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/_session__session_id__messages_post_request"
+              }
             }
           }
         },
-        "x-code-samples": [
-          {
-            "label": "Python",
-            "lang": "python",
-            "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Rename tool names\nresult = client.tools.rename([\n    {\"old_name\": \"old_tool_name\", \"new_name\": \"new_tool_name\"}\n])\nprint(result.status)\n"
-          },
-          {
-            "label": "JavaScript",
-            "lang": "javascript",
-            "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Rename tool names\nconst result = await client.tools.rename([\n  { oldName: 'old_tool_name', newName: 'new_tool_name' }\n]);\nconsole.log(result.status);\n"
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session__session_id__messages_post_201_response"
+                }
+              }
+            },
+            "description" : "Created"
           }
-        ]
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Send message to session",
+        "tags" : [ "session" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\nfrom acontext.messages import build_acontext_message\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Send a message in Acontext format\nmessage = build_acontext_message(role='user', parts=['Hello!'])\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=message,\n    format='acontext'\n)\n\n# Send a message in OpenAI format\nopenai_message = {'role': 'user', 'content': 'Hello from OpenAI format!'}\nclient.sessions.send_message(\n    session_id='session-uuid',\n    blob=openai_message,\n    format='openai'\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient, MessagePart } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Send a message in Acontext format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    parts: [MessagePart.textPart('Hello!')]\n  },\n  { format: 'acontext' }\n);\n\n// Send a message in OpenAI format\nawait client.sessions.sendMessage(\n  'session-uuid',\n  {\n    role: 'user',\n    content: 'Hello from OpenAI format!'\n  },\n  { format: 'openai' }\n);\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/session/{session_id}/task" : {
+      "get" : {
+        "description" : "Get tasks from session with cursor-based pagination",
+        "parameters" : [ {
+          "description" : "Session ID",
+          "in" : "path",
+          "name" : "session_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Limit of tasks to return, default 20. Max 200.",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+          "in" : "query",
+          "name" : "cursor",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order by created_at descending if true, ascending if false (default false)",
+          "in" : "query",
+          "name" : "time_desc",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session__session_id__task_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get tasks from session",
+        "tags" : [ "task" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get tasks from a session\ntasks = client.sessions.get_tasks(\n    session_id='session-uuid',\n    limit=20,\n    time_desc=False\n)\nprint(f\"Found {len(tasks.items)} tasks\")\nfor task in tasks.items:\n    print(f\"Task {task.id}: {task.status}\")\n\n# If there are more tasks, use the cursor for pagination\nif tasks.has_more:\n    next_tasks = client.sessions.get_tasks(\n        session_id='session-uuid',\n        limit=20,\n        cursor=tasks.next_cursor\n    )\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get tasks from a session\nconst tasks = await client.sessions.getTasks('session-uuid', {\n  limit: 20,\n  timeDesc: false\n});\nconsole.log(`Found ${tasks.items.length} tasks`);\nfor (const task of tasks.items) {\n  console.log(`Task ${task.id}: ${task.status}`);\n}\n\n// If there are more tasks, use the cursor for pagination\nif (tasks.hasMore) {\n  const nextTasks = await client.sessions.getTasks('session-uuid', {\n    limit: 20,\n    cursor: tasks.nextCursor\n  });\n}\n"
+        } ]
+      }
+    },
+    "/space" : {
+      "get" : {
+        "description" : "Get all spaces under a project",
+        "parameters" : [ {
+          "description" : "Limit of spaces to return, default 20. Max 200.",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cursor for pagination. Use the cursor from the previous response to get the next page.",
+          "in" : "query",
+          "name" : "cursor",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order by created_at descending if true, ascending if false (default false)",
+          "in" : "query",
+          "name" : "time_desc",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get spaces",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List spaces\nspaces = client.spaces.list(limit=20, time_desc=True)\nfor space in spaces.items:\n    print(f\"{space.id}: {space.configs}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List spaces\nconst spaces = await client.spaces.list({ limit: 20, timeDesc: true });\nfor (const space of spaces.items) {\n  console.log(`${space.id}: ${JSON.stringify(space.configs)}`);\n}\n"
+        } ]
+      },
+      "post" : {
+        "description" : "Create a new space under a project",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.CreateSpaceReq"
+              }
+            }
+          },
+          "description" : "CreateSpace payload",
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space_post_201_response"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Create space",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a space\nspace = client.spaces.create(configs={\"name\": \"My Space\"})\nprint(f\"Created space: {space.id}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a space\nconst space = await client.spaces.create({ configs: { name: 'My Space' } });\nconsole.log(`Created space: ${space.id}`);\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/space/{space_id}" : {
+      "delete" : {
+        "description" : "Delete a space by its ID",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Delete space",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a space\nclient.spaces.delete(space_id='space-uuid')\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a space\nawait client.spaces.delete('space-uuid');\n"
+        } ]
+      }
+    },
+    "/space/{space_id}/block" : {
+      "get" : {
+        "description" : "List blocks in a space. Use type query parameter to filter by block type (page, folder, text, sop, etc.). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Block type",
+          "in" : "query",
+          "name" : "type",
+          "schema" : {
+            "enum" : [ "page", "folder", "text", "sop" ],
+            "type" : "string"
+          }
+        }, {
+          "description" : "Parent ID",
+          "in" : "query",
+          "name" : "parent_id",
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space__space_id__block_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "List blocks",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# List blocks\nblocks = client.blocks.list(\n    space_id='space-uuid',\n    parent_id='parent-uuid',\n    block_type='page'\n)\nfor block in blocks:\n    print(f\"{block.id}: {block.title}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// List blocks\nconst blocks = await client.blocks.list('space-uuid', {\n  parentId: 'parent-uuid',\n  type: 'page'\n});\nfor (const block of blocks) {\n  console.log(`${block.id}: ${block.title}`);\n}\n"
+        } ]
+      },
+      "post" : {
+        "description" : "Create a new block (supports all types: page, folder, text, sop, etc.). For page and folder types, parent_id is optional. For other types, parent_id is required.",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.CreateBlockReq"
+              }
+            }
+          },
+          "description" : "CreateBlock payload",
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space__space_id__block_post_201_response"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Create block",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a page\npage = client.blocks.create(\n    space_id='space-uuid',\n    block_type='page',\n    title='My Page'\n)\n\n# Create a text block under the page\ntext_block = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=page['id'],\n    block_type='text',\n    title='Content',\n    props={\"text\": \"Block content here\"}\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a page\nconst page = await client.blocks.create('space-uuid', {\n  blockType: 'page',\n  title: 'My Page'\n});\n\n// Create a text block under the page\nconst textBlock = await client.blocks.create('space-uuid', {\n  parentId: page.id,\n  blockType: 'text',\n  title: 'Content',\n  props: { text: 'Block content here' }\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/space/{space_id}/block/{block_id}" : {
+      "delete" : {
+        "description" : "Delete a block by its ID (works for all block types: page, folder, text, sop, etc.)",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Block ID",
+          "in" : "path",
+          "name" : "block_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Delete block",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Delete a block\nclient.blocks.delete(space_id='space-uuid', block_id='block-uuid')\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Delete a block\nawait client.blocks.delete('space-uuid', 'block-uuid');\n"
+        } ]
+      }
+    },
+    "/space/{space_id}/block/{block_id}/move" : {
+      "put" : {
+        "description" : "Move block by updating its parent_id. Works for all block types (page, folder, text, sop, etc.). For page and folder types, parent_id can be null (root level).",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Block ID",
+          "in" : "path",
+          "name" : "block_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.MoveBlockReq"
+              }
+            }
+          },
+          "description" : "MoveBlock payload",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Move block",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Move block to a different parent\nclient.blocks.move(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    parent_id='new-parent-uuid'\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Move block to a different parent\nawait client.blocks.move('space-uuid', 'block-uuid', {\n  parentId: 'new-parent-uuid'\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/space/{space_id}/block/{block_id}/properties" : {
+      "get" : {
+        "description" : "Get a block's properties by its ID (works for all block types: page, folder, text, sop, etc.)",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Block ID",
+          "in" : "path",
+          "name" : "block_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space__space_id__block__block_id__properties_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get block properties",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get block properties\nblock = client.blocks.get_properties(\n    space_id='space-uuid',\n    block_id='block-uuid'\n)\nprint(f\"{block.title}: {block.props}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get block properties\nconst block = await client.blocks.getProperties('space-uuid', 'block-uuid');\nconsole.log(`${block.title}: ${JSON.stringify(block.props)}`);\n"
+        } ]
+      },
+      "put" : {
+        "description" : "Update a block's title and properties by its ID (works for all block types: page, folder, text, sop, etc.)",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Block ID",
+          "in" : "path",
+          "name" : "block_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.UpdateBlockPropertiesReq"
+              }
+            }
+          },
+          "description" : "UpdateBlockProperties payload",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Update block properties",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block properties\nclient.blocks.update_properties(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    title='Updated Title',\n    props={\"text\": \"Updated content\"}\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block properties\nawait client.blocks.updateProperties('space-uuid', 'block-uuid', {\n  title: 'Updated Title',\n  props: { text: 'Updated content' }\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/space/{space_id}/block/{block_id}/sort" : {
+      "put" : {
+        "description" : "Update block sort value (works for all block types: page, folder, text, sop, etc.)",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Block ID",
+          "in" : "path",
+          "name" : "block_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.UpdateBlockSortReq"
+              }
+            }
+          },
+          "description" : "UpdateBlockSort payload",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Update block sort",
+        "tags" : [ "block" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update block sort order\nclient.blocks.update_sort(\n    space_id='space-uuid',\n    block_id='block-uuid',\n    sort=5\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update block sort order\nawait client.blocks.updateSort('space-uuid', 'block-uuid', {\n  sort: 5\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/space/{space_id}/configs" : {
+      "get" : {
+        "description" : "Retrieve the configurations of a space by its ID",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space_post_201_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get space configs",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get space configs\nspace = client.spaces.get_configs(space_id='space-uuid')\nprint(space.configs)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get space configs\nconst space = await client.spaces.getConfigs('space-uuid');\nconsole.log(space.configs);\n"
+        } ]
+      },
+      "put" : {
+        "description" : "Update the configurations of a space by its ID",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.UpdateSpaceConfigsReq"
+              }
+            }
+          },
+          "description" : "UpdateConfigs payload",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Update space configs",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Update space configs\nclient.spaces.update_configs(\n    space_id='space-uuid',\n    configs={\"name\": \"Updated Name\", \"description\": \"New description\"}\n)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Update space configs\nawait client.spaces.updateConfigs('space-uuid', {\n  configs: { name: 'Updated Name', description: 'New description' }\n});\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
+      }
+    },
+    "/space/{space_id}/experience_search" : {
+      "get" : {
+        "description" : "Retrieve the experience search results for a given query within a space by its ID",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Search query for page/folder titles",
+          "in" : "query",
+          "name" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Maximum number of results to return (1-50, default 10)",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Search mode: fast or agentic (default fast)",
+          "in" : "query",
+          "name" : "mode",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Cosine distance threshold (0=identical, 2=opposite)",
+          "in" : "query",
+          "name" : "semantic_threshold",
+          "schema" : {
+            "format" : "float64",
+            "type" : "number"
+          }
+        }, {
+          "description" : "Maximum number of iterations for agentic search (1-100, default 16)",
+          "in" : "query",
+          "name" : "max_iterations",
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space__space_id__experience_search_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get experience search",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Experience search\nresult = client.spaces.experience_search(\n    space_id='space-uuid',\n    query='How to implement authentication?',\n    limit=10,\n    mode='agentic',\n    max_iterations=20\n)\nfor block in result.cited_blocks:\n    print(f\"{block.title} (distance: {block.distance})\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Experience search\nconst result = await client.spaces.experienceSearch('space-uuid', {\n  query: 'How to implement authentication?',\n  limit: 10,\n  mode: 'agentic',\n  maxIterations: 20\n});\nfor (const block of result.cited_blocks) {\n  console.log(`${block.title} (distance: ${block.distance})`);\n}\n"
+        } ]
+      }
+    },
+    "/space/{space_id}/semantic_glob" : {
+      "get" : {
+        "description" : "Retrieve the semantic glob (glob) search results for page/folder titles within a space by its ID",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Search query for page/folder titles",
+          "in" : "query",
+          "name" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Maximum number of results to return (1-50, default 10)",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cosine distance threshold (0=identical, 2=opposite)",
+          "in" : "query",
+          "name" : "threshold",
+          "schema" : {
+            "format" : "float64",
+            "type" : "number"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space__space_id__semantic_glob_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get semantic glob",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic glob search\nresults = client.spaces.semantic_glob(\n    space_id='space-uuid',\n    query='authentication and authorization pages',\n    limit=10,\n    threshold=1.0\n)\nfor block in results:\n    print(f\"{block.title} - {block.type}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic glob search\nconst results = await client.spaces.semanticGlobal('space-uuid', {\n  query: 'authentication and authorization pages',\n  limit: 10,\n  threshold: 1.0\n});\nfor (const block of results) {\n  console.log(`${block.title} - ${block.type}`);\n}\n"
+        } ]
+      }
+    },
+    "/space/{space_id}/semantic_grep" : {
+      "get" : {
+        "description" : "Retrieve the semantic grep search results for content blocks within a space by its ID",
+        "parameters" : [ {
+          "description" : "Space ID",
+          "in" : "path",
+          "name" : "space_id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Search query for content blocks",
+          "in" : "query",
+          "name" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Maximum number of results to return (1-50, default 10)",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cosine distance threshold (0=identical, 2=opposite)",
+          "in" : "query",
+          "name" : "threshold",
+          "schema" : {
+            "format" : "float64",
+            "type" : "number"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_space__space_id__semantic_glob_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get semantic grep",
+        "tags" : [ "space" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Semantic grep search\nresults = client.spaces.semantic_grep(\n    space_id='space-uuid',\n    query='JWT token validation code examples',\n    limit=15,\n    threshold=0.7\n)\nfor block in results:\n    print(f\"{block.title} - distance: {block.distance}\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Semantic grep search\nconst results = await client.spaces.semanticGrep('space-uuid', {\n  query: 'JWT token validation code examples',\n  limit: 15,\n  threshold: 0.7\n});\nfor (const block of results) {\n  console.log(`${block.title} - distance: ${block.distance}`);\n}\n"
+        } ]
+      }
+    },
+    "/tool/name" : {
+      "get" : {
+        "description" : "Get all tool names within a project",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_tool_name_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get tool names",
+        "tags" : [ "tool" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get all tool names\ntools = client.tools.list()\nfor tool in tools:\n    print(f\"{tool.name}: {tool.sop_count} SOPs\")\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get all tool names\nconst tools = await client.tools.list();\nfor (const tool of tools) {\n  console.log(`${tool.name}: ${tool.sop_count} SOPs`);\n}\n"
+        } ]
+      },
+      "put" : {
+        "description" : "Rename one or more tool names within a project",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.RenameToolNameReq"
+              }
+            }
+          },
+          "description" : "Tool rename request",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_session__session_id__flush_post_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Rename tool names",
+        "tags" : [ "tool" ],
+        "x-code-samples" : [ {
+          "label" : "Python",
+          "lang" : "python",
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Rename tool names\nresult = client.tools.rename([\n    {\"old_name\": \"old_tool_name\", \"new_name\": \"new_tool_name\"}\n])\nprint(result.status)\n"
+        }, {
+          "label" : "JavaScript",
+          "lang" : "javascript",
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Rename tool names\nconst result = await client.tools.rename([\n  { oldName: 'old_tool_name', newName: 'new_tool_name' }\n]);\nconsole.log(result.status);\n"
+        } ],
+        "x-codegen-request-body-name" : "payload"
       }
     }
   },
-  "components": {
-    "securitySchemes": {
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "description": "Project Bearer token (e.g., \"Bearer sk-ac-xxxx\")"
+  "components" : {
+    "schemas" : {
+      "fileparser.FileContent" : {
+        "properties" : {
+          "raw" : {
+            "description" : "Raw text content",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "\"text\", \"json\", \"csv\", \"code\"",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.ConnectToSpaceReq" : {
+        "properties" : {
+          "space_id" : {
+            "example" : "123e4567-e89b-12d3-a456-426614174000",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "space_id" ],
+        "type" : "object"
+      },
+      "handler.CreateBlockReq" : {
+        "properties" : {
+          "parent_id" : {
+            "type" : "string"
+          },
+          "props" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "type" : "object"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "example" : "text",
+            "type" : "string"
+          }
+        },
+        "required" : [ "type" ],
+        "type" : "object"
+      },
+      "handler.CreateSessionReq" : {
+        "properties" : {
+          "configs" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          },
+          "space_id" : {
+            "example" : "123e4567-e89b-12d3-a456-000042661417",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.CreateSpaceReq" : {
+        "properties" : {
+          "configs" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.GetArtifactResp" : {
+        "properties" : {
+          "artifact" : {
+            "$ref" : "#/components/schemas/model.Artifact"
+          },
+          "content" : {
+            "$ref" : "#/components/schemas/fileparser.FileContent"
+          },
+          "public_url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.ListArtifactsResp" : {
+        "properties" : {
+          "artifacts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.Artifact"
+            },
+            "type" : "array"
+          },
+          "directories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.MoveBlockReq" : {
+        "properties" : {
+          "parent_id" : {
+            "type" : "string"
+          },
+          "sort" : {
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.RenameToolNameReq" : {
+        "properties" : {
+          "rename" : {
+            "items" : {
+              "$ref" : "#/components/schemas/handler.ToolRenameItem"
+            },
+            "minItems" : 1,
+            "type" : "array"
+          }
+        },
+        "required" : [ "rename" ],
+        "type" : "object"
+      },
+      "handler.SendMessageReq" : {
+        "properties" : {
+          "blob" : {
+            "type" : "object"
+          },
+          "format" : {
+            "enum" : [ "acontext", "openai", "anthropic" ],
+            "example" : "openai",
+            "type" : "string"
+          }
+        },
+        "required" : [ "blob" ],
+        "type" : "object"
+      },
+      "handler.ToolRenameItem" : {
+        "properties" : {
+          "new_name" : {
+            "type" : "string"
+          },
+          "old_name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "new_name", "old_name" ],
+        "type" : "object"
+      },
+      "handler.UpdateArtifactReq" : {
+        "properties" : {
+          "file_path" : {
+            "description" : "File path including filename",
+            "type" : "string"
+          },
+          "meta" : {
+            "description" : "Custom metadata as JSON string",
+            "type" : "string"
+          }
+        },
+        "required" : [ "file_path", "meta" ],
+        "type" : "object"
+      },
+      "handler.UpdateArtifactResp" : {
+        "properties" : {
+          "artifact" : {
+            "$ref" : "#/components/schemas/model.Artifact"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.UpdateBlockPropertiesReq" : {
+        "properties" : {
+          "props" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "type" : "object"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.UpdateBlockSortReq" : {
+        "properties" : {
+          "sort" : {
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.UpdateSessionConfigsReq" : {
+        "properties" : {
+          "configs" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "handler.UpdateSpaceConfigsReq" : {
+        "properties" : {
+          "configs" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          }
+        },
+        "required" : [ "configs" ],
+        "type" : "object"
+      },
+      "httpclient.FlagResponse" : {
+        "properties" : {
+          "errmsg" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "httpclient.InsertBlockResponse" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "httpclient.SearchResultBlockItem" : {
+        "properties" : {
+          "block_id" : {
+            "type" : "string"
+          },
+          "distance" : {
+            "type" : "number"
+          },
+          "props" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "httpclient.SpaceSearchResult" : {
+        "properties" : {
+          "cited_blocks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/httpclient.SearchResultBlockItem"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "httpclient.ToolReferenceData" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "sop_count" : {
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Artifact" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "disk_id" : {
+            "type" : "string"
+          },
+          "filename" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Block" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "is_archived" : {
+            "type" : "boolean"
+          },
+          "parent_id" : {
+            "type" : "string"
+          },
+          "props" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "sort" : {
+            "type" : "integer"
+          },
+          "space_id" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Disk" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "project_id" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Message" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "parent_id" : {
+            "type" : "string"
+          },
+          "parts" : {
+            "items" : {
+              "properties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "session_id" : {
+            "type" : "string"
+          },
+          "session_task_process_status" : {
+            "type" : "string"
+          },
+          "task_id" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Session" : {
+        "properties" : {
+          "configs" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "created_at" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "project_id" : {
+            "type" : "string"
+          },
+          "space_id" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Space" : {
+        "properties" : {
+          "configs" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "created_at" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "project_id" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "model.Task" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "data" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "is_planning" : {
+            "type" : "boolean"
+          },
+          "order" : {
+            "type" : "integer"
+          },
+          "project_id" : {
+            "type" : "string"
+          },
+          "session_id" : {
+            "type" : "string"
+          },
+          "space_digested" : {
+            "type" : "boolean"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "serializer.Response" : {
+        "properties" : {
+          "code" : {
+            "type" : "integer"
+          },
+          "error" : {
+            "type" : "string"
+          },
+          "msg" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "service.GetMessagesOutput" : {
+        "properties" : {
+          "has_more" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.Message"
+            },
+            "type" : "array"
+          },
+          "next_cursor" : {
+            "type" : "string"
+          },
+          "public_urls" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/service.PublicURL"
+            },
+            "description" : "file_name -> url",
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "service.GetTasksOutput" : {
+        "properties" : {
+          "has_more" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.Task"
+            },
+            "type" : "array"
+          },
+          "next_cursor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "service.ListDisksOutput" : {
+        "properties" : {
+          "has_more" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.Disk"
+            },
+            "type" : "array"
+          },
+          "next_cursor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "service.ListSessionsOutput" : {
+        "properties" : {
+          "has_more" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.Session"
+            },
+            "type" : "array"
+          },
+          "next_cursor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "service.ListSpacesOutput" : {
+        "properties" : {
+          "has_more" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.Space"
+            },
+            "type" : "array"
+          },
+          "next_cursor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "service.PublicURL" : {
+        "properties" : {
+          "expire_at" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "_disk_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/service.ListDisksOutput"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_disk_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.Disk"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_disk__disk_id__artifact_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/handler.GetArtifactResp"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_disk__disk_id__artifact_put_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/handler.UpdateArtifactResp"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_disk__disk_id__artifact_post_request" : {
+        "properties" : {
+          "file_path" : {
+            "description" : "File path in the disk storage (optional, defaults to '/')",
+            "type" : "string"
+          },
+          "file" : {
+            "description" : "File to upload",
+            "format" : "binary",
+            "type" : "string"
+          },
+          "meta" : {
+            "description" : "Custom metadata as JSON string (optional, system metadata will be stored under '__artifact_info__' key)",
+            "type" : "string"
+          }
+        },
+        "required" : [ "file" ],
+        "type" : "object"
+      },
+      "_disk__disk_id__artifact_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.Artifact"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_disk__disk_id__artifact_ls_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/handler.ListArtifactsResp"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_session_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/service.ListSessionsOutput"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_session_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.Session"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_session__session_id__flush_post_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/httpclient.FlagResponse"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_session__session_id__messages_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/service.GetMessagesOutput"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_session__session_id__messages_post_request" : {
+        "properties" : {
+          "payload" : {
+            "description" : "SendMessage payload (Content-Type: multipart/form-data)",
+            "type" : "string"
+          },
+          "file" : {
+            "description" : "When uploading files, the field name must correspond to parts[*].file_field.",
+            "format" : "binary",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "_session__session_id__messages_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.Message"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_session__session_id__task_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/service.GetTasksOutput"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/service.ListSpacesOutput"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.Space"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space__space_id__block_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "items" : {
+                "$ref" : "#/components/schemas/model.Block"
+              },
+              "type" : "array"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space__space_id__block_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/httpclient.InsertBlockResponse"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space__space_id__block__block_id__properties_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.Block"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space__space_id__experience_search_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/httpclient.SpaceSearchResult"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_space__space_id__semantic_glob_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "items" : {
+                "$ref" : "#/components/schemas/httpclient.SearchResultBlockItem"
+              },
+              "type" : "array"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_tool_name_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "items" : {
+                "$ref" : "#/components/schemas/httpclient.ToolReferenceData"
+              },
+              "type" : "array"
+            }
+          },
+          "type" : "object"
+        } ]
       }
     },
-    "schemas": {
-      "Response": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "integer"
-          },
-          "msg": {
-            "type": "string"
-          },
-          "error": {
-            "type": "string"
-          },
-          "data": {}
-        }
-      },
-      "Disk": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "project_id": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "Artifact": {
-        "type": "object",
-        "properties": {
-          "disk_id": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "filename": {
-            "type": "string"
-          },
-          "meta": {
-            "type": "object"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "FileContent": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "\"text\", \"json\", \"csv\", \"code\""
-          },
-          "raw": {
-            "type": "string",
-            "description": "Raw text content"
-          }
-        }
-      },
-      "GetArtifactResp": {
-        "type": "object",
-        "properties": {
-          "artifact": {
-            "$ref": "#/components/schemas/Artifact"
-          },
-          "public_url": {
-            "type": "string"
-          },
-          "content": {
-            "$ref": "#/components/schemas/FileContent"
-          }
-        }
-      },
-      "UpdateArtifactResp": {
-        "type": "object",
-        "properties": {
-          "artifact": {
-            "$ref": "#/components/schemas/Artifact"
-          }
-        }
-      },
-      "ListArtifactsResp": {
-        "type": "object",
-        "properties": {
-          "artifacts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Artifact"
-            }
-          },
-          "directories": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "ListDisksOutput": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Disk"
-            }
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
-            "type": "string"
-          }
-        }
-      },
-      "Session": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "project_id": {
-            "type": "string"
-          },
-          "space_id": {
-            "type": "string"
-          },
-          "configs": {
-            "type": "object"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "ListSessionsOutput": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Session"
-            }
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateSessionReq": {
-        "type": "object",
-        "properties": {
-          "space_id": {
-            "type": "string",
-            "format": "uuid",
-            "example": "123e4567-e89b-12d3-a456-42661417"
-          },
-          "configs": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        }
-      },
-      "UpdateSessionConfigsReq": {
-        "type": "object",
-        "properties": {
-          "configs": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        }
-      },
-      "ConnectToSpaceReq": {
-        "type": "object",
-        "required": [
-          "space_id"
-        ],
-        "properties": {
-          "space_id": {
-            "type": "string",
-            "format": "uuid",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        }
-      },
-      "FlagResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "integer"
-          },
-          "errmsg": {
-            "type": "string"
-          }
-        }
-      },
-      "Message": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "session_id": {
-            "type": "string"
-          },
-          "parent_id": {
-            "type": "string"
-          },
-          "task_id": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
-          "parts": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
-          "meta": {
-            "type": "object"
-          },
-          "session_task_process_status": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "GetMessagesOutput": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Message"
-            }
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
-            "type": "string"
-          },
-          "public_urls": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PublicURL"
-            }
-          }
-        }
-      },
-      "PublicURL": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string"
-          },
-          "expire_at": {
-            "type": "string"
-          }
-        }
-      },
-      "SendMessageReq": {
-        "type": "object",
-        "required": [
-          "blob"
-        ],
-        "properties": {
-          "blob": {},
-          "format": {
-            "type": "string",
-            "enum": [
-              "acontext",
-              "openai",
-              "anthropic"
-            ],
-            "example": "openai"
-          }
-        }
-      },
-      "Space": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "project_id": {
-            "type": "string"
-          },
-          "configs": {
-            "type": "object"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "ListSpacesOutput": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Space"
-            }
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateSpaceReq": {
-        "type": "object",
-        "properties": {
-          "configs": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        }
-      },
-      "UpdateSpaceConfigsReq": {
-        "type": "object",
-        "required": [
-          "configs"
-        ],
-        "properties": {
-          "configs": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        }
-      },
-      "SpaceSearchResult": {
-        "type": "object",
-        "properties": {
-          "cited_blocks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SearchResultBlockItem"
-            }
-          }
-        }
-      },
-      "SearchResultBlockItem": {
-        "type": "object",
-        "properties": {
-          "block_id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "distance": {
-            "type": "number"
-          },
-          "props": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        }
-      },
-      "Block": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "space_id": {
-            "type": "string"
-          },
-          "parent_id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "props": {
-            "type": "object"
-          },
-          "sort": {
-            "type": "integer"
-          },
-          "is_archived": {
-            "type": "boolean"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateBlockReq": {
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "properties": {
-          "parent_id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "example": "text"
-          },
-          "title": {
-            "type": "string"
-          },
-          "props": {
-            "type": "object",
-            "additionalProperties": {}
-          }
-        }
-      },
-      "UpdateBlockPropertiesReq": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "props": {
-            "type": "object",
-            "additionalProperties": {}
-          }
-        }
-      },
-      "MoveBlockReq": {
-        "type": "object",
-        "properties": {
-          "parent_id": {
-            "type": "string"
-          },
-          "sort": {
-            "type": "integer"
-          }
-        }
-      },
-      "UpdateBlockSortReq": {
-        "type": "object",
-        "properties": {
-          "sort": {
-            "type": "integer"
-          }
-        }
-      },
-      "InsertBlockResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        }
-      },
-      "ToolReferenceData": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "sop_count": {
-            "type": "integer"
-          }
-        }
-      },
-      "RenameToolNameReq": {
-        "type": "object",
-        "required": [
-          "rename"
-        ],
-        "properties": {
-          "rename": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "$ref": "#/components/schemas/ToolRenameItem"
-            }
-          }
-        }
-      },
-      "ToolRenameItem": {
-        "type": "object",
-        "required": [
-          "old_name",
-          "new_name"
-        ],
-        "properties": {
-          "old_name": {
-            "type": "string"
-          },
-          "new_name": {
-            "type": "string"
-          }
-        }
-      },
-      "Task": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "project_id": {
-            "type": "string"
-          },
-          "session_id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "data": {
-            "type": "object"
-          },
-          "order": {
-            "type": "integer"
-          },
-          "is_planning": {
-            "type": "boolean"
-          },
-          "space_digested": {
-            "type": "boolean"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        }
-      },
-      "GetTasksOutput": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Task"
-            }
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
-            "type": "string"
-          }
-        }
+    "securitySchemes" : {
+      "BearerAuth" : {
+        "description" : "Project Bearer token (e.g., \"Bearer sk-ac-xxxx\")",
+        "in" : "header",
+        "name" : "Authorization",
+        "type" : "apiKey"
       }
     }
-  }
+  },
+  "x-original-swagger-version" : "2.0"
 }

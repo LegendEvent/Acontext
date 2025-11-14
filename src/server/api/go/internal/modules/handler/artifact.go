@@ -267,9 +267,8 @@ type UpdateArtifactResp struct {
 //	@Tags			artifact
 //	@Accept			json
 //	@Produce		json
-//	@Param			disk_id		path	string	true	"Disk ID"						Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
-//	@Param			file_path	body	string	true	"File path including filename"	example:"/documents/report.pdf"
-//	@Param			meta		body	string	true	"Custom metadata as JSON string (system metadata '__artifact_info__' cannot be modified)"
+//	@Param			disk_id	path	string						true	"Disk ID"	Format(uuid)	Example(123e4567-e89b-12d3-a456-426614174000)
+//	@Param			request	body	handler.UpdateArtifactReq	true	"Update artifact request"
 //	@Security		BearerAuth
 //	@Success		200	{object}	serializer.Response{data=handler.UpdateArtifactResp}
 //	@Router			/disk/{disk_id}/artifact [put]

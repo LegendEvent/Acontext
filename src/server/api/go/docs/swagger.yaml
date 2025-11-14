@@ -109,6 +109,18 @@ definitions:
     - new_name
     - old_name
     type: object
+  handler.UpdateArtifactReq:
+    properties:
+      file_path:
+        description: File path including filename
+        type: string
+      meta:
+        description: Custom metadata as JSON string
+        type: string
+    required:
+    - file_path
+    - meta
+    type: object
   handler.UpdateArtifactResp:
     properties:
       artifact:
@@ -310,7 +322,6 @@ definitions:
     properties:
       code:
         type: integer
-      data: {}
       error:
         type: string
       msg:
@@ -770,19 +781,12 @@ paths:
         name: disk_id
         required: true
         type: string
-      - description: File path including filename
+      - description: Update artifact request
         in: body
-        name: file_path
+        name: request
         required: true
         schema:
-          type: string
-      - description: Custom metadata as JSON string (system metadata '__artifact_info__'
-          cannot be modified)
-        in: body
-        name: meta
-        required: true
-        schema:
-          type: string
+          $ref: '#/definitions/handler.UpdateArtifactReq'
       produces:
       - application/json
       responses:

@@ -304,21 +304,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "File path including filename",
-                        "name": "file_path",
+                        "description": "Update artifact request",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Custom metadata as JSON string (system metadata '__artifact_info__' cannot be modified)",
-                        "name": "meta",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.UpdateArtifactReq"
                         }
                     }
                 ],
@@ -2589,6 +2580,23 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.UpdateArtifactReq": {
+            "type": "object",
+            "required": [
+                "file_path",
+                "meta"
+            ],
+            "properties": {
+                "file_path": {
+                    "description": "File path including filename",
+                    "type": "string"
+                },
+                "meta": {
+                    "description": "Custom metadata as JSON string",
+                    "type": "string"
+                }
+            }
+        },
         "handler.UpdateArtifactResp": {
             "type": "object",
             "properties": {
@@ -2897,7 +2905,6 @@ const docTemplate = `{
                 "code": {
                     "type": "integer"
                 },
-                "data": {},
                 "error": {
                     "type": "string"
                 },

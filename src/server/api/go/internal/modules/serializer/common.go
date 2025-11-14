@@ -18,7 +18,7 @@ func SetLogger(log *zap.Logger) {
 // Response
 type Response struct {
 	Code  int         `json:"code"`
-	Data  interface{} `json:"data,omitempty"`
+	Data  interface{} `json:"data,omitempty" swaggerignore:"true"`
 	Msg   string      `json:"msg"`
 	Error string      `json:"error,omitempty"`
 }
