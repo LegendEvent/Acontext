@@ -332,7 +332,7 @@ To search skills from `Space` and use it in the next session:
 
 ```python
 result = client.spaces.experience_search(
-    space_id="space-uuid",
+    space_id=space.id,
     query="I need to implement authentication",
   	mode="fast"
 )
