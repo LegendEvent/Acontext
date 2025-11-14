@@ -81,20 +81,23 @@ for msg in messages:
 # Wait for task extraction to complete
 client.sessions.flush(session.id)
 # Display extracted tasks
+tasks_response = client.sessions.get_tasks(session.id)
+print(tasks_response)
 for task in tasks_response.items:
     print(f"\nTask #{task.order}:")
     print(f"  ID: {task.id}")
+    print(f"  Title: {task.data['task_description']}")
     print(f"  Status: {task.status}")
-    
+
     # Show progress updates if available
     if "progresses" in task.data:
         print(f"  Progress updates: {len(task.data['progresses'])}")
         for progress in task.data["progresses"]:
             print(f"    - {progress}")
-    
+
     # Show user preferences if available
     if "user_preferences" in task.data:
-        print(f"  User preferences:")
+        print("  User preferences:")
         for pref in task.data["user_preferences"]:
             print(f"    - {pref}")
 ```
@@ -146,21 +149,15 @@ async function demonstrateTasks() {
 
     // Wait for task extraction to complete
     await client.sessions.flush(session.id);
-    const tasksResponse = await client.sessions.getTasks(session.id);
-
-    if (!tasksResponse || tasksResponse.items.length === 0) {
-        console.log('No tasks extracted yet, extraction may still be in progress');
-        return;
-    }
-    
-    console.log(`Successfully extracted ${tasksResponse.items.length} tasks!`);
-
     // Display extracted tasks
+    const tasksResponse = await client.sessions.getTasks(session.id);
+    console.log(tasksResponse);
     for (const task of tasksResponse.items) {
         console.log(`\nTask #${task.order}:`);
         console.log(`  ID: ${task.id}`);
+        console.log(`  Title: ${task.data.task_description}`);
         console.log(`  Status: ${task.status}`);
-        
+
         // Show progress updates if available
         if (task.data.progresses) {
             console.log(`  Progress updates: ${task.data.progresses.length}`);
@@ -168,7 +165,7 @@ async function demonstrateTasks() {
                 console.log(`    - ${progress}`);
             });
         }
-        
+
         // Show user preferences if available
         if (task.data.user_preferences) {
             console.log(`  User preferences:`);
