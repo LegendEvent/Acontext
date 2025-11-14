@@ -12,8 +12,8 @@ class TaskSOPPrompt(BasePrompt):
 - Give the task's complexity a score. 
 - Skip easy task's tool_sop, or abstract a template SOP from complex task.
 ### Task Complexity Scoring
-(c.1) If there're unexpected errors in working history, + 1 point
-(c.2) Imagine that agent can do it second time, if it can reduce tons of tool-calls, + 1 point.
+(c.1) If there're unexpected errors in working history and it can be avoided by acting differently, + 1 point
+(c.2) If there're back-and-forth retries in working history, and we can reduce tons of tool-calls by extracting a clean SOP, + 1 point.
 (c.3) If agent done something wrong decision before, then user offers some feedbacks to correct the agent's wrong decision, + 2 points
 (c.4) User explicitly emphasized saving this workflow or experience, + 5 points
 If a task's complexity score is < 2, then skip the task because it's too easy, and you should submit a empty SOP with `is_easy_task` set to True.
@@ -23,7 +23,7 @@ else, set `is_easy_task` to False.
 If the task is not an easy task, abstract a template SOP from complex task for a certain scenario, using 'submit_sop' tool:
 - When generate `tool_sops`, use the exact tool_name from <agent_action>, and keep the most necessary and generalizable arguments in 'action'.
     - `tool_sops` can be an empty list if the task itself is a easy task.
-- If this task involves repetitive workflows applied to different inputs, only retain the most concise SOP from a single workflow.
+- If this task involves the same workflow repeated with different inputs, only retain the most concise SOP from a single iteration.
 #### Templatized Tool Action 
 - Template SOP must be the shortest possible too-calls to achieve the goal, remove all the redundancies.
 - Template tool sops: remove those parameters that may vary in different user input in tool 'action', only keep the parameters that are critical to the sop case.
@@ -53,11 +53,12 @@ Format:
 You must report your thinkings (using extrmaly brief wordings) first using the 'report_thinking' tool:
 1. What's tools have been used?
 2. Give your judgement on (c.1), (c.2), (c.3), (c.4) and for each term, what's the scores?, then sum them and score the task complexity.
-3. If it's an easy task, confirm you will set `is_easy_task` to True and only submit the `use_when` and `preferences` field and an empty `tool_sops list and skip step 5
+3. If it's an easy task, confirm you will set `is_easy_task` to True and only submit the `use_when` and `preferences` field and an empty `tool_sops list
 4. How to reduce the tool-calls to build a shortest path to achieve the goal?
 5. Which parameters/values are related to the future user input and should be removed in 'action' and 'preferences'?
-6. In which general scenarios should we use this SOP? (3~5 words for `use_when`)
-7. Any user preferences can help this general scenarios? (short sentenqces for `preferences`) If not, 'preferences' field should be empty string
+6. Which parameters/values are necessary to make sure the SOP will have no more unexpected errors and back-and-forth retries?
+7. In which general scenarios should we use this SOP? (3~5 words for `use_when`)
+8. Any user preferences can help this general scenarios? (short sentenqces for `preferences`) If not, 'preferences' field should be empty string
 Then decide if you should submit the SOP.
 """
 
