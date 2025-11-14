@@ -70,6 +70,21 @@ def test_request_transport_error(mock_request) -> None:
 
 
 @patch("acontext.client.AcontextClient.request")
+def test_ping_returns_pong(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {"code": 200, "msg": "pong"}
+
+    result = client.ping()
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/ping"
+    assert kwargs["unwrap"] is False
+    assert result == "pong"
+
+
+@patch("acontext.client.AcontextClient.request")
 def test_send_message_with_files_uses_multipart_payload(
     mock_request, client: AcontextClient
 ) -> None:

@@ -114,6 +114,20 @@ class AcontextClient:
     def base_url(self) -> str:
         return self._base_url
 
+    def ping(self) -> str:
+        """
+        Ping the API server to check connectivity.
+
+        Returns:
+            str: "pong" if the server is reachable and responding.
+
+        Raises:
+            APIError: If the server returns an error response.
+            TransportError: If there's a network connectivity issue.
+        """
+        response = self.request("GET", "/ping", unwrap=False)
+        return response.get("msg", "pong")
+
     def close(self) -> None:
         if self._owns_client:
             self._client.close()
@@ -121,7 +135,9 @@ class AcontextClient:
     def __enter__(self) -> "AcontextClient":
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:  # noqa: D401 - standard context manager protocol
+    def __exit__(
+        self, exc_type, exc, tb
+    ) -> None:  # noqa: D401 - standard context manager protocol
         self.close()
 
     # ------------------------------------------------------------------
@@ -160,7 +176,7 @@ class AcontextClient:
         parsed: Mapping[str, Any] | None
         if "application/json" in content_type:
             try:
-                parsed = response.json() # dict
+                parsed = response.json()  # dict
             except ValueError:
                 parsed = None
         else:
@@ -191,7 +207,11 @@ class AcontextClient:
         if parsed is None:
             if unwrap:
                 return response.text
-            return {"code": response.status_code, "data": response.text, "msg": response.reason_phrase}
+            return {
+                "code": response.status_code,
+                "data": response.text,
+                "msg": response.reason_phrase,
+            }
 
         app_code = parsed.get("code")
         if isinstance(app_code, int) and app_code >= 400:

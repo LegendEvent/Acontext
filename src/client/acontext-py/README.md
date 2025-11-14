@@ -59,6 +59,27 @@ async def main():
 asyncio.run(main())
 ```
 
+### Health Check
+
+#### Ping the server
+
+Test connectivity to the Acontext API server:
+
+```python
+# Synchronous client
+pong = client.ping()
+print(f"Server responded: {pong}")  # Output: Server responded: pong
+
+# Async client
+pong = await client.ping()
+print(f"Server responded: {pong}")  # Output: Server responded: pong
+```
+
+This is useful for:
+- Verifying API connectivity before performing operations
+- Health checks in monitoring systems
+- Debugging connection issues
+
 ### Spaces API
 
 #### List spaces

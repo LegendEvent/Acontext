@@ -114,6 +114,20 @@ class AcontextAsyncClient:
     def base_url(self) -> str:
         return self._base_url
 
+    async def ping(self) -> str:
+        """
+        Ping the API server to check connectivity.
+
+        Returns:
+            str: "pong" if the server is reachable and responding.
+
+        Raises:
+            APIError: If the server returns an error response.
+            TransportError: If there's a network connectivity issue.
+        """
+        response = await self.request("GET", "/ping", unwrap=False)
+        return response.get("msg", "pong")
+
     async def aclose(self) -> None:
         """Close the async client."""
         if self._owns_client:
@@ -122,7 +136,9 @@ class AcontextAsyncClient:
     async def __aenter__(self) -> "AcontextAsyncClient":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: D401 - standard context manager protocol
+    async def __aexit__(
+        self, exc_type, exc, tb
+    ) -> None:  # noqa: D401 - standard context manager protocol
         await self.aclose()
 
     # ------------------------------------------------------------------
@@ -192,7 +208,11 @@ class AcontextAsyncClient:
         if parsed is None:
             if unwrap:
                 return response.text
-            return {"code": response.status_code, "data": response.text, "msg": response.reason_phrase}
+            return {
+                "code": response.status_code,
+                "data": response.text,
+                "msg": response.reason_phrase,
+            }
 
         app_code = parsed.get("code")
         if isinstance(app_code, int) and app_code >= 400:
@@ -205,4 +225,3 @@ class AcontextAsyncClient:
             )
 
         return parsed.get("data") if unwrap else parsed
-

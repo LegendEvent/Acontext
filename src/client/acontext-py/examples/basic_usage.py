@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from acontext import AcontextClient
 from acontext.errors import APIError, AcontextError, TransportError
-from acontext.messages import build_acontext_message 
+from acontext.messages import build_acontext_message
 
 
 SPACE_CONFIG_NAME = "sdk-e2e-space"
@@ -76,7 +76,7 @@ def exercise_spaces(client: AcontextClient) -> tuple[str, dict[str, Any]]:
 #     client.blocks.move(space_id, text_block.id, parent_id=page_b.id)
 #     client.blocks.update_sort(space_id, text_block.id, sort=0)
 #
-#     text_block_2 = client.blocks.create(space_id, 
+#     text_block_2 = client.blocks.create(space_id,
 #         parent_id=page_b.id,
 #         block_type="text",
 #         title="Another Block",
@@ -107,7 +107,9 @@ def build_file_upload() -> tuple[str, bytes, str]:
 def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
     summary: dict[str, Any] = {}
 
-    summary["initial_sessions"] = client.sessions.list(space_id=space_id, not_connected=False)
+    summary["initial_sessions"] = client.sessions.list(
+        space_id=space_id, not_connected=False
+    )
     session = client.sessions.create(space_id=space_id, configs={"mode": "sdk-e2e"})
     session_id = session.id
     summary["session_created"] = session
@@ -142,15 +144,16 @@ def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
     # send tool-call message
     tool_blob = build_acontext_message(
         role="assistant",
-        parts=["Triggering weather tool.",
+        parts=[
+            "Triggering weather tool.",
             {
                 "type": "tool-call",
                 "meta": {
                     "id": "call_001",
                     "name": "search_apis",
                     "arguments": '{"query": "weather API free", "type": "public"}',
-                }
-            }
+                },
+            },
         ],
     )
     client.sessions.send_message(session_id, blob=tool_blob, format="acontext")
@@ -205,7 +208,9 @@ def exercise_sessions(client: AcontextClient, space_id: str) -> dict[str, Any]:
     )
 
     client.sessions.delete(session_id)
-    summary["sessions_after_delete"] = client.sessions.list(space_id=space_id, not_connected=False)
+    summary["sessions_after_delete"] = client.sessions.list(
+        space_id=space_id, not_connected=False
+    )
 
     return summary
 
@@ -256,6 +261,11 @@ def run() -> dict[str, Any]:
     report: dict[str, Any] = {}
 
     with AcontextClient(api_key=api_key, base_url=base_url) as client:
+        # Test connectivity with ping
+        ping_result = client.ping()
+        report["ping"] = ping_result
+        print(f"✓ Server ping: {ping_result}")
+
         space_id, report["spaces"] = exercise_spaces(client)
         # NOTE: Block operations are commented out because API passes through to core
         # report["blocks"] = exercise_blocks(client, space_id)
@@ -271,7 +281,9 @@ def main() -> None:
     try:
         report = run()
     except APIError as exc:
-        print(f"[API error] status={exc.status_code} code={exc.code} message={exc.message}")
+        print(
+            f"[API error] status={exc.status_code} code={exc.code} message={exc.message}"
+        )
         if exc.payload:
             print(f"payload: {exc.payload}")
         raise

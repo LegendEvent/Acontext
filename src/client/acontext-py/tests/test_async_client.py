@@ -46,7 +46,9 @@ async def test_async_handle_response_app_code_error() -> None:
 @patch("acontext.async_client.httpx.AsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
 async def test_async_request_transport_error(mock_request) -> None:
-    exc = httpx.ConnectError("boom", request=httpx.Request("GET", "https://api.acontext.test/failure"))
+    exc = httpx.ConnectError(
+        "boom", request=httpx.Request("GET", "https://api.acontext.test/failure")
+    )
     mock_request.side_effect = exc
     async with AcontextAsyncClient(api_key="token") as client:
         with pytest.raises(TransportError):
@@ -55,7 +57,27 @@ async def test_async_request_transport_error(mock_request) -> None:
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_with_files_uses_multipart_payload(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_ping_returns_pong(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
+    mock_request.return_value = {"code": 200, "msg": "pong"}
+
+    result = await async_client.ping()
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/ping"
+    assert kwargs["unwrap"] is False
+    assert result == "pong"
+
+
+@patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
+@pytest.mark.asyncio
+async def test_async_send_message_with_files_uses_multipart_payload(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -74,7 +96,9 @@ async def test_async_send_message_with_files_uses_multipart_payload(mock_request
             return b"bytes"
 
     dummy_stream = _DummyStream()
-    upload = FileUpload(filename="image.png", content=dummy_stream, content_type="image/png")
+    upload = FileUpload(
+        filename="image.png", content=dummy_stream, content_type="image/png"
+    )
 
     await async_client.sessions.send_message(
         "session-id",
@@ -111,7 +135,9 @@ async def test_async_send_message_with_files_uses_multipart_payload(mock_request
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_allows_nullable_blob_for_other_formats(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_allows_nullable_blob_for_other_formats(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -131,7 +157,9 @@ async def test_async_send_message_allows_nullable_blob_for_other_formats(mock_re
 
 
 @pytest.mark.asyncio
-async def test_async_send_message_rejects_unknown_format(async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_rejects_unknown_format(
+    async_client: AcontextAsyncClient,
+) -> None:
     with pytest.raises(ValueError, match="format must be one of"):
         await async_client.sessions.send_message(
             "session-id",
@@ -142,7 +170,9 @@ async def test_async_send_message_rejects_unknown_format(async_client: AcontextA
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_explicit_format_still_supported(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_explicit_format_still_supported(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -192,7 +222,9 @@ class _FakeAnthropicMessage:
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_handles_openai_model_dump(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_handles_openai_model_dump(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -219,7 +251,9 @@ async def test_async_send_message_handles_openai_model_dump(mock_request, async_
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_handles_anthropic_model_dump(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_handles_anthropic_model_dump(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -246,7 +280,9 @@ async def test_async_send_message_handles_anthropic_model_dump(mock_request, asy
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_accepts_acontext_message(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_accepts_acontext_message(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "msg-id",
         "session_id": "session-id",
@@ -267,16 +303,22 @@ async def test_async_send_message_accepts_acontext_message(mock_request, async_c
 
 
 @pytest.mark.asyncio
-async def test_async_send_message_requires_file_field_when_file_provided(async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_requires_file_field_when_file_provided(
+    async_client: AcontextAsyncClient,
+) -> None:
     blob = build_acontext_message(role="user", parts=["hello"])
-    
+
     class _DummyStream:
         def read(self) -> bytes:
             return b"bytes"
-    
-    upload = FileUpload(filename="image.png", content=_DummyStream(), content_type="image/png")
-    
-    with pytest.raises(ValueError, match="file_field is required when file is provided"):
+
+    upload = FileUpload(
+        filename="image.png", content=_DummyStream(), content_type="image/png"
+    )
+
+    with pytest.raises(
+        ValueError, match="file_field is required when file is provided"
+    ):
         await async_client.sessions.send_message(
             "session-id",
             blob=blob,
@@ -287,14 +329,21 @@ async def test_async_send_message_requires_file_field_when_file_provided(async_c
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_rejects_file_for_non_acontext_format(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_send_message_rejects_file_for_non_acontext_format(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     class _DummyStream:
         def read(self) -> bytes:
             return b"bytes"
-    
-    upload = FileUpload(filename="image.png", content=_DummyStream(), content_type="image/png")
-    
-    with pytest.raises(ValueError, match="file and file_field parameters are only supported when format is 'acontext'"):
+
+    upload = FileUpload(
+        filename="image.png", content=_DummyStream(), content_type="image/png"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="file and file_field parameters are only supported when format is 'acontext'",
+    ):
         await async_client.sessions.send_message(
             "session-id",
             blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
@@ -302,30 +351,39 @@ async def test_async_send_message_rejects_file_for_non_acontext_format(mock_requ
             file=upload,
             file_field="attachment",
         )
-    
+
     mock_request.assert_not_called()
 
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_send_message_rejects_file_field_for_non_acontext_format(mock_request, async_client: AcontextAsyncClient) -> None:
-    with pytest.raises(ValueError, match="file and file_field parameters are only supported when format is 'acontext'"):
+async def test_async_send_message_rejects_file_field_for_non_acontext_format(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="file and file_field parameters are only supported when format is 'acontext'",
+    ):
         await async_client.sessions.send_message(
             "session-id",
             blob={"role": "user", "content": "hi"},  # type: ignore[arg-type]
             format="openai",
             file_field="attachment",
         )
-    
+
     mock_request.assert_not_called()
 
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_sessions_get_messages_forwards_format(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_sessions_get_messages_forwards_format(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {"items": [], "has_more": False}
 
-    result = await async_client.sessions.get_messages("session-id", format="acontext", time_desc=True)
+    result = await async_client.sessions.get_messages(
+        "session-id", format="acontext", time_desc=True
+    )
 
     mock_request.assert_called_once()
     args, kwargs = mock_request.call_args
@@ -340,7 +398,9 @@ async def test_async_sessions_get_messages_forwards_format(mock_request, async_c
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_sessions_get_tasks_without_filters(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_sessions_get_tasks_without_filters(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {"items": [], "has_more": False}
 
     result = await async_client.sessions.get_tasks("session-id")
@@ -358,10 +418,14 @@ async def test_async_sessions_get_tasks_without_filters(mock_request, async_clie
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_sessions_get_tasks_with_filters(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_sessions_get_tasks_with_filters(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {"items": [], "has_more": False}
 
-    result = await async_client.sessions.get_tasks("session-id", limit=10, cursor="cursor")
+    result = await async_client.sessions.get_tasks(
+        "session-id", limit=10, cursor="cursor"
+    )
 
     mock_request.assert_called_once()
     args, kwargs = mock_request.call_args
@@ -376,7 +440,9 @@ async def test_async_sessions_get_tasks_with_filters(mock_request, async_client:
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_blocks_list_without_filters(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_blocks_list_without_filters(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = []
 
     result = await async_client.blocks.list("space-id")
@@ -393,10 +459,14 @@ async def test_async_blocks_list_without_filters(mock_request, async_client: Aco
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_blocks_list_with_filters(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_blocks_list_with_filters(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = []
 
-    result = await async_client.blocks.list("space-id", parent_id="parent-id", block_type="page")
+    result = await async_client.blocks.list(
+        "space-id", parent_id="parent-id", block_type="page"
+    )
 
     mock_request.assert_called_once()
     args, kwargs = mock_request.call_args
@@ -486,14 +556,18 @@ async def test_async_blocks_list_with_filters(mock_request, async_client: Aconte
 
 
 @pytest.mark.asyncio
-async def test_async_blocks_move_requires_payload(async_client: AcontextAsyncClient) -> None:
+async def test_async_blocks_move_requires_payload(
+    async_client: AcontextAsyncClient,
+) -> None:
     with pytest.raises(ValueError):
         await async_client.blocks.move("space-id", "block-id")
 
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_blocks_move_with_parent(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_blocks_move_with_parent(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {"status": "ok"}
 
     await async_client.blocks.move("space-id", "block-id", parent_id="parent-id")
@@ -508,7 +582,9 @@ async def test_async_blocks_move_with_parent(mock_request, async_client: Acontex
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_blocks_move_with_sort(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_blocks_move_with_sort(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {"status": "ok"}
 
     await async_client.blocks.move("space-id", "block-id", sort=42)
@@ -522,14 +598,18 @@ async def test_async_blocks_move_with_sort(mock_request, async_client: AcontextA
 
 
 @pytest.mark.asyncio
-async def test_async_blocks_update_properties_requires_payload(async_client: AcontextAsyncClient) -> None:
+async def test_async_blocks_update_properties_requires_payload(
+    async_client: AcontextAsyncClient,
+) -> None:
     with pytest.raises(ValueError):
         await async_client.blocks.update_properties("space-id", "block-id")
 
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_disks_create_hits_disk_endpoint(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_disks_create_hits_disk_endpoint(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "disk",
         "project_id": "project-id",
@@ -550,13 +630,17 @@ async def test_async_disks_create_hits_disk_endpoint(mock_request, async_client:
 
 
 @pytest.mark.asyncio
-async def test_async_artifacts_aliases_disk_artifacts(async_client: AcontextAsyncClient) -> None:
+async def test_async_artifacts_aliases_disk_artifacts(
+    async_client: AcontextAsyncClient,
+) -> None:
     assert async_client.artifacts is async_client.disks.artifacts
 
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_disk_artifacts_upsert_uses_multipart_payload(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_disk_artifacts_upsert_uses_multipart_payload(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "id": "artifact",
         "disk_id": "disk-id",
@@ -569,7 +653,9 @@ async def test_async_disk_artifacts_upsert_uses_multipart_payload(mock_request, 
 
     await async_client.disks.artifacts.upsert(
         "disk-id",
-        file=FileUpload(filename="file.txt", content=b"data", content_type="text/plain"),
+        file=FileUpload(
+            filename="file.txt", content=b"data", content_type="text/plain"
+        ),
         file_path="/folder",
         meta={"source": "unit-test"},
     )
@@ -592,7 +678,9 @@ async def test_async_disk_artifacts_upsert_uses_multipart_payload(mock_request, 
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_async_disk_artifacts_get_translates_query_params(mock_request, async_client: AcontextAsyncClient) -> None:
+async def test_async_disk_artifacts_get_translates_query_params(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
     mock_request.return_value = {
         "artifact": {
             "id": "artifact",
