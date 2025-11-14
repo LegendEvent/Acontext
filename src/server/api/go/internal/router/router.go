@@ -109,6 +109,9 @@ func NewRouter(d RouterDeps) *gin.Engine {
 	{
 		v1.Use(projectAuthMiddleware(d.Config, d.DB))
 
+		// ping endpoint
+		v1.GET("/ping", func(c *gin.Context) { c.JSON(http.StatusOK, serializer.Response{Msg: "pong"}) })
+
 		space := v1.Group("/space")
 		{
 			space.GET("/status")
