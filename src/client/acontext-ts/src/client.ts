@@ -41,7 +41,7 @@ export class AcontextClient implements RequesterProtocol {
     if (!this._apiKey || !this._apiKey.trim()) {
       throw new Error(
         "apiKey is required. Provide it either as a parameter (apiKey='...') " +
-          "or set the ACONTEXT_API_KEY environment variable."
+        "or set the ACONTEXT_API_KEY environment variable."
       );
     }
 
@@ -73,6 +73,20 @@ export class AcontextClient implements RequesterProtocol {
 
   get baseUrl(): string {
     return this._baseUrl;
+  }
+
+  /**
+   * Ping the API server to check connectivity.
+   *
+   * @returns Promise resolving to "pong" if the server is reachable and responding.
+   * @throws {APIError} If the server returns an error response.
+   * @throws {TransportError} If there's a network connectivity issue.
+   */
+  async ping(): Promise<string> {
+    const response = await this.request<{ code: number; msg: string; data?: unknown }>('GET', '/ping', {
+      unwrap: false,
+    });
+    return response.msg || 'pong';
   }
 
   async request<T = unknown>(

@@ -37,6 +37,25 @@ await client.sessions.flush(session.id);
 
 See the inline documentation for the full list of helpers covering sessions, spaces, disks, and artifact uploads.
 
+## Health Check
+
+Test connectivity to the Acontext API server:
+
+```typescript
+import { AcontextClient } from '@acontext/acontext';
+
+const client = new AcontextClient({ apiKey: 'sk-ac-your-root-api-bearer-token' });
+
+// Ping the server
+const pong = await client.ping();
+console.log(`Server responded: ${pong}`); // Output: Server responded: pong
+```
+
+This is useful for:
+- Verifying API connectivity before performing operations
+- Health checks in monitoring systems
+- Debugging connection issues
+
 ## Managing disks and artifacts
 
 Artifacts now live under project disks. Create a disk first, then upload files through the disk-scoped helper:

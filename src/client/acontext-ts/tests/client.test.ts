@@ -53,6 +53,13 @@ describe('AcontextClient Integration Tests', () => {
     }
   });
 
+  describe('Health Check', () => {
+    test('should ping the server', async () => {
+      const result = await client.ping();
+      expect(result).toBe('pong');
+    });
+  });
+
   describe('Spaces API', () => {
     test('should list spaces', async () => {
       const spaces = await client.spaces.list();
