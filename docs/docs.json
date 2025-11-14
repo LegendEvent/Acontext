@@ -59,6 +59,13 @@
               "settings/core",
               "settings/runtime"
             ]
+          },
+          {
+            "group": "Miscellaneous",
+            "icon": "ellipsis",
+            "pages": [
+              "chore/async_python"
+            ]
           }
         ]
       },

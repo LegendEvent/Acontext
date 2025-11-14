@@ -29,7 +29,7 @@ client = AcontextClient(
     api_key="sk-ac-your-root-api-bearer-token",
     base_url="http://localhost:8029/api/v1"
 )
-
+client.ping()
 # Create a session
 session = client.sessions.create()
 print(f"Session created: {session.id}")

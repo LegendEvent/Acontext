@@ -1,0 +1,20 @@
+---
+title: "Async Python Client"
+---
+
+
+You can use async python client:
+
+```python Python
+from acontext import AcontextAsyncClient
+
+client = AcontextAsyncClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+print(await client.ping())
+session = await client.sessions.create()
+# ...
+```
+
+Every method is available in async client, just add `await` prefix to the method call.

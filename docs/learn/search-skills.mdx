@@ -16,7 +16,7 @@ client = AcontextClient(
     api_key="sk-ac-your-root-api-bearer-token",
     base_url="http://localhost:8029/api/v1"
 )
-
+client.ping()
 # Fast mode - quick semantic search
 result = client.spaces.experience_search(
     space_id="space-uuid",
