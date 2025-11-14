@@ -189,7 +189,7 @@ artifact = client.disks.artifacts.upsert(
 
 print(client.disks.artifacts.list(
     disk.id,
-    path="/2024/"
+    path="/todo/"
 ))
 
 result = client.disks.artifacts.get(
