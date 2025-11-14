@@ -16,6 +16,7 @@ from ..types.session import (
     Session,
 )
 from ..uploads import FileUpload, normalize_file_upload
+from pydantic import BaseModel
 from openai.types.chat import ChatCompletionMessageParam
 from anthropic.types import MessageParam
 
@@ -39,21 +40,28 @@ class AsyncSessionsAPI:
         time_desc: bool | None = None,
     ) -> ListSessionsOutput:
         """List all sessions in the project.
-        
+
         Args:
             space_id: Filter sessions by space ID. Defaults to None.
             not_connected: Filter sessions that are not connected to a space. Defaults to None.
             limit: Maximum number of sessions to return. Defaults to None.
             cursor: Cursor for pagination. Defaults to None.
             time_desc: Order by created_at descending if True, ascending if False. Defaults to None.
-            
+
         Returns:
             ListSessionsOutput containing the list of sessions and pagination information.
         """
         params: dict[str, Any] = {}
         if space_id:
             params["space_id"] = space_id
-        params.update(build_params(not_connected=not_connected, limit=limit, cursor=cursor, time_desc=time_desc))
+        params.update(
+            build_params(
+                not_connected=not_connected,
+                limit=limit,
+                cursor=cursor,
+                time_desc=time_desc,
+            )
+        )
         data = await self._requester.request("GET", "/session", params=params or None)
         return ListSessionsOutput.model_validate(data)
 
@@ -64,11 +72,11 @@ class AsyncSessionsAPI:
         configs: Mapping[str, Any] | None = None,
     ) -> Session:
         """Create a new session.
-        
+
         Args:
             space_id: Optional space ID to associate with the session. Defaults to None.
             configs: Optional session configuration dictionary. Defaults to None.
-            
+
         Returns:
             The created Session object.
         """
@@ -82,7 +90,7 @@ class AsyncSessionsAPI:
 
     async def delete(self, session_id: str) -> None:
         """Delete a session by its ID.
-        
+
         Args:
             session_id: The UUID of the session to delete.
         """
@@ -95,7 +103,7 @@ class AsyncSessionsAPI:
         configs: Mapping[str, Any],
     ) -> None:
         """Update session configurations.
-        
+
         Args:
             session_id: The UUID of the session.
             configs: Session configuration dictionary.
@@ -107,10 +115,10 @@ class AsyncSessionsAPI:
 
     async def get_configs(self, session_id: str) -> Session:
         """Get session configurations.
-        
+
         Args:
             session_id: The UUID of the session.
-            
+
         Returns:
             Session object containing the configurations.
         """
@@ -119,7 +127,7 @@ class AsyncSessionsAPI:
 
     async def connect_to_space(self, session_id: str, *, space_id: str) -> None:
         """Connect a session to a space.
-        
+
         Args:
             session_id: The UUID of the session.
             space_id: The UUID of the space to connect to.
@@ -138,13 +146,13 @@ class AsyncSessionsAPI:
         time_desc: bool | None = None,
     ) -> GetTasksOutput:
         """Get tasks for a session.
-        
+
         Args:
             session_id: The UUID of the session.
             limit: Maximum number of tasks to return. Defaults to None.
             cursor: Cursor for pagination. Defaults to None.
             time_desc: Order by created_at descending if True, ascending if False. Defaults to None.
-            
+
         Returns:
             GetTasksOutput containing the list of tasks and pagination information.
         """
@@ -163,10 +171,15 @@ class AsyncSessionsAPI:
         blob: MessageBlob,
         format: Literal["acontext", "openai", "anthropic"] = "openai",
         file_field: str | None = None,
-        file: FileUpload | tuple[str, BinaryIO | bytes] | tuple[str, BinaryIO | bytes, str] | None = None,
+        file: (
+            FileUpload
+            | tuple[str, BinaryIO | bytes]
+            | tuple[str, BinaryIO | bytes, str]
+            | None
+        ) = None,
     ) -> Message:
         """Send a message to a session.
-        
+
         Args:
             session_id: The UUID of the session.
             blob: The message blob in Acontext, OpenAI, or Anthropic format.
@@ -174,10 +187,10 @@ class AsyncSessionsAPI:
             file_field: The field name for file upload. Only used when format is "acontext".
                 Required if file is provided. Defaults to None.
             file: Optional file upload. Only used when format is "acontext". Defaults to None.
-            
+
         Returns:
             The created Message object.
-            
+
         Raises:
             ValueError: If format is invalid, file/file_field provided for non-acontext format,
                 or file is provided without file_field for acontext format.
@@ -186,13 +199,14 @@ class AsyncSessionsAPI:
             raise ValueError(
                 "format must be one of {'acontext', 'openai', 'anthropic'}"
             )
-        
+
         # File upload is only supported for acontext format
         if format != "acontext" and (file is not None or file_field is not None):
             raise ValueError(
                 "file and file_field parameters are only supported when format is 'acontext'"
             )
-
+        if isinstance(blob, BaseModel):
+            blob = blob.model_dump()
         payload: dict[str, Any] = {
             "format": format,
         }
@@ -200,10 +214,12 @@ class AsyncSessionsAPI:
             if isinstance(blob, Mapping):
                 payload["blob"] = blob
             elif isinstance(blob, AcontextMessage):
-                payload["blob"] = asdict(blob) 
+                payload["blob"] = asdict(blob)
             else:
-                raise ValueError(f"Invalid blob type: {type(blob)} when format is 'acontext'. Expected Mapping or AcontextMessage")
-            
+                raise ValueError(
+                    f"Invalid blob type: {type(blob)} when format is 'acontext'. Expected Mapping or AcontextMessage"
+                )
+
             # Handle file upload for acontext format
             file_payload: dict[str, tuple[str, BinaryIO, str]] | None = None
             if file is not None:
@@ -211,10 +227,8 @@ class AsyncSessionsAPI:
                     raise ValueError("file_field is required when file is provided")
                 # only support upload one file now
                 upload = normalize_file_upload(file)
-                file_payload = {
-                    file_field: upload.as_httpx()
-                }
-            
+                file_payload = {file_field: upload.as_httpx()}
+
             if file_payload:
                 form_data = {"payload": json.dumps(payload)}
                 data = await self._requester.request(
@@ -250,7 +264,7 @@ class AsyncSessionsAPI:
         time_desc: bool | None = None,
     ) -> GetMessagesOutput:
         """Get messages for a session.
-        
+
         Args:
             session_id: The UUID of the session.
             limit: Maximum number of messages to return. Defaults to None.
@@ -258,19 +272,21 @@ class AsyncSessionsAPI:
             with_asset_public_url: Whether to include presigned URLs for assets. Defaults to None.
             format: The format of the messages. Defaults to "acontext".
             time_desc: Order by created_at descending if True, ascending if False. Defaults to None.
-            
+
         Returns:
             GetMessagesOutput containing the list of messages and pagination information.
         """
         params: dict[str, Any] = {}
         if format is not None:
             params["format"] = format
-        params.update(build_params(
-            limit=limit,
-            cursor=cursor,
-            with_asset_public_url=with_asset_public_url,
-            time_desc=time_desc,
-        ))
+        params.update(
+            build_params(
+                limit=limit,
+                cursor=cursor,
+                with_asset_public_url=with_asset_public_url,
+                time_desc=time_desc,
+            )
+        )
         data = await self._requester.request(
             "GET", f"/session/{session_id}/messages", params=params or None
         )
@@ -278,13 +294,12 @@ class AsyncSessionsAPI:
 
     async def flush(self, session_id: str) -> dict[str, Any]:
         """Flush the session buffer for a given session.
-        
+
         Args:
             session_id: The UUID of the session.
-            
+
         Returns:
             Dictionary containing status and errmsg fields.
         """
         data = await self._requester.request("POST", f"/session/{session_id}/flush")
         return data  # type: ignore
-
