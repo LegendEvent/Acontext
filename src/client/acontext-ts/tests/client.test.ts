@@ -258,6 +258,134 @@ describe('AcontextClient Integration Tests', () => {
       const session = await client.sessions.getConfigs(createdSessionId);
       expect(session.configs).toMatchObject({ mode: 'test-updated' });
     });
+
+    test('should send messages in OpenAI format', async () => {
+      if (!createdSessionId) {
+        throw new Error('Session not created');
+      }
+      
+      // Send user message in OpenAI format
+      const userMessage = {
+        role: 'user',
+        content: 'Hello, how are you?',
+      };
+      
+      const sentUserMessage = await client.sessions.sendMessage(
+        createdSessionId,
+        userMessage,
+        { format: 'openai' }
+      );
+      expect(sentUserMessage).toBeDefined();
+      expect(sentUserMessage.id).toBeDefined();
+      expect(sentUserMessage.session_id).toBe(createdSessionId);
+      expect(sentUserMessage.role).toBe('user');
+      
+      // Send assistant message in OpenAI format
+      const assistantMessage = {
+        role: 'assistant',
+        content: 'I am doing well, thank you for asking!',
+      };
+      
+      const sentAssistantMessage = await client.sessions.sendMessage(
+        createdSessionId,
+        assistantMessage,
+        { format: 'openai' }
+      );
+      expect(sentAssistantMessage).toBeDefined();
+      expect(sentAssistantMessage.id).toBeDefined();
+      expect(sentAssistantMessage.session_id).toBe(createdSessionId);
+      expect(sentAssistantMessage.role).toBe('assistant');
+    });
+
+    test('should send Anthropic response format messages', async () => {
+      if (!createdSessionId) {
+        throw new Error('Session not created');
+      }
+      
+      // Send user message
+      const userMessage = {
+        role: 'user',
+        content: 'Hello, how are you?',
+      };
+      
+      const sentUserMessage = await client.sessions.sendMessage(
+        createdSessionId,
+        userMessage,
+        { format: 'openai' }
+      );
+      expect(sentUserMessage).toBeDefined();
+      expect(sentUserMessage.role).toBe('user');
+      
+      // Simulate Anthropic API response format
+      const anthropicResponse = {
+        id: 'msg_01XFDUDYJgAACzvnptvVoYEL',
+        type: 'message',
+        role: 'assistant',
+        model: 'claude-sonnet-4-20250514',
+        content: [
+          {
+            type: 'text',
+            text: 'Hello! I\'m doing well, thank you for asking. How can I assist you today?',
+          },
+        ],
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: {
+          input_tokens: 10,
+          output_tokens: 20,
+        },
+      };
+      
+      // Send Anthropic response as a message
+      const sentAnthropicMessage = await client.sessions.sendMessage(
+        createdSessionId,
+        anthropicResponse,
+        { format: 'openai' }
+      );
+      expect(sentAnthropicMessage).toBeDefined();
+      expect(sentAnthropicMessage.id).toBeDefined();
+      expect(sentAnthropicMessage.session_id).toBe(createdSessionId);
+      expect(sentAnthropicMessage.role).toBe('assistant');
+    });
+
+    test('should send OpenAI chat completion response format messages', async () => {
+      if (!createdSessionId) {
+        throw new Error('Session not created');
+      }
+      
+      // Send user message
+      const userMessage = {
+        role: 'user',
+        content: 'Hello, how are you?',
+      };
+      
+      const sentUserMessage = await client.sessions.sendMessage(
+        createdSessionId,
+        userMessage,
+        { format: 'openai' }
+      );
+      expect(sentUserMessage).toBeDefined();
+      expect(sentUserMessage.role).toBe('user');
+      
+      // Simulate OpenAI chat completion response message format
+      const openaiResponseMessage = {
+        role: 'assistant',
+        content: 'I\'m doing well, thank you for asking! How can I help you today?',
+        refusal: null,
+      };
+      
+      // Send OpenAI response message
+      const sentOpenAIMessage = await client.sessions.sendMessage(
+        createdSessionId,
+        openaiResponseMessage,
+        { format: 'openai' }
+      );
+
+      expect(sentOpenAIMessage).toBeDefined();
+      expect(sentOpenAIMessage.id).toBeDefined();
+      expect(sentOpenAIMessage.session_id).toBe(createdSessionId);
+      expect(sentOpenAIMessage.role).toBe('assistant');
+    });
   });
 
   describe('Disks API', () => {

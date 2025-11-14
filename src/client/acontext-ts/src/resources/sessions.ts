@@ -194,7 +194,7 @@ export class SessionsAPI {
         limit: options?.limit ?? null,
         cursor: options?.cursor ?? null,
         with_asset_public_url: options?.withAssetPublicUrl ?? null,
-        time_desc: options?.timeDesc ?? null,
+        time_desc: options?.timeDesc ?? true, // Default to true
       })
     );
     const data = await this.requester.request('GET', `/session/${sessionId}/messages`, {
