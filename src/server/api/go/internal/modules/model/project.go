@@ -24,6 +24,9 @@ type Project struct {
 
 	// Project <-> Task
 	Tasks []Task `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
+
+	// Project <-> ToolReference
+	ToolReferences []ToolReference `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"-"`
 }
 
 func (Project) TableName() string { return "projects" }
