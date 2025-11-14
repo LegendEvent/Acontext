@@ -260,7 +260,7 @@ class SessionsAPI:
         limit: int | None = None,
         cursor: str | None = None,
         with_asset_public_url: bool | None = None,
-        format: Literal["acontext", "openai", "anthropic"] = "acontext",
+        format: Literal["acontext", "openai", "anthropic"] = "openai",
         time_desc: bool | None = None,
     ) -> GetMessagesOutput:
         """Get messages for a session.
