@@ -60,10 +60,12 @@ so that your agent can be more stable,  and provide greater value to your users.
 </div>
 
 
+
+
+
+# How to Start It? [📖](https://docs.acontext.io/local)
+
 > 📖 means a document link
-
-
-## How to Start It? [📖](https://docs.acontext.io/local)
 
 We have a `acontext-cli` to help you do quick proof-of-concept. Download it first in your terminal:
 
@@ -98,11 +100,22 @@ Once it’s done, you can the following endpoints enabled:
 
 
 
-## How to Use It?
+# How to Use It?
 
 We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)]("https://www.npmjs.com/package/@acontext/acontext") SDKs. Below snippets are using Python.
 
-### Init Client
+
+
+## Install SDKs
+
+```
+pip install acontext # for Python
+npm i @acontext/acontext # for Typescript
+```
+
+
+
+## Init Client
 
 ```python
 from acontext import AcontextClient
@@ -120,11 +133,11 @@ client.ping()
 
 
 
-### Store
+## Store
 
 Acontext can manage your sessions and artifacts.
 
-#### Save Messages [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
+### Save Messages [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
 Acontext offers a persistent storage for messages data.
 
@@ -143,7 +156,7 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 >
 > [📖](https://docs.acontext.io/store/messages/multi-modal) We supports multi-modal messages storage.
 
-#### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
+### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
 Obtain your session messages
 
@@ -164,7 +177,7 @@ print(r.choices[0].message.content)
 </div>
 
 
-#### Artifacts [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
 Create a disk for your agent to store and read artifacts, using file paths
 
@@ -215,7 +228,7 @@ print(f"✓ Download URL: {result.public_url}")
 
 
 
-### Observe [📖](https://docs.acontext.io/observe)
+## Observe [📖](https://docs.acontext.io/observe)
 
 For every session, Acontext will launch a background agent to track the tasks progresses and user feedback.
 
@@ -293,11 +306,11 @@ You can view the sessions tasks' statuses in Dashboard:
 
 
 
-### Self-learning
+## Self-learning
 
 Acontext can gather a brunch of sessions, and learn skills(SOPs) of how to call tools for certain tasks.
 
-#### Learn Skills to a `Space` [📖](https://docs.acontext.io/learn/skill-space)
+### Learn Skills to a `Space` [📖](https://docs.acontext.io/learn/skill-space)
 
 A `Space` can store skills, experiences and memories in a notion-like system.
 
@@ -326,7 +339,7 @@ You can view every `Space` in Dashboard:
 
 
 
-#### Search Skills from a `Space` [📖](https://docs.acontext.io/learn/search-skills)
+### Search Skills from a `Space` [📖](https://docs.acontext.io/learn/search-skills)
 
 To search skills from `Space` and use it in the next session:
 
@@ -344,7 +357,7 @@ Acontext supports `fast` and `agentic` mode to search. The former one use embedd
 
 
 
-## Stay Updated
+# Stay Updated
 
 Star Acontext on Github to support and receive instant notifications ❤️
 
@@ -352,7 +365,7 @@ Star Acontext on Github to support and receive instant notifications ❤️
 
 
 
-## Support
+# Stay Together
 
 Join the community for support and discussions:
 
