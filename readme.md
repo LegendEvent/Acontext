@@ -37,18 +37,18 @@
 
 Acontext is a context data platform that:
 
-- **Store** contexts & artifacts, using postgres and S3
-- **Observe** agents' tasks and user feedbacks, and offer a nice Dashboard
-- Enable agents' **self-learning** by collecting experiences (or SOPs).
+- **Stores** contexts & artifacts, using Postgres and S3
+- **Observes** agent tasks and user feedback, and offers a nice Dashboard
+- Enables agent **self-learning** by collecting experiences (or SOPs)
 
 
 
-We're building it because we believe Acontext can help you to:
+We're building it because we believe Acontext can help you:
 
 - **Build a more scalable agent product**
-- **Improve agent's task success rate and reduce running steps**
+- **Improve your agent success rate and reduce running steps**
 
-so that your agent can be more stable,  and provide greater value to your users.
+so that your agent can be more stable and provide greater value to your users.
 
 
 
@@ -73,17 +73,17 @@ We have a `acontext-cli` to help you do quick proof-of-concept. Download it firs
 curl -fsSL https://install.acontext.io | sh
 ```
 
-You should have [docker](https://www.docker.com/get-started/) installed, and an OpenAI API Key to start a Acontext backend in your computer:
+You should have [docker](https://www.docker.com/get-started/) installed and an OpenAI API Key to start an Acontext backend on your computer:
 
 ```bash
 acontext docker up
 ```
 
-> [📖](https://docs.acontext.io/settings/core) Acontext requires a llm provider and an embedding provider. 
+> [📖](https://docs.acontext.io/settings/core) Acontext requires an LLM provider and an embedding provider. 
 >
-> We support OpenAI and Anthropic SDK format and OpenAI and jina.ai embedding api format
+> We support OpenAI and Anthropic SDK formats and OpenAI and jina.ai embedding API formats
 
-Once it’s done, you can the following endpoints enabled:
+Once it's done, you can access the following endpoints:
 
 - Acontext API Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
@@ -115,7 +115,7 @@ npm i @acontext/acontext # for Typescript
 
 
 
-## Init Client
+## Initialize Client
 
 ```python
 from acontext import AcontextClient
@@ -139,7 +139,7 @@ Acontext can manage your sessions and artifacts.
 
 ### Save Messages [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
-Acontext offers a persistent storage for messages data.
+Acontext offers persistent storage for message data.
 
 ```python
 session = client.sessions.create()
@@ -152,13 +152,13 @@ client.sessions.send_message(session_id=session.id, blob=messages[0])
 client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 ```
 
-> [📖](https://docs.acontext.io/store/messages/multi-provider#anthropic-format) We supports Anthropic SDK as well. 
+> [📖](https://docs.acontext.io/store/messages/multi-provider#anthropic-format) We support Anthropic SDK as well. 
 >
-> [📖](https://docs.acontext.io/store/messages/multi-modal) We supports multi-modal messages storage.
+> [📖](https://docs.acontext.io/store/messages/multi-modal) We support multi-modal message storage.
 
 ### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
-Obtain your session messages
+Obtain your session messages:
 
 ```python
 r = client.sessions.get_messages(session.id)
@@ -179,7 +179,7 @@ print(r.choices[0].message.content)
 
 ### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-Create a disk for your agent to store and read artifacts, using file paths
+Create a disk for your agent to store and read artifacts using file paths:
 
 <details>
 <summary>Code Snippet</summary>
@@ -230,9 +230,9 @@ print(f"✓ Download URL: {result.public_url}")
 
 ## Observe [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will launch a background agent to track the tasks progresses and user feedback.
+For every session, Acontext will launch a background agent to track the task progress and user feedback.
 
-You can use SDK to retreieve the current state of the agent session.
+You can use the SDK to retrieve the current state of the agent session.
 
 <details>
 <summary>Code Snippet</summary>
@@ -308,11 +308,11 @@ You can view the sessions tasks' statuses in Dashboard:
 
 ## Self-learning
 
-Acontext can gather a brunch of sessions, and learn skills(SOPs) of how to call tools for certain tasks.
+Acontext can gather a bunch of sessions and learn skills (SOPs) on how to call tools for certain tasks.
 
 ### Learn Skills to a `Space` [📖](https://docs.acontext.io/learn/skill-space)
 
-A `Space` can store skills, experiences and memories in a notion-like system.
+A `Space` can store skills, experiences, and memories in a Notion-like system.
 
 ```python
 # Step 1: Create a Space for skill learning
@@ -325,9 +325,9 @@ session = client.sessions.create(space_id=space.id)
 # ... push the agent working context
 ```
 
-The learning is happening at the background and not realtime (delay around 10-30s).
+The learning happens in the background and is not real-time (delay around 10-30s).
 
-You can view every `Space` in Dashboard:
+You can view every `Space` in the Dashboard:
 
 <div align="center">
     <picture>
@@ -351,7 +351,7 @@ result = client.spaces.experience_search(
 )
 ```
 
-Acontext supports `fast` and `agentic` mode to search. The former one use embedding to match skills. The later one use a Notion Agent to explore the whole `Space` and try to cover every skill needed.
+Acontext supports `fast` and `agentic` modes for search. The former uses embedding to match skills. The latter uses a Notion Agent to explore the entire `Space` and tries to cover every skill needed.
 
 
 
