@@ -22,8 +22,9 @@ try {
   // Create .env file with default values
   const defaultEnvContent = `NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 NEXT_PUBLIC_BASE_PATH=""
-NEXT_PUBLIC_API_SERVER_URL="http://localhost:8029"
+API_SERVER_URL="http://localhost:8029"
 ROOT_API_BEARER_TOKEN="your-root-api-bearer-token"
+DATABASE_URL="postgresql://acontext:helloworld@localhost:15432/acontext"
 `;
 
   fs.writeFileSync(envFilePath, defaultEnvContent, 'utf8');

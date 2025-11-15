@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space?${params.toString()}`,
+        `${process.env.API_SERVER_URL}/api/v1/space?${params.toString()}`,
         {
           method: "GET",
           headers: {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   const createSpace = new Promise<Space>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space`,
+        `${process.env.API_SERVER_URL}/api/v1/space`,
         {
           method: "POST",
           headers: {

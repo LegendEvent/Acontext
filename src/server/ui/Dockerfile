@@ -27,16 +27,14 @@ COPY . .
 # Accept build arguments from docker-compose
 ARG NODE_ENV
 ARG NEXT_PUBLIC_BASE_URL
-ARG NEXT_PUBLIC_API_SERVER_URL
 ARG NEXT_PUBLIC_BASE_PATH
-ARG ROOT_API_BEARER_TOKEN
 
 # Set environment variables for Next.js build
+# Note: API_SERVER_URL is NOT a build arg because it's only used in server-side API routes
+# and will be provided at runtime via docker-compose environment variables
 ENV NODE_ENV=${NODE_ENV}
 ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-ENV NEXT_PUBLIC_API_SERVER_URL=${NEXT_PUBLIC_API_SERVER_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
-ENV ROOT_API_BEARER_TOKEN=${ROOT_API_BEARER_TOKEN}
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry

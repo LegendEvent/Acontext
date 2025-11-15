@@ -10,7 +10,7 @@ export async function GET(
   const getBlockProperties = new Promise<Block>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block/${block_id}/properties`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/block/${block_id}/properties`,
         {
           method: "GET",
           headers: {
@@ -52,7 +52,7 @@ export async function PUT(
   const updateBlockProperties = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block/${block_id}/properties`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/block/${block_id}/properties`,
         {
           method: "PUT",
           headers: {

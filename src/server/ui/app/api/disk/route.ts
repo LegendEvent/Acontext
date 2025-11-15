@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk?${params.toString()}`,
+        `${process.env.API_SERVER_URL}/api/v1/disk?${params.toString()}`,
         {
           method: "GET",
           headers: {
@@ -54,7 +54,7 @@ export async function POST() {
   const createDisk = new Promise<Disk>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk`,
+        `${process.env.API_SERVER_URL}/api/v1/disk`,
         {
           method: "POST",
           headers: {

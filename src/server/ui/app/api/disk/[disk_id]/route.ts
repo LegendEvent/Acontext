@@ -12,7 +12,7 @@ export async function DELETE(
   const deleteDisk = new Promise<null>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}`,
+        `${process.env.API_SERVER_URL}/api/v1/disk/${disk_id}`,
         {
           method: "DELETE",
           headers: {

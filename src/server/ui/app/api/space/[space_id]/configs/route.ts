@@ -13,7 +13,7 @@ export async function GET(
   const getConfigs = new Promise<Space>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/configs`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/configs`,
         {
           method: "GET",
           headers: {
@@ -58,7 +58,7 @@ export async function PUT(
   const updateConfigs = new Promise<null>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/configs`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/configs`,
         {
           method: "PUT",
           headers: {

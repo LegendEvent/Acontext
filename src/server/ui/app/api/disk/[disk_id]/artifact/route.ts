@@ -19,7 +19,7 @@ export async function GET(
   const getArtifact = new Promise<GetArtifactResp>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}/artifact?file_path=${file_path}`,
+        `${process.env.API_SERVER_URL}/api/v1/disk/${disk_id}/artifact?file_path=${file_path}`,
         {
           method: "GET",
           headers: {
@@ -85,7 +85,7 @@ export async function POST(
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}/artifact`,
+      `${process.env.API_SERVER_URL}/api/v1/disk/${disk_id}/artifact`,
       {
         method: "POST",
         headers: {
@@ -134,7 +134,7 @@ export async function PUT(
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}/artifact`,
+      `${process.env.API_SERVER_URL}/api/v1/disk/${disk_id}/artifact`,
       {
         method: "PUT",
         headers: {
@@ -180,7 +180,7 @@ export async function DELETE(
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}/artifact?file_path=${encodeURIComponent(file_path)}`,
+      `${process.env.API_SERVER_URL}/api/v1/disk/${disk_id}/artifact?file_path=${encodeURIComponent(file_path)}`,
       {
         method: "DELETE",
         headers: {

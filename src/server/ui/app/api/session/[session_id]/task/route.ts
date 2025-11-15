@@ -25,7 +25,7 @@ export async function GET(
 
       const response = await fetch(
         `${
-          process.env.NEXT_PUBLIC_API_SERVER_URL
+          process.env.API_SERVER_URL
         }/api/v1/session/${session_id}/task?${params.toString()}`,
         {
           method: "GET",

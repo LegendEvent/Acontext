@@ -13,7 +13,7 @@ export async function POST(
   const connectToSpace = new Promise<null>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session/${session_id}/connect_to_space`,
+        `${process.env.API_SERVER_URL}/api/v1/session/${session_id}/connect_to_space`,
         {
           method: "POST",
           headers: {

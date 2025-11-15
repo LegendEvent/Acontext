@@ -9,7 +9,7 @@ export async function DELETE(
   const deleteBlock = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block/${block_id}`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/block/${block_id}`,
         {
           method: "DELETE",
           headers: {

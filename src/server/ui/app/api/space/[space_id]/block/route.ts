@@ -19,7 +19,7 @@ export async function GET(
       const queryString = queryParams.toString();
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block${queryString ? `?${queryString}` : ""}`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/block${queryString ? `?${queryString}` : ""}`,
         {
           method: "GET",
           headers: {
@@ -61,7 +61,7 @@ export async function POST(
   const createBlock = new Promise<Block>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/space/${space_id}/block`,
+        `${process.env.API_SERVER_URL}/api/v1/space/${space_id}/block`,
         {
           method: "POST",
           headers: {

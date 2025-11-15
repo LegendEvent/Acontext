@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       }
 
       const queryString = params.toString();
-      const url = `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session${
+      const url = `${process.env.API_SERVER_URL}/api/v1/session${
         queryString ? `?${queryString}` : ""
       }`;
 
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   const createSession = new Promise<Session>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/session`,
+        `${process.env.API_SERVER_URL}/api/v1/session`,
         {
           method: "POST",
           headers: {

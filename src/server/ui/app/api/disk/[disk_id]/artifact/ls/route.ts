@@ -16,7 +16,7 @@ export async function GET(
   const getListArtifacts = new Promise<ListArtifactsResp>(async (resolve, reject) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_SERVER_URL}/api/v1/disk/${disk_id}/artifact/ls?path=${path}`,
+        `${process.env.API_SERVER_URL}/api/v1/disk/${disk_id}/artifact/ls?path=${path}`,
         {
           method: "GET",
           headers: {
