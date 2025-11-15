@@ -12,9 +12,9 @@ class TaskSOPPrompt(BasePrompt):
 - Give the task's complexity a score. 
 - Skip easy task's tool_sop, or abstract a template SOP from complex task.
 ### Task Complexity Scoring
-(c.1) If there're unexpected errors in working history and it can be avoided by acting differently, + 1 point
-(c.2) If there're back-and-forth retries in working history, and we can reduce tons of tool-calls by extracting a clean SOP, + 1 point.
-(c.3) If agent done something wrong decision before, then user offers some feedbacks to correct the agent's wrong decision, + 2 points
+(c.1) If there're errors because of the wrong tool parameter passing and it can be avoided, + 1 point
+(c.2) If there're back-and-forth retries (not errors) because agent has a wrong strategy, + 1 point.
+(c.3) If agent done something wrong decision before, then user offers some feedbacks/preferences to correct the agent's wrong decision, + 2 points
 (c.4) User explicitly emphasized saving this workflow or experience, + 5 points
 If a task's complexity score is < 2, then skip the task because it's too easy, and you should submit a empty SOP with `is_easy_task` set to True.
 else, set `is_easy_task` to False.
