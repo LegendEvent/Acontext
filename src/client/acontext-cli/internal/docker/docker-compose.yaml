@@ -116,6 +116,7 @@ services:
   # acontext-server-core
   acontext-server-core:
     image: ${CORE_IMAGE:-ghcr.io/memodb-io/acontext-core:latest}
+    pull_policy: always
     container_name: acontext-server-core
     restart: unless-stopped
     environment:
@@ -141,6 +142,7 @@ services:
   # acontext-server-api
   acontext-server-api:
     image: ${API_IMAGE:-ghcr.io/memodb-io/acontext-api:latest}
+    pull_policy: always
     container_name: acontext-server-api
     restart: unless-stopped
     environment:
@@ -180,6 +182,7 @@ services:
   # acontext-server-ui
   acontext-server-ui:
     image: ${UI_IMAGE:-ghcr.io/memodb-io/acontext-ui:latest}
+    pull_policy: always
     container_name: acontext-server-ui
     restart: unless-stopped
     environment:
