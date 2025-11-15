@@ -370,7 +370,7 @@ func promptEnvConfig() (*docker.EnvConfig, error) {
 	// Prompt for Root API Bearer Token (with default)
 	var rootAPIBearerToken string
 	rootTokenPrompt := &survey.Input{
-		Message: "4. Enter Root API Bearer Token:",
+		Message: "4. Set up Root API Bearer Token:",
 		Default: "your-root-api-bearer-token",
 		Help:    "This token is used for root API access (e.g., for creating projects)",
 	}
