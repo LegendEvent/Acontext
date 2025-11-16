@@ -3,8 +3,8 @@
   <br/>
   <a href="https://discord.gg/rpZs5TaSuV">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/logo/dark.svg">
-      <img alt="Show Acontext logo" src="./docs/logo/light.svg" width="418">
+      <source media="(prefers-color-scheme: dark)" srcset="https://assets.memodb.io/Acontext/Acontext-oneway-dark.gif">
+      <img alt="Show Acontext logo" src="https://assets.memodb.io/Acontext/Acontext-oneway.gif" width="418">
     </picture>
   <br/>
   <br/>
