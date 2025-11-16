@@ -1,9 +1,8 @@
 package config
 
 import (
+	_ "embed"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,37 +25,19 @@ type TemplatesConfig struct {
 	Presets   map[string][]Preset                  `yaml:"presets"`
 }
 
+//go:embed templates.yaml
+var templatesYAML string
+
 var cachedConfig *TemplatesConfig
 
-// LoadTemplatesConfig loads template configuration file
+// LoadTemplatesConfig loads template configuration from embedded file
 func LoadTemplatesConfig() (*TemplatesConfig, error) {
 	if cachedConfig != nil {
 		return cachedConfig, nil
 	}
 
-	// Get config file path
-	exePath, err := os.Executable()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	exeDir := filepath.Dir(exePath)
-	configPath := filepath.Join(exeDir, "templates", "templates.yaml")
-
-	// If not found in executable directory, try development path
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		// Development environment
-		cwd, _ := os.Getwd()
-		configPath = filepath.Join(cwd, "templates", "templates.yaml")
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read templates config: %w", err)
-	}
-
 	var config TemplatesConfig
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	if err := yaml.Unmarshal([]byte(templatesYAML), &config); err != nil {
 		return nil, fmt.Errorf("failed to parse templates config: %w", err)
 	}
 

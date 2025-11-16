@@ -19,7 +19,8 @@ func TestLoadTemplatesConfig(t *testing.T) {
 		{
 			name: "load valid config from templates directory",
 			setup: func(t *testing.T) string {
-				// This will use the actual templates.yaml file
+				// Reset cached config for clean test
+				cachedConfig = nil
 				return ""
 			},
 			wantErr: false,
@@ -28,18 +29,16 @@ func TestLoadTemplatesConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(t)
 			config, err := LoadTemplatesConfig()
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, config)
 			} else {
-				// If config file exists, should load successfully
-				// If not, error is acceptable
-				if err == nil {
-					assert.NotNil(t, config)
-					assert.NotEmpty(t, config.Templates)
-					assert.NotEmpty(t, config.Presets)
-				}
+				require.NoError(t, err)
+				assert.NotNil(t, config)
+				assert.NotEmpty(t, config.Templates)
+				assert.NotEmpty(t, config.Presets)
 			}
 		})
 	}
