@@ -35,6 +35,7 @@
 </div>
 
 
+
 Acontext is a context data platform that:
 
 - **Stores** contexts & artifacts, using Postgres and S3
@@ -370,5 +371,4 @@ Star Acontext on Github to support and receive instant notifications ❤️
 Join the community for support and discussions:
 
 -   [Discuss with Builders on Acontext Discord](https://discord.gg/rpZs5TaSuV) 👻 
-
--  [Follow Acontext on Twitter](https://x.com/acontext_io) 𝕏 
+-  [Follow Acontext on X](https://x.com/acontext_io) 𝕏 
