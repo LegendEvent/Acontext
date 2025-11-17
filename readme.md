@@ -38,9 +38,10 @@
 
 Acontext is a context data platform that:
 
-- **Stores** contexts & artifacts, using Postgres and S3
-- **Observes** agent tasks and user feedback, and offers a nice Dashboard
-- Enables agent **self-learning** by collecting experiences (or SOPs)
+- **Stores** contexts & artifacts
+- **Observes** agent tasks and user feedback.
+- Enables agent **self-learning** by collecting experiences (SOPs).
+- Offers a **local Dashboard** to view everything.
 
 
 
