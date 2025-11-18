@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from sqlalchemy import String, ForeignKey, Index, CheckConstraint, Column
 from sqlalchemy.orm import relationship
@@ -25,7 +26,7 @@ class Asset(BaseModel):
 
 class ToolCallMeta(BaseModel):
     name: str
-    arguments: dict
+    arguments: dict | str
 
 
 class ToolResultMeta(BaseModel):
