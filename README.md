@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="./assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>Store Contexts ➡️ Observe Tasks ➡️ Learn Skills</h3>
+    <h3>Scale for your Agents, Improve for your Users</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -18,7 +18,6 @@
     <a href="https://deepwiki.com/memodb-io/Acontext"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
     <a href="https://github.com/memodb-io/Acontext"><img src="https://img.shields.io/github/stars/memodb-io/Acontext?style=social" alt="GitHub stars"></a>
   </p>
-
   <div align="center">
     <!-- Keep these links. Translations will automatically update with the README. -->
     <a href="https://zdoc.app/de/memodb-io/Acontext">Deutsch</a> | 
@@ -38,17 +37,18 @@ Acontext is a context data platform that:
 
 - **Stores** contexts & artifacts
 - **Observes** agent tasks and user feedback.
-- Enables agent **self-learning** by collecting experiences (SOPs).  Context data → extract patterns → create & save skills → reuse & refine → agent improves. Acontext turns raw context into real, reusable experience.
+- Enables agent **self-learning** by collecting experiences (SOPs) into long-term memory.
 - Offers a **local Dashboard** to view messages, tasks, artifacts and experiences.
 
 
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./docs/images/acontext_data_flow.png" width="100%">
+      <img alt="Acontext Learning" src="./assets/acontext_dataflow.png" width="100%">
     </picture>
-  <p>How Does Acontext Learn for Your Agents?</p>
+  <p>Store Contexts, Observe Tasks, then Learn Skills</p>
 </div>
+
 
 
 
@@ -70,8 +70,8 @@ so that your agent can be more stable and provide greater value to your users.
 - **Disk** - File storage for agent artifacts.
 
 - **Space** - A knowledge repository (like Notion) for agent, where learned skills are stored. 
-  - **Experience Agents** - Background AI agents that automatically extract tasks and learn skills. 
-  - **Skill Block** - A learned SOP (Standard Operating Procedure) containing `use_when` conditions, user `preferences`, and `tool_sops` patterns. Only complex tasks become skills.
+  - **Experience Agent** - Background AI agents that extract tasks and learn skills. 
+  - **Skill Block** - A learned experience from complex tasks.
 
 ### How They Work Together
 
@@ -138,8 +138,8 @@ acontext docker up
 ```
 
 > [📖](https://docs.acontext.io/settings/core) Acontext requires an LLM provider and an embedding provider. 
->
-> We support OpenAI and Anthropic SDK formats and OpenAI and jina.ai embedding API formats
+
+
 
 Once it's done, you can access the following endpoints:
 
@@ -207,15 +207,7 @@ messages = [
     {
         "role": "assistant",
         "content": "Sure, my plan is below:\n1. Search for the latest news about iPhone 15 pro max\n2. Init Next.js project for the landing page\n3. Deploy the landing page to the website",
-    },
-    {
-        "role": "user",
-        "content": "That sounds good. Let's first collect the message and report to me before any landing page coding.",
-    },
-    {
-        "role": "assistant",
-        "content": "Sure, I will first collect the message then report to you before any landing page coding.",
-    },
+    }
 ]
 
 # Save messages
@@ -223,9 +215,7 @@ for msg in messages:
     client.sessions.send_message(session_id=session.id, blob=msg, format="openai")
 ```
 
-> [📖](https://docs.acontext.io/store/messages/multi-provider#anthropic-format) We support Anthropic SDK as well. 
->
-> [📖](https://docs.acontext.io/store/messages/multi-modal) We support multi-modal message storage.
+> [📖](https://docs.acontext.io/store/messages/multi-modal) We also support multi-modal message storage and anthropic SDK.
 
 ### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
@@ -385,7 +375,6 @@ Script Example Return:
 
 ```txt
 Task #1:
-  ID: 60624fcf-7bd2-4ecc-84a3-5cfe8fa1810a
   Title: Search for the latest news about iPhone 15 Pro Max and report findings to the user before any landing page coding.
   Status: running
   Progress updates: 1
@@ -394,18 +383,12 @@ Task #1:
     - user expects a report on latest news about iPhone 15 pro max before any coding work on the landing page.
 
 Task #2:
-  ID: 0036d009-257d-4acb-8244-b289cb48af09
   Title: Initialize a Next.js project for the iPhone 15 Pro Max landing page.
   Status: pending
-  Progress updates: 0
-  User preferences:
 
 Task #3:
-  ID: b75306ae-c95b-4f17-9818-223006e4ea7b
   Title: Deploy the completed landing page to the website.
   Status: pending
-  Progress updates: 0
-  User preferences:
 ```
 
 
@@ -564,9 +547,3 @@ This project is currently licensed under [Apache License 2.0](LICENSE).
 ```
 
 
-
-# Meet the Amazing People Behind This Project:
-
-<a href="https://github.com/memodb-io/Acontext/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=memodb-io/Acontext" />
-</a>
