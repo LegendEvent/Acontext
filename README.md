@@ -465,7 +465,7 @@ result = client.spaces.experience_search(
 )
 ```
 
-Acontext supports `fast` and `agentic` modes for search. The former uses embeddings to match skills. The latter uses a Notion Agent to explore the entire `Space` and tries to cover every skill needed.
+Acontext supports `fast` and `agentic` modes for search. The former uses embeddings to match skills. The latter uses an Experience Agent to explore the entire `Space` and tries to cover every skill needed.
 
 The return is a list of sop blocks, which look like below:
 
