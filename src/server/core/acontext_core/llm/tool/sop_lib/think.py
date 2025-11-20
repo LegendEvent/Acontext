@@ -4,16 +4,17 @@ from ....schema.result import Result
 from ....service.data import task as TD
 from ....infra.db import DB_CLIENT
 from .ctx import SOPCtx
+from ....env import LOG
 
 
 async def _thinking_handler(
     ctx: SOPCtx,
     llm_arguments: dict,
 ) -> Result[str]:
+    LOG.info(f"Agent reports its thinking: {llm_arguments.get('thinking', '...')}")
     sop_thinking = llm_arguments.get("thinking", None)
     if sop_thinking is None:
         return Result.resolve("No thinking provided")
-
     async with DB_CLIENT.get_session_context() as db_session:
         await TD.append_sop_thinking_to_task(db_session, ctx.task.id, sop_thinking)
     return Result.resolve("thinking reported")

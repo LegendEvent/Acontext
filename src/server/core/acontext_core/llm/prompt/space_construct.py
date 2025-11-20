@@ -67,6 +67,7 @@ Read into all the candidate data, and insert them into the right place of worksp
     For example, if you're creating a page to insert a sop block of 'find nba players from Europs', the title 'find_nba_players' is better than 'find_nba_players_from_europs', and better than 'find_people'
 - For simplicity, always create page under root first, unless there is already a suitable folder to contain the new page.
 - Avoid creating pages with titles containing 'user_preferences', 'sop', 'skill', etc. Make your titles have less repetition.
+- If a page is separate but closely related to a candidate data, you should consider insert it in this page then rename the page to a more appropriate title.
 
 ## Think before Actions
 Use report_thinking tool to report your thinking with different tags before certain type of actions:
