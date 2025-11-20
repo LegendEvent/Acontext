@@ -506,7 +506,13 @@ Join the community for support and discussions:
 
 
 
+# Contributing
+
+- Check our [roadmap](./roadmap.md) first.
+- Read [Contributing.md](./contributing.md)
+
 # LICENSE
+
 This project is currently licensed under [Apache License 2.0](LICENSE).
 
 

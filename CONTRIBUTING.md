@@ -1,3 +1,9 @@
+## Pull Request
+
+- Please pull request to `dev` branch
+
+
+
 ## Git Commit Message
 
 - pattern: `type(scope): description`
