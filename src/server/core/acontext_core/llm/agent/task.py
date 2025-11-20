@@ -31,6 +31,7 @@ def pack_previous_messages_section(
 ) -> str:
     task_ids = [m.task_id for m in messages]
     mappings = {t.id: t for t in tasks}
+    tool_mappings = {}
     task_descs = []
     for ti in task_ids:
         if ti is None:
@@ -45,15 +46,19 @@ def pack_previous_messages_section(
             task_descs.append("(no task linked)")
     return "\n---\n".join(
         [
-            f"{td}\n{m.to_string(truncate_chars=256)}"
+            f"{td}\n{m.to_string(tool_mappings, truncate_chars=256)}"
             for td, m in zip(task_descs, messages)
         ]
     )
 
 
 def pack_current_message_with_ids(messages: list[MessageBlob]) -> str:
+    tool_mappings = {}
     return "\n".join(
-        [f"<message id={i}> {m.to_string()} </message>" for i, m in enumerate(messages)]
+        [
+            f"<message id={i}> {m.to_string(tool_mappings, truncate_chars=1024)} </message>"
+            for i, m in enumerate(messages)
+        ]
     )
 
 

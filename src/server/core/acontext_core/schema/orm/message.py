@@ -27,11 +27,11 @@ class Asset(BaseModel):
 class ToolCallMeta(BaseModel):
     name: str
     arguments: dict | str
+    id: Optional[str] = None
 
 
 class ToolResultMeta(BaseModel):
-    name: str
-    result: str
+    tool_call_id: str
 
 
 class Part(BaseModel):

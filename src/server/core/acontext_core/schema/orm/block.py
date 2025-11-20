@@ -1,4 +1,3 @@
-import uuid
 from dataclasses import dataclass, field
 from sqlalchemy import (
     String,
@@ -9,7 +8,7 @@ from sqlalchemy import (
     Boolean,
     BigInteger,
 )
-from sqlalchemy.orm import relationship, foreign, remote
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 from .base import ORM_BASE, CommonMixin

@@ -15,10 +15,13 @@ from ..tool.sop_lib.ctx import SOPCtx
 def pack_task_data(
     task: TaskSchema, message_blobs: list[MessageBlob]
 ) -> tuple[str, str, str]:
+    tool_mappings = {}
     return (
         task.data.task_description,
         "\n".join([f"- {p}" for p in (task.data.user_preferences or [])]),
-        "\n".join([m.to_string(truncate_chars=1024) for m in message_blobs]),
+        "\n".join(
+            [m.to_string(tool_mappings, truncate_chars=1024) for m in message_blobs]
+        ),
     )
 
 
