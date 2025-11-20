@@ -1,4 +1,3 @@
-from sqlalchemy.sql.functions import user
 from .base import BasePrompt, ToolSchema
 from ..tool.space_tools import SPACE_TOOLS
 

@@ -6,13 +6,15 @@ from .sop_customization import SOPPromptCustomization
 
 class TaskSOPPrompt(BasePrompt):
     @classmethod
-    def system_prompt(cls, customization: Optional[SOPPromptCustomization] = None) -> str:
+    def system_prompt(
+        cls, customization: Optional[SOPPromptCustomization] = None
+    ) -> str:
         """
         Generate system prompt for SOP agent.
-        
+
         Args:
             customization: Optional customization config for extending prompt behavior
-            
+
         Returns:
             Complete system prompt string
         """
@@ -22,20 +24,20 @@ class TaskSOPPrompt(BasePrompt):
 (c.2) If there're back-and-forth retries (not errors) because agent has a wrong strategy, + 1 point.
 (c.3) If agent done something wrong decision before, then user offers some feedbacks/preferences to correct the agent's wrong decision, + 2 points
 (c.4) User explicitly emphasized saving this workflow or experience, + 5 points"""
-        
+
         # Append custom scoring rules if provided
         if customization and customization.custom_scoring_rules:
             custom_rules = customization.build_custom_scoring_section(start_index=5)
             if custom_rules:
                 base_scoring_section += "\n" + custom_rules
-        
+
         # Build rule indices list for report section
         if customization:
             all_rule_indices = customization.get_all_rule_indices(base_count=4)
             rule_indices_str = ", ".join(all_rule_indices)
         else:
             rule_indices_str = "(c.1), (c.2), (c.3), (c.4)"
-        
+
         return f"""You're a Tool-calling SOP Agent that analyzes user-agent working history and generates reusable tool-calling SOPs.
 
 ## Core Responsibilities
@@ -70,8 +72,8 @@ Format:
 ```
 <user>(text) ...
 <agent>(text) ...
-<agent>(tool-call) {{'tool_name': '...', 'arguments': {{'...'}}}}
-<agent>(tool-result) {{'tool_name': '...', 'result': '...'}}
+<agent>(tool-call) 'tool_name': '...', 'arguments': '...'
+<agent>(tool-result) 'tool_name': '...', 'result': '...'
 ```
 - Results maybe truncated([...truncated])
 - Only the tool_names among <agent>(tool-call) can be used in `tool_sops`, don't make it up.
