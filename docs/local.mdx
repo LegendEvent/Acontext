@@ -16,8 +16,30 @@ Once it's done, you can the following endpoints enabled:
 - Acontext Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
 
-## Try some Examples
-### Interactive mode
-```bash
-acontenxt create
+## Launch with Envs
+Place your `.env` file and run `acontext docker up` at the same directory:
+```bash 
+cat .env
+acontext docker up
 ```
+
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card title="Dashboard" icon="robot" href="/observe/dashboard">
+View your agent's tasks, conversations, and learned skills in one place
+</Card>
+<Card title="Store Messages" icon="message" href="/store/messages/multi-provider">
+Save agent conversations with context
+</Card>
+
+<Card title="Enable Learning" icon="sparkles" href="/learn/skill-space">
+Let your agent learn from experience
+</Card>
+
+<Card title="Configuration" icon="gear" href="/settings/runtime">
+Configure Acontext to your needs
+</Card>
+</CardGroup>
