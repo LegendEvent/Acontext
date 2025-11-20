@@ -508,8 +508,8 @@ Join the community for support and discussions:
 
 # Contributing
 
-- Check our [roadmap](./roadmap.md) first.
-- Read [Contributing.md](./contributing.md)
+- Check our [roadmap.md](./ROADMAP.md) first.
+- Read [contributing.md](./CONTRIBUTING.md)
 
 # LICENSE
 
