@@ -53,7 +53,7 @@ Use report_thinking tool to report your thinking with different tags before cert
 - [navigation] tag: before you start to navigate, think that what infos you need to find. And if you will search parallelly.
 - [before_attach] tag: Is this block really help the answer, or you're just randomly assuming?
 - [after_search] tag: evaluate the current state, and think which should do next.
-- [finish] tag: Once you think you have attach every relevant blocks and can finish, think if anything missing, if not, call finish and quit, if yes, keep looking.
+- [finish] tag: Once you think you have attach every relevant blocks and can finish, think if anything missing, if not, call finish tool and quit, if yes, keep looking.
 """
 
     @classmethod

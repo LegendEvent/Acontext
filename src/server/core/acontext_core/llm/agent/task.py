@@ -26,6 +26,25 @@ def pack_task_section(tasks: List[TaskSchema]) -> str:
     return section
 
 
+def pack_previous_progress_section(
+    tasks: list[TaskSchema],
+    previous_progress_num: int = 5,
+) -> str:
+    progresses = []
+    for task in tasks[::-1]:
+        max_taken = max(0, previous_progress_num - len(progresses))
+        if max_taken <= 0:
+            break
+        if task.data.progresses is not None:
+            progresses.extend(
+                [f"Task {task.order}: {p}" for p in task.data.progresses[-max_taken:]][
+                    ::-1
+                ]
+            )
+
+    return "\n".join(progresses[::-1])
+
+
 def pack_previous_messages_section(
     planning_task: TaskSchema | None,
     tasks: list[TaskSchema],
@@ -97,9 +116,9 @@ async def build_task_ctx(
 async def task_agent_curd(
     project_id: asUUID,
     session_id: asUUID,
-    previous_messages: List[MessageBlob],
     messages: List[MessageBlob],
     max_iterations=3,  # task curd agent only receive one turn of actions
+    previous_progress_num: int = 6,
 ) -> Result[None]:
     async with DB_CLIENT.get_session_context() as db_session:
         r = await TD.fetch_current_tasks(db_session, session_id)
@@ -107,19 +126,14 @@ async def task_agent_curd(
         if eil:
             return r
 
-        r = await TD.fetch_planning_task(db_session, session_id)
-        planning_section, eil = r.unpack()
-        if eil:
-            return r
-
     task_section = pack_task_section(tasks)
-    previous_messages_section = pack_previous_messages_section(
-        planning_section, tasks, previous_messages
+    previous_progress_section = pack_previous_progress_section(
+        tasks, previous_progress_num
     )
     current_messages_section = pack_current_message_with_ids(messages)
 
     LOG.info(f"Task Section: {task_section}")
-    LOG.info(f"Previous Messages Section: {previous_messages_section}")
+    LOG.info(f"Previous Progress Section: {previous_progress_section}")
     LOG.info(f"Current Messages Section: {current_messages_section}")
 
     json_tools = [tool.model_dump() for tool in TaskPrompt.tool_schema()]
@@ -128,7 +142,7 @@ async def task_agent_curd(
         {
             "role": "user",
             "content": TaskPrompt.pack_task_input(
-                previous_messages_section, current_messages_section, task_section
+                previous_progress_section, current_messages_section, task_section
             ),
         }
     ]

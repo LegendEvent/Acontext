@@ -46,28 +46,19 @@ async def process_session_pending_message(
                 messages[0].created_at,
                 limit=project_config.project_session_message_use_previous_messages_turns,
             )
-            previous_messages, eil = r.unpack()
-            if eil:
-                return r
             messages_data = [
                 MessageBlob(
                     message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id
                 )
                 for m in messages
             ]
-            previous_messages_data = [
-                MessageBlob(
-                    message_id=m.id, role=m.role, parts=m.parts, task_id=m.task_id
-                )
-                for m in previous_messages
-            ]
 
         r = await AT.task_agent_curd(
             project_id,
             session_id,
-            previous_messages_data,
             messages_data,
             max_iterations=project_config.default_task_agent_max_iterations,
+            previous_progress_num=project_config.default_task_agent_previous_progress_num,
         )
 
         after_status = TaskStatus.SUCCESS

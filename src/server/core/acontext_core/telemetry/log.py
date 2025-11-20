@@ -1,4 +1,3 @@
-import os
 import sys
 import logging
 import structlog
@@ -55,35 +54,12 @@ def __get_json_logger():
     return logger
 
 
-class CustomTextFormatter(logging.Formatter):
-    """Custom formatter that supports extra fields for text logging"""
-
-    def format(self, record):
-        # First, format the standard message
-        base_msg = super().format(record)
-
-        # Check if there are extra fields (beyond the standard ones)
-        printout_attrs = {"traceback", "session_id", "message_id"}
-
-        all_fields = record.__dict__
-        extra_fields = []
-        for attr in printout_attrs:
-            if attr in all_fields:
-                extra_fields.append(f"{attr}={all_fields[attr]}")
-
-        # If there are extra fields, append them to the message
-        if extra_fields:
-            extra_text = "\n- " + "\n- ".join(extra_fields)
-            return base_msg + extra_text
-        return base_msg
-
-
 def __get_text_logger():
     logger = logging.getLogger("acontext-core")
     logger.setLevel(logging.INFO)
 
-    formatter = CustomTextFormatter(
-        f"{TerminalColorMarks.BOLD}{TerminalColorMarks.BLUE}|{TerminalColorMarks.END} %(asctime)s - %(levelname)s - %(message)s"
+    formatter = logging.Formatter(
+        f"{TerminalColorMarks.BOLD}{TerminalColorMarks.BLUE}>{TerminalColorMarks.END} %(asctime)s - %(levelname)s - %(message)s"
     )
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

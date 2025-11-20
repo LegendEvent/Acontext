@@ -46,13 +46,15 @@ class TaskPrompt(BasePrompt):
 - No need to link every message, just those messages that are contributed to the process of certain tasks.
 - Make sure the messages are contributed to the process of the task, not just doing random linking.
 - Update task statuses or descriptions when confident about relationships 
-- Give a brief progress or learnings of the task when appending messages
-    - Not need to repeat the detailed results, only what actions have been taken
-    - You should include necessary infos/numbers that may help the following tasks
-    - Narrate progress in the first person as the agent.
-    - Facts over General. Don't say "I encountered many errors", say "I encountered python syntax error then the compiling error."
 - If user mentioned any preference on this task, extract in the clean format 'user expects/wants...' in 'user_preference_and_infos' field.
 - If user mentioned any infos(address, email,... etc) so that the task can be completed, extract it and fill it in 'user_preference_and_infos' field.
+
+## Append with Progress
+- Give a brief progress of the task when appending messages
+- Concise and short. only state what the current state.
+- Narrate progress in the first person as the agent.
+- Facts over General. Don't say "I encountered many errors", say "I encountered python syntax and rust compiling error."
+- Actual State over Reference. Don't say 'I open the target websit', say "I navigate to https://github.com/trending".
 
 ## Update Task Status 
 - `pending`: For tasks not yet started
@@ -67,7 +69,7 @@ class TaskPrompt(BasePrompt):
 ## Input Format
 - Input will be markdown-formatted text, with the following sections:
   - `## Current Existing Tasks`: existing tasks, their orders, descriptions, and statuses
-  - `## Previous Messages`: the history messages of user/agent, help you understand the full context. [no message id, maybe truncated]
+  - `## Previous Progress`: the previous progress of the tasks, help you understand the full context.
   - `## Current Message with IDs`: the current messages that you need to analyze [with message ids]
 - Message with ID format: <message id=N> ... </message>, inside the tag is the message content, the id field indicates the message id.
 
@@ -80,20 +82,22 @@ Use extremely brief wordings to report using the 'report_thinking' tool before c
 5. Which Messages are contributed to planning? Not the execution.
 6. Which Messages are contributed to which task? What the progress of the messages brough to the task?
 7. Any user preferences and personal infos in Current Message section related to complete which tasks?
-8. Which task's status need to be updated?
-9. Briefly describe your tool-call actions to correctly manage the tasks.
-Make sure your will call `finish` tool after every tools are called
+8. Any progress should be appended with actual states?
+9. Which task's status need to be updated?
+10. Briefly describe your tool-call actions to correctly manage the tasks.
+
+Call 'finish' tool if you have finish your jobs.
 """
 
     @classmethod
     def pack_task_input(
-        cls, previous_messages: str, current_message_with_ids: str, current_tasks: str
+        cls, previous_progress: str, current_message_with_ids: str, current_tasks: str
     ) -> str:
         return f"""## Current Existing Tasks:
 {current_tasks}
 
-## Previous Messages:
-{previous_messages}
+## Previous Progress:
+{previous_progress}
 
 ## Current Message with IDs:
 {current_message_with_ids}
