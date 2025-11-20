@@ -9,19 +9,21 @@ curl -fsSL https://install.acontext.io | sh
 ```
 
 ## Start Acontext Server Locally
-```bash
+Acontext requires at least an OpenAI API Key to Start.
+```bash .env
+LLM_API_KEY="YOUR_OPENAI_API_KEY"
+```
+Place your `.env` file and run `acontext docker up` at the same directory:
+```bash server
 acontext docker up
 ```
 Once it's done, you can the following endpoints enabled:
 - Acontext Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
 
-## Launch with Envs
-Place your `.env` file and run `acontext docker up` at the same directory:
-```bash 
-cat .env
-acontext docker up
-```
+<Info>
+To use different providers, check [Core Settings](/settings/core) for more details.
+</Info>
 
 
 ## Next Steps

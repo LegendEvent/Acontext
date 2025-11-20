@@ -138,7 +138,7 @@ You should have [docker](https://www.docker.com/get-started/) installed and an O
 acontext docker up
 ```
 
-> [📖](https://docs.acontext.io/settings/core) Acontext requires an LLM provider and an embedding provider. 
+> [📖](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key.  We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
 
 
 
