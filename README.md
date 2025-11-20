@@ -15,8 +15,6 @@
   <p align="center">
     <a href="https://x.com/acontext_io"><img src="https://img.shields.io/twitter/follow/acontext_io?style=social" alt="Twitter Follow"></a>
     <a href="https://discord.gg/rpZs5TaSuV"><img src="https://dcbadge.limes.pink/api/server/rpZs5TaSuV?style=flat" alt="Discord"></a>
-    <a href="https://deepwiki.com/memodb-io/Acontext"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
-    <a href="https://github.com/memodb-io/Acontext"><img src="https://img.shields.io/github/stars/memodb-io/Acontext?style=social" alt="GitHub stars"></a>
   </p>
   <div align="center">
     <!-- Keep these links. Translations will automatically update with the README. -->
@@ -31,6 +29,7 @@
   </div>
   <br/>
 </div>
+
 
 
 Acontext is a context data platform that:
@@ -512,10 +511,37 @@ This project is currently licensed under [Apache License 2.0](LICENSE).
 
 # Badges
 
-![Made with Acontext](./assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](./assets/badge-made-with-acontext-dark.svg)
+![Made with Acontext](./assets/badge-made-with-acontext.svg)
 
-```markdown
+```md
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext.svg)](https://acontext.io)
+```
+
+```html
+<a href="https://acontext.io">
+  <img
+    width="160"
+    height="30"
+    src="https://assets.memodb.io/Acontext/badge-made-with-acontext.svg"
+    alt="Made with Acontext"
+  />
+</a>
+```
+
+![Made with Acontext (dark)](./assets/badge-made-with-acontext-dark.svg)
+
+```md
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext-dark.svg)](https://acontext.io)
+```
+
+```html
+<a href="https://acontext.io">
+  <img
+    width="160"
+    height="30"
+    src="https://assets.memodb.io/Acontext/badge-made-with-acontext-dark.svg"
+    alt="Made with Acontext"
+  />
+</a>
 ```
 
