@@ -114,9 +114,8 @@ async def update_task(
     if data is not None:
         task.data = data
     elif patch_data is not None:
-        new_data = task.data.copy()
-        new_data.update(patch_data)
-        task.data = new_data
+        task.data.update(patch_data)
+        flag_modified(task, "data")
 
     await db_session.flush()
     # Changes will be committed when the session context exits
