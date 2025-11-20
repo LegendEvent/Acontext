@@ -200,6 +200,9 @@ Acontext can manage agent sessions and artifacts.
 
 Acontext offers persistent storage for message data. When you call `session.send_message`, Acontext will persist the message and start to monitor this session:
 
+<details>
+<summary>Code Snippet</summary>
+
 ```python
 session = client.sessions.create()
 
@@ -218,9 +221,15 @@ for msg in messages:
 
 > [📖](https://docs.acontext.io/store/messages/multi-modal) We also support multi-modal message storage and anthropic SDK.
 
+
+</details>
+
 ### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
 Obtain your session messages using `sessions.get_messages`
+
+<details>
+<summary>Code Snippet</summary>
 
 ```python
 r = client.sessions.get_messages(session.id)
@@ -231,6 +240,8 @@ r = openai_client.chat.completions.create(model="gpt-4.1", messages=new_msg)
 print(r.choices[0].message.content)
 client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 ```
+
+</details>
 
 <div align="center">
     <picture>
@@ -293,7 +304,7 @@ print(f"✓ Download URL: {result.public_url}")
 
 ## Observe [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will automatically launch a background agent to track the task progress and user feedback.
+For every session, Acontext will automatically launch a background agent to track the task progress and user feedback. It's like a background TODO agent.
 
 You can use the SDK to retrieve the current state of the agent session.
 
@@ -372,7 +383,7 @@ for task in tasks_response.items:
 
 </details>
 
-Script Example Return:
+Example Task Return:
 
 ```txt
 Task #1:
