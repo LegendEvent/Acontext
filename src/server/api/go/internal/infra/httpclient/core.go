@@ -268,6 +268,12 @@ type FlagResponse struct {
 	Errmsg string `json:"errmsg"`
 }
 
+// LearningStatusResponse represents the learning status response
+type LearningStatusResponse struct {
+	SpaceDigestedCount    int `json:"space_digested_count"`
+	NotSpaceDigestedCount int `json:"not_space_digested_count"`
+}
+
 // SessionFlush calls the session flush endpoint
 func (c *CoreClient) SessionFlush(ctx context.Context, projectID, sessionID uuid.UUID) (*FlagResponse, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/project/%s/session/%s/flush", c.BaseURL, projectID.String(), sessionID.String())
@@ -296,6 +302,41 @@ func (c *CoreClient) SessionFlush(ctx context.Context, projectID, sessionID uuid
 	}
 
 	var result FlagResponse
+	if err := sonic.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetLearningStatus calls the get learning status endpoint
+func (c *CoreClient) GetLearningStatus(ctx context.Context, projectID, sessionID uuid.UUID) (*LearningStatusResponse, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/project/%s/session/%s/get_learning_status", c.BaseURL, projectID.String(), sessionID.String())
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.Logger.Error("get_learning_status request failed",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("body", string(respBody)))
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result LearningStatusResponse
 	if err := sonic.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("unmarshal response: %w", err)
 	}

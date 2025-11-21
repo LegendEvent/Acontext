@@ -571,3 +571,37 @@ func (h *SessionHandler) SessionFlush(c *gin.Context) {
 
 	c.JSON(http.StatusOK, serializer.Response{Data: result})
 }
+
+// GetLearningStatus godoc
+//
+//	@Summary		Get learning status
+//	@Description	Get learning status for a session. Returns the count of space digested tasks and not space digested tasks. If the session is not connected to a space, returns 0 and 0.
+//	@Tags			session
+//	@Accept			json
+//	@Produce		json
+//	@Param			session_id	path	string	true	"Session ID"	format(uuid)
+//	@Security		BearerAuth
+//	@Success		200	{object}	serializer.Response{data=httpclient.LearningStatusResponse}
+//	@Router			/session/{session_id}/get_learning_status [get]
+//	@x-code-samples	[{"lang":"python","source":"from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Get learning status\nresult = client.sessions.get_learning_status(session_id='session-uuid')\nprint(f\"Space digested: {result.space_digested_count}, Not digested: {result.not_space_digested_count}\")\n","label":"Python"},{"lang":"javascript","source":"import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Get learning status\nconst result = await client.sessions.getLearningStatus('session-uuid');\nconsole.log(`Space digested: ${result.space_digested_count}, Not digested: ${result.not_space_digested_count}`);\n","label":"JavaScript"}]
+func (h *SessionHandler) GetLearningStatus(c *gin.Context) {
+	project, ok := c.MustGet("project").(*model.Project)
+	if !ok {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", errors.New("project not found")))
+		return
+	}
+
+	sessionID, err := uuid.Parse(c.Param("session_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, serializer.ParamErr("", err))
+		return
+	}
+
+	result, err := h.coreClient.GetLearningStatus(c.Request.Context(), project.ID, sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.Err(http.StatusInternalServerError, "failed to get learning status", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, serializer.Response{Data: result})
+}
