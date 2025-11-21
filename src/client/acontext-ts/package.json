@@ -20,6 +20,10 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/memodb-io/Acontext"
+  },
   "dependencies": {
     "zod": "^4.1.12"
   },
