@@ -15,7 +15,7 @@ class ProjectConfig(BaseModel):
     project_session_message_use_previous_messages_turns: int = 3
     project_session_message_buffer_max_turns: int = 16
     project_session_message_buffer_max_overflow: int = 16
-    project_session_message_buffer_ttl_seconds: int = 4  # 4 seconds
+    project_session_message_buffer_ttl_seconds: int = 8  # 4 seconds
     default_task_agent_max_iterations: int = 4
     default_task_agent_previous_progress_num: int = 6
     default_sop_agent_max_iterations: int = 4
