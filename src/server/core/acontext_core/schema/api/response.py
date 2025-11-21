@@ -31,3 +31,12 @@ class Flag(BaseModel):
 
 class InsertBlockResponse(BaseModel):
     id: asUUID = Field(..., description="Block ID")
+
+
+class LearningStatusResponse(BaseModel):
+    space_digested_count: int = Field(
+        ..., description="Number of tasks that are space digested"
+    )
+    not_space_digested_count: int = Field(
+        ..., description="Number of tasks that are not space digested"
+    )
