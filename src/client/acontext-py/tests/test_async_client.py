@@ -440,6 +440,30 @@ async def test_async_sessions_get_tasks_with_filters(
 
 @patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
 @pytest.mark.asyncio
+async def test_async_sessions_get_learning_status(
+    mock_request, async_client: AcontextAsyncClient
+) -> None:
+    mock_request.return_value = {
+        "space_digested_count": 5,
+        "not_space_digested_count": 3,
+    }
+
+    result = await async_client.sessions.get_learning_status("session-id")
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/session/session-id/get_learning_status"
+    # Verify it returns a Pydantic model
+    assert hasattr(result, "space_digested_count")
+    assert hasattr(result, "not_space_digested_count")
+    assert result.space_digested_count == 5
+    assert result.not_space_digested_count == 3
+
+
+@patch("acontext.async_client.AcontextAsyncClient.request", new_callable=AsyncMock)
+@pytest.mark.asyncio
 async def test_async_blocks_list_without_filters(
     mock_request, async_client: AcontextAsyncClient
 ) -> None:

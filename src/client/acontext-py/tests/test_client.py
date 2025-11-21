@@ -449,6 +449,27 @@ def test_sessions_get_tasks_with_filters(mock_request, client: AcontextClient) -
 
 
 @patch("acontext.client.AcontextClient.request")
+def test_sessions_get_learning_status(mock_request, client: AcontextClient) -> None:
+    mock_request.return_value = {
+        "space_digested_count": 5,
+        "not_space_digested_count": 3,
+    }
+
+    result = client.sessions.get_learning_status("session-id")
+
+    mock_request.assert_called_once()
+    args, kwargs = mock_request.call_args
+    method, path = args
+    assert method == "GET"
+    assert path == "/session/session-id/get_learning_status"
+    # Verify it returns a Pydantic model
+    assert hasattr(result, "space_digested_count")
+    assert hasattr(result, "not_space_digested_count")
+    assert result.space_digested_count == 5
+    assert result.not_space_digested_count == 3
+
+
+@patch("acontext.client.AcontextClient.request")
 def test_blocks_list_without_filters(mock_request, client: AcontextClient) -> None:
     mock_request.return_value = []
 

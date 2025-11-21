@@ -98,3 +98,10 @@ export const GetTasksOutputSchema = z.object({
 
 export type GetTasksOutput = z.infer<typeof GetTasksOutputSchema>;
 
+export const LearningStatusSchema = z.object({
+  space_digested_count: z.number(),
+  not_space_digested_count: z.number(),
+});
+
+export type LearningStatus = z.infer<typeof LearningStatusSchema>;
+

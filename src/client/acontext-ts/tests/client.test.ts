@@ -248,6 +248,20 @@ describe('AcontextClient Integration Tests', () => {
       expect(tasks.has_more).toBeDefined();
     });
 
+    test('should get learning status', async () => {
+      if (!createdSessionId) {
+        throw new Error('Session not created');
+      }
+      const learningStatus = await client.sessions.getLearningStatus(createdSessionId);
+      expect(learningStatus).toBeDefined();
+      expect(learningStatus.space_digested_count).toBeDefined();
+      expect(learningStatus.not_space_digested_count).toBeDefined();
+      expect(typeof learningStatus.space_digested_count).toBe('number');
+      expect(typeof learningStatus.not_space_digested_count).toBe('number');
+      expect(learningStatus.space_digested_count).toBeGreaterThanOrEqual(0);
+      expect(learningStatus.not_space_digested_count).toBeGreaterThanOrEqual(0);
+    });
+
     test('should update session configs', async () => {
       if (!createdSessionId) {
         throw new Error('Session not created');
@@ -263,13 +277,13 @@ describe('AcontextClient Integration Tests', () => {
       if (!createdSessionId) {
         throw new Error('Session not created');
       }
-      
+
       // Send user message in OpenAI format
       const userMessage = {
         role: 'user',
         content: 'Hello, how are you?',
       };
-      
+
       const sentUserMessage = await client.sessions.sendMessage(
         createdSessionId,
         userMessage,
@@ -279,13 +293,13 @@ describe('AcontextClient Integration Tests', () => {
       expect(sentUserMessage.id).toBeDefined();
       expect(sentUserMessage.session_id).toBe(createdSessionId);
       expect(sentUserMessage.role).toBe('user');
-      
+
       // Send assistant message in OpenAI format
       const assistantMessage = {
         role: 'assistant',
         content: 'I am doing well, thank you for asking!',
       };
-      
+
       const sentAssistantMessage = await client.sessions.sendMessage(
         createdSessionId,
         assistantMessage,
@@ -301,13 +315,13 @@ describe('AcontextClient Integration Tests', () => {
       if (!createdSessionId) {
         throw new Error('Session not created');
       }
-      
+
       // Send user message
       const userMessage = {
         role: 'user',
         content: 'Hello, how are you?',
       };
-      
+
       const sentUserMessage = await client.sessions.sendMessage(
         createdSessionId,
         userMessage,
@@ -315,7 +329,7 @@ describe('AcontextClient Integration Tests', () => {
       );
       expect(sentUserMessage).toBeDefined();
       expect(sentUserMessage.role).toBe('user');
-      
+
       // Simulate Anthropic API response format
       const anthropicResponse = {
         id: 'msg_01XFDUDYJgAACzvnptvVoYEL',
@@ -335,7 +349,7 @@ describe('AcontextClient Integration Tests', () => {
           output_tokens: 20,
         },
       };
-      
+
       // Send Anthropic response as a message
       const sentAnthropicMessage = await client.sessions.sendMessage(
         createdSessionId,
@@ -352,13 +366,13 @@ describe('AcontextClient Integration Tests', () => {
       if (!createdSessionId) {
         throw new Error('Session not created');
       }
-      
+
       // Send user message
       const userMessage = {
         role: 'user',
         content: 'Hello, how are you?',
       };
-      
+
       const sentUserMessage = await client.sessions.sendMessage(
         createdSessionId,
         userMessage,
@@ -366,14 +380,14 @@ describe('AcontextClient Integration Tests', () => {
       );
       expect(sentUserMessage).toBeDefined();
       expect(sentUserMessage.role).toBe('user');
-      
+
       // Simulate OpenAI chat completion response message format
       const openaiResponseMessage = {
         role: 'assistant',
         content: 'I\'m doing well, thank you for asking! How can I help you today?',
         refusal: null,
       };
-      
+
       // Send OpenAI response message
       const sentOpenAIMessage = await client.sessions.sendMessage(
         createdSessionId,

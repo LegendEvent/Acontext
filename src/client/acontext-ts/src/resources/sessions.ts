@@ -11,6 +11,8 @@ import {
   GetMessagesOutputSchema,
   GetTasksOutput,
   GetTasksOutputSchema,
+  LearningStatus,
+  LearningStatusSchema,
   ListSessionsOutput,
   ListSessionsOutputSchema,
   Message,
@@ -22,7 +24,7 @@ import {
 export type MessageBlob = AcontextMessage | Record<string, unknown>;
 
 export class SessionsAPI {
-  constructor(private requester: RequesterProtocol) {}
+  constructor(private requester: RequesterProtocol) { }
 
   async list(options?: {
     spaceId?: string | null;
@@ -206,6 +208,23 @@ export class SessionsAPI {
   async flush(sessionId: string): Promise<{ status: number; errmsg: string }> {
     const data = await this.requester.request('POST', `/session/${sessionId}/flush`);
     return data as { status: number; errmsg: string };
+  }
+
+  /**
+   * Get learning status for a session.
+   *
+   * Returns the count of space digested tasks and not space digested tasks.
+   * If the session is not connected to a space, returns 0 and 0.
+   *
+   * @param sessionId - The UUID of the session.
+   * @returns LearningStatus object containing space_digested_count and not_space_digested_count.
+   */
+  async getLearningStatus(sessionId: string): Promise<LearningStatus> {
+    const data = await this.requester.request(
+      'GET',
+      `/session/${sessionId}/get_learning_status`
+    );
+    return LearningStatusSchema.parse(data);
   }
 }
 

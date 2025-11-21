@@ -122,3 +122,14 @@ class GetTasksOutput(BaseModel):
     items: list[Task] = Field(..., description="List of tasks")
     next_cursor: str | None = Field(None, description="Cursor for pagination")
     has_more: bool = Field(..., description="Whether there are more items")
+
+
+class LearningStatus(BaseModel):
+    """Response model for learning status."""
+
+    space_digested_count: int = Field(
+        ..., description="Number of tasks that are space digested"
+    )
+    not_space_digested_count: int = Field(
+        ..., description="Number of tasks that are not space digested"
+    )

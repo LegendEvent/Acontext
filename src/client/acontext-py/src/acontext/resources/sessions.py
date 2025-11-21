@@ -11,6 +11,7 @@ from ..messages import AcontextMessage
 from ..types.session import (
     GetMessagesOutput,
     GetTasksOutput,
+    LearningStatus,
     ListSessionsOutput,
     Message,
     Session,
@@ -303,3 +304,20 @@ class SessionsAPI:
         """
         data = self._requester.request("POST", f"/session/{session_id}/flush")
         return data  # type: ignore
+
+    def get_learning_status(self, session_id: str) -> LearningStatus:
+        """Get learning status for a session.
+
+        Returns the count of space digested tasks and not space digested tasks.
+        If the session is not connected to a space, returns 0 and 0.
+
+        Args:
+            session_id: The UUID of the session.
+
+        Returns:
+            LearningStatus object containing space_digested_count and not_space_digested_count.
+        """
+        data = self._requester.request(
+            "GET", f"/session/{session_id}/get_learning_status"
+        )
+        return LearningStatus.model_validate(data)
