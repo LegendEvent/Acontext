@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -121,14 +120,7 @@ func runDockerUp(cmd *cobra.Command, args []string) error {
 		} else {
 			fmt.Println()
 			fmt.Println("🎉 All services are running!")
-			fmt.Println()
-			showServiceInfo(projectDir, composeFile)
 		}
-	} else {
-		fmt.Println("✅ Services started (press Ctrl+C to stop)")
-		fmt.Println()
-		showServiceInfo(projectDir, composeFile)
-		fmt.Println("💡 Tip: Use 'acontext docker up -d' to run services in the background")
 	}
 
 	return nil
@@ -257,69 +249,6 @@ func getProjectDir() (string, error) {
 		return "", err
 	}
 	return cwd, nil
-}
-
-func showServiceInfo(projectDir string, composeFile string) {
-	portsMap, err := docker.GetServicePorts(projectDir, composeFile)
-	if err != nil {
-		// Fallback to default values if query fails
-		fmt.Println("📝 Access your services:")
-		fmt.Println("   - PostgreSQL: localhost:5432")
-		fmt.Println("   - Redis: localhost:6379")
-		fmt.Println("   - RabbitMQ UI: http://localhost:15672")
-		fmt.Println("   - SeaweedFS Console: http://localhost:9001")
-		fmt.Println()
-		return
-	}
-
-	fmt.Println("📝 Access your services:")
-
-	// Service name mappings to display names
-	serviceLabels := map[string]string{
-		"acontext-server-pg":        "PostgreSQL",
-		"acontext-server-redis":     "Redis",
-		"acontext-server-rabbitmq":  "RabbitMQ",
-		"acontext-server-seaweedfs": "SeaweedFS",
-	}
-
-	// Extract and display port information
-	for serviceName, ports := range portsMap {
-		if ports == "" {
-			continue
-		}
-		displayName := serviceLabels[serviceName]
-		if displayName == "" {
-			displayName = serviceName
-		}
-
-		// Parse ports: format is like "0.0.0.0:5432->5432/tcp" or "0.0.0.0:5432->5432/tcp, 0.0.0.0:15672->15672/tcp"
-		portList := strings.Split(ports, ", ")
-		for _, portStr := range portList {
-			// Extract host port (before ->)
-			if strings.Contains(portStr, "->") {
-				parts := strings.Split(portStr, "->")
-				if len(parts) > 0 {
-					hostPort := parts[0]
-					// Extract just the port number (after last :)
-					if idx := strings.LastIndex(hostPort, ":"); idx >= 0 {
-						port := hostPort[idx+1:]
-						if strings.Contains(portStr, "/tcp") || strings.Contains(portStr, "/udp") {
-							if strings.Contains(displayName, "RabbitMQ") && strings.Contains(portStr, "15672") {
-								fmt.Printf("   - %s UI: http://localhost:%s\n", displayName, port)
-							} else if strings.Contains(displayName, "SeaweedFS") && strings.Contains(portStr, "8888") {
-								fmt.Printf("   - %s Console: http://localhost:%s\n", displayName, port)
-							} else if displayName == "PostgreSQL" || displayName == "Redis" {
-								fmt.Printf("   - %s: localhost:%s\n", displayName, port)
-							} else {
-								fmt.Printf("   - %s: localhost:%s\n", displayName, port)
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	fmt.Println()
 }
 
 // promptEnvConfig prompts user for required environment configuration

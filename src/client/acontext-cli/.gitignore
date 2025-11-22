@@ -63,3 +63,7 @@ checksums.txt
 dist/**
 
 db/
+
+acontext_data/
+
+.docker-compose-*.yaml
