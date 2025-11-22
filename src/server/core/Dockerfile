@@ -17,8 +17,7 @@ RUN uv sync --frozen --no-dev --no-cache-dir
 COPY ./acontext_core /app/acontext_core
 COPY ./api.py /app
 
-
-# Expose port 8029 (FastAPI default)
+# Expose port 8000
 EXPOSE 8000
 
 # Set environment variables

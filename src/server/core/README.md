@@ -17,7 +17,7 @@ uv sync
 ```
 
 - Set necessary configs
-```
+```bash
 cp config.yaml.example config.yaml
 # or
 cp .env.example .env

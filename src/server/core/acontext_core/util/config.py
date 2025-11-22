@@ -10,7 +10,7 @@ from ..schema.config import (
 def get_local_core_config() -> CoreConfig:
     CONFIG_FILE_PATH = os.getenv("CONFIG_FILE_PATH", "config.yaml")
 
-    if not os.path.exists(CONFIG_FILE_PATH):
+    if not os.path.isfile(CONFIG_FILE_PATH):
         CONFIG_YAML_STRING = ""
         print(f"No config file found in {CONFIG_FILE_PATH}")
     else:
@@ -27,7 +27,7 @@ def get_local_core_config() -> CoreConfig:
 def get_local_project_config() -> ProjectConfig:
     CONFIG_FILE_PATH = os.getenv("CONFIG_FILE_PATH", "config.yaml")
 
-    if not os.path.exists(CONFIG_FILE_PATH):
+    if not os.path.isfile(CONFIG_FILE_PATH):
         CONFIG_YAML_STRING = ""
         print(f"No config file found in {CONFIG_FILE_PATH}")
     else:
