@@ -129,6 +129,8 @@ services:
       S3_ENDPOINT: http://acontext-server-seaweedfs:9000
     ports:
       - "${CORE_EXPORT_PORT:-8019}:8000"
+    volumes:
+      - ${CORE_CONFIG_YAML_FILE:-./config.yaml}:/app/config.yaml
     depends_on:
       acontext-server-pg:
         condition: service_healthy

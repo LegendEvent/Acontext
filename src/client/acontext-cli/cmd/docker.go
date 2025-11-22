@@ -378,6 +378,34 @@ func promptEnvConfig() (*docker.EnvConfig, error) {
 		return nil, fmt.Errorf("failed to get Root API Bearer Token: %w", err)
 	}
 
+	// Prompt for Core Config YAML File (optional)
+	var coreConfigYAMLFile string
+	coreConfigPrompt := &survey.Input{
+		Message: "5. Enter Core Config YAML File path (optional):",
+		Default: "./config.yaml",
+		Help:    "Path to your core config.yaml file (e.g., ./config.yaml). Leave empty to use env vars only.",
+	}
+	if err := survey.AskOne(coreConfigPrompt, &coreConfigYAMLFile); err != nil {
+		return nil, fmt.Errorf("failed to get Core Config YAML File: %w", err)
+	}
+
+	// Convert to absolute path if provided
+	if coreConfigYAMLFile != "" {
+		absPath, err := filepath.Abs(coreConfigYAMLFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve config file path: %w", err)
+		}
+		coreConfigYAMLFile = absPath
+
+		// Check if file exists (just for user feedback, not required)
+		if _, err := os.Stat(absPath); os.IsNotExist(err) {
+			fmt.Printf("⚠️  Note: Config file does not exist yet: %s\n", absPath)
+			fmt.Println("   The core service will use environment variables for configuration.")
+		} else {
+			fmt.Printf("✅ Using config file: %s\n", absPath)
+		}
+	}
+
 	fmt.Println()
 	fmt.Println("✅ Configuration saved!")
 
@@ -388,5 +416,6 @@ func promptEnvConfig() (*docker.EnvConfig, error) {
 			SDK:     llmSDK,
 		},
 		RootAPIBearerToken: rootAPIBearerToken,
+		CoreConfigYAMLFile: coreConfigYAMLFile,
 	}, nil
 }

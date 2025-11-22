@@ -16,7 +16,10 @@ LLM_SDK={{.LLMSDK}}
 
 # API Bearer Token (for root API access)
 ROOT_API_BEARER_TOKEN={{.RootAPIBearerToken}}
-
+{{if .CoreConfigYAMLFile}}
+# Core Configuration YAML File
+CORE_CONFIG_YAML_FILE={{.CoreConfigYAMLFile}}
+{{end}}
 # Optional: Override defaults if needed
 # All other settings use defaults from docker-compose.yaml
 # Uncomment and set values below to override docker-compose defaults:
@@ -31,15 +34,17 @@ ROOT_API_BEARER_TOKEN={{.RootAPIBearerToken}}
 `
 
 	vars := struct {
-		LLMAPIKey        string
-		LLMBaseURL       string
-		LLMSDK           string
+		LLMAPIKey          string
+		LLMBaseURL         string
+		LLMSDK             string
 		RootAPIBearerToken string
+		CoreConfigYAMLFile string
 	}{
-		LLMAPIKey:        config.LLMConfig.APIKey,
-		LLMBaseURL:       config.LLMConfig.BaseURL,
-		LLMSDK:           config.LLMConfig.SDK,
+		LLMAPIKey:          config.LLMConfig.APIKey,
+		LLMBaseURL:         config.LLMConfig.BaseURL,
+		LLMSDK:             config.LLMConfig.SDK,
 		RootAPIBearerToken: config.RootAPIBearerToken,
+		CoreConfigYAMLFile: config.CoreConfigYAMLFile,
 	}
 
 	t, err := template.New("env").Parse(tmpl)
@@ -71,6 +76,7 @@ type LLMConfig struct {
 
 // EnvConfig contains all environment configuration
 type EnvConfig struct {
-	LLMConfig         *LLMConfig
+	LLMConfig          *LLMConfig
 	RootAPIBearerToken string
+	CoreConfigYAMLFile string
 }
