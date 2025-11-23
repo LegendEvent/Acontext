@@ -90,6 +90,20 @@ so that your agent can be more stable and provide greater value to your users.
                   Skills guide agent
 ```
 
+Agent experience will be stored in a structured workspace, with folders, pages and blocks:
+
+```txt
+/
+└── github_ops/ (folder)
+    └── GTM_sop (page)
+        ├── find_trending_repos (sop block)
+        └── find_contributor_emails (sop block)
+    └── basic_ops (page)
+        ├── create_repo (sop block)
+        └── delete_repo (sop block)
+```
+
+
 
 # 🚀 How to Start It?
 
