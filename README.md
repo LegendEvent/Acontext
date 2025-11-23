@@ -119,9 +119,7 @@ so that your agent can be more stable and provide greater value to your users.
 ```
 
 
-# How to Start It? [📖](https://docs.acontext.io/local)
-
-> 📖 means a document link
+# 🚀 How to Start It?
 
 We have an `acontext-cli` to help you do quick proof-of-concept. Download it first in your terminal:
 
@@ -136,6 +134,8 @@ acontext docker up
 ```
 
 > [📖](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key.  We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
+
+> [📖](https://docs.acontext.io/local) Read about detailed setup in your computer 
 
 
 
@@ -164,7 +164,32 @@ We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](h
 
 ## End-to-End Examples
 
-TODO
+Download scripts with `acontext`:
+
+- **OpenAI SDK + Acontext**
+
+```bash
+acontext create my-proj --template-path "python/openai_basic"
+```
+- **OpenAI Agent SDK + Acontext**
+
+```bash
+# Coming Soon!
+```
+
+- **Agno + Acontext**
+
+```bash
+acontext create my-proj --template-path "python/agno_basic"
+```
+
+- **vercel/ai-sdk + Acontext**
+
+```bash
+# Coming Soon!
+```
+
+
 
 ## Step by Step Explanation
 
@@ -500,6 +525,10 @@ The return is a list of sop blocks, which look like below:
 ```
 
 </details>
+
+
+
+
 
 
 
