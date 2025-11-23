@@ -664,7 +664,7 @@ class TestGetLearningStatusEndpoint:
                 session_id=test_session.id,
                 order=3,
                 data={"task_description": "Task 3"},
-                status="pending",
+                status="success",
                 space_digested=False,
             )
             session.add_all([task1, task2, task3])

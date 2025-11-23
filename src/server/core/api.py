@@ -358,6 +358,7 @@ async def get_learning_status(
             )
             .where(Task.session_id == session_id)
             .where(Task.is_planning == False)  # noqa: E712
+            .where(Task.status == "success")  # only count successful tasks
         )
 
         result = await db_session.execute(query)
