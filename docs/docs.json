@@ -51,7 +51,13 @@
               "learn/skill-space",
               "learn/search-skills",
               "learn/tool",
-              "learn/design-complex"
+              {
+                "group": "Advance",
+                "pages": [
+                  "learn/advance/design-complex",
+                  "learn/advance/experience-agent"
+                ]
+              }
             ]
           },
           {
