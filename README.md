@@ -65,14 +65,11 @@ so that your agent can be more stable and provide greater value to your users.
 
 # Core Concepts
 
-- **Session** - A conversation thread that stores messages with multi-modal support. 
-  - **Task** - extracted automatically from conversations. Tasks move through `pending` → `running` → `success`/`failed` states. 
-
-- **Disk** - File storage for agent artifacts.
-
-- **Space** - A knowledge repository (like Notion) for agent, where learned skills are stored. 
-  - **Experience Agent** - Background AI agents that extract tasks and learn skills. 
-  - **Skill Block** - A learned experience from complex tasks.
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - A conversation thread that stores messages with multi-modal support. 
+  - [**Task**](https://docs.acontext.io/store/messages/multi-provider) - extracted automatically from conversations. Tasks move through `pending` → `running` → `success`/`failed` states. 
+- [**Disk**](https://docs.acontext.io/store/disk) - File storage for agent artifacts.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - A knowledge repository (like Notion) for agent, where learned skills are stored. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background AI agents that extract tasks and learn skills. 
 
 ### How They Work Together
 
@@ -163,6 +160,16 @@ Once it's done, you can access the following endpoints:
 
 We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)]("https://www.npmjs.com/package/@acontext/acontext") SDKs. The snippets below are using Python.
 
+
+
+## End-to-End Examples
+
+TODO
+
+## Step by Step Explanation
+
+<details>
+<summary>Click to Open</summary>
 
 
 ## Install SDKs
@@ -491,6 +498,8 @@ The return is a list of sop blocks, which look like below:
     ]
 }
 ```
+
+</details>
 
 
 
