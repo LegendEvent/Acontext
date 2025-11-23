@@ -152,7 +152,7 @@ acontext create my-proj --template-path "python/openai-basic"
 **OpenAI Agent SDK + Acontext**
 
 ```bash
-# Coming Soon!
+acontext create my-proj --template-path "python/openai-agent-basic"
 ```
 
 **Agno + Acontext**
