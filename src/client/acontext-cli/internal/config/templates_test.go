@@ -1,146 +1,74 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 func TestLoadTemplatesConfig(t *testing.T) {
+	config, err := LoadTemplatesConfig()
+	assert.NoError(t, err)
+	assert.NotNil(t, config)
+	assert.NotEmpty(t, config.Repo)
+	assert.NotEmpty(t, config.Templates)
+}
+
+func TestGetLanguages(t *testing.T) {
+	languages := GetLanguages()
+	assert.NotEmpty(t, languages)
+	assert.Contains(t, languages, "python")
+	assert.Contains(t, languages, "typescript")
+}
+
+func TestNeedsTemplateDiscovery(t *testing.T) {
+	// Test with languages that should need discovery (no presets in YAML)
+	needsDiscovery, err := NeedsTemplateDiscovery("python")
+	assert.NoError(t, err)
+	assert.True(t, needsDiscovery, "python should need template discovery")
+
+	needsDiscovery, err = NeedsTemplateDiscovery("typescript")
+	assert.NoError(t, err)
+	assert.True(t, needsDiscovery, "typescript should need template discovery")
+}
+
+func TestFormatTemplateName(t *testing.T) {
 	tests := []struct {
-		name    string
-		setup   func(t *testing.T) string
-		wantErr bool
+		name         string
+		language     string
+		templateName string
+		expected     string
 	}{
 		{
-			name: "load valid config from templates directory",
-			setup: func(t *testing.T) string {
-				// Reset cached config for clean test
-				cachedConfig = nil
-				return ""
-			},
-			wantErr: false,
+			name:         "simple name",
+			language:     "python",
+			templateName: "openai",
+			expected:     "Openai",
+		},
+		{
+			name:         "hyphenated name",
+			language:     "typescript",
+			templateName: "vercel-ai",
+			expected:     "Vercel Ai",
+		},
+		{
+			name:         "underscore name",
+			language:     "python",
+			templateName: "custom_template",
+			expected:     "Custom Template",
+		},
+		{
+			name:         "mixed separators",
+			language:     "typescript",
+			templateName: "my-custom_template",
+			expected:     "My Custom Template",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.setup(t)
-			config, err := LoadTemplatesConfig()
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, config)
-			} else {
-				require.NoError(t, err)
-				assert.NotNil(t, config)
-				assert.NotEmpty(t, config.Templates)
-				assert.NotEmpty(t, config.Presets)
-			}
+			result := formatTemplateName(tt.language, tt.templateName)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
-func TestGetTemplate(t *testing.T) {
-	// Create a temporary config file for testing
-	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "templates.yaml")
-
-	configContent := `
-templates:
-  python:
-    plain:
-      repo: "https://github.com/test/repo"
-      path: "python/plain"
-      description: "Test template"
-presets:
-  python:
-    - name: "Test"
-      template: "python.plain"
-`
-
-	err := os.MkdirAll(filepath.Dir(configPath), 0755)
-	require.NoError(t, err)
-
-	err = os.WriteFile(configPath, []byte(configContent), 0644)
-	require.NoError(t, err)
-
-	// Reset cached config
-	cachedConfig = nil
-
-	// We can't easily test this without modifying the package to accept a config path
-	// So we'll test the logic with a manual config
-	var config TemplatesConfig
-	err = yaml.Unmarshal([]byte(configContent), &config)
-	require.NoError(t, err)
-
-	template, ok := config.Templates["python"]["plain"]
-	assert.True(t, ok)
-	assert.Equal(t, "https://github.com/test/repo", template.Repo)
-	assert.Equal(t, "python/plain", template.Path)
-	assert.Equal(t, "Test template", template.Description)
-}
-
-func TestGetPresets(t *testing.T) {
-	configContent := `
-presets:
-  python:
-    - name: "Basic"
-      description: "Basic Python"
-      template: "python.plain"
-    - name: "With OpenAI"
-      description: "Python with OpenAI"
-      template: "python.openai"
-  typescript:
-    - name: "Basic TS"
-      description: "Basic TypeScript"
-      template: "typescript.plain"
-`
-
-	var config TemplatesConfig
-	err := yaml.Unmarshal([]byte(configContent), &config)
-	require.NoError(t, err)
-
-	// Test Python presets
-	presets, ok := config.Presets["python"]
-	assert.True(t, ok)
-	assert.Len(t, presets, 2)
-	assert.Equal(t, "Basic", presets[0].Name)
-	assert.Equal(t, "With OpenAI", presets[1].Name)
-
-	// Test TypeScript presets
-	tsPresets, ok := config.Presets["typescript"]
-	assert.True(t, ok)
-	assert.Len(t, tsPresets, 1)
-	assert.Equal(t, "Basic TS", tsPresets[0].Name)
-}
-
-func TestGetLanguages(t *testing.T) {
-	configContent := `
-presets:
-  python:
-    - name: "Test"
-      template: "python.plain"
-  typescript:
-    - name: "Test"
-      template: "typescript.plain"
-`
-
-	var config TemplatesConfig
-	err := yaml.Unmarshal([]byte(configContent), &config)
-	require.NoError(t, err)
-
-	// Since GetLanguages uses LoadTemplatesConfig, we test the logic directly
-	languages := make([]string, 0, len(config.Presets))
-	for lang := range config.Presets {
-		languages = append(languages, lang)
-	}
-
-	assert.Contains(t, languages, "python")
-	assert.Contains(t, languages, "typescript")
-	assert.Len(t, languages, 2)
-}
-

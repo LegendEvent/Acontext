@@ -37,11 +37,15 @@ acontext create my-project --template-path "python/custom-template"
 acontext create my-project -t "typescript/my-custom-template"
 ```
 
-**Available Templates:**
-- `python/openai` - Python with OpenAI integration (default)
-- `typescript/vercel-ai` - TypeScript with Vercel AI SDK (default)
+**Templates:**
 
-You can also use any custom template folder from the [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples) repository by specifying the path with `--template-path`.
+The CLI automatically discovers all available templates from the [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples) repository. When you run `acontext create`, you'll see a list of all templates available for your selected language.
+
+Templates are organized by language:
+- `python/` - Python templates (openai, anthropic, etc.)
+- `typescript/` - TypeScript templates (vercel-ai, langchain, etc.)
+
+You can also use any custom template folder by specifying the path with `--template-path`.
 
 ### Docker Deployment
 
@@ -78,6 +82,7 @@ acontext version check --upgrade
 **✅ Completed**: 
 - ✅ Interactive project creation
 - ✅ Multi-language template support (Python/TypeScript)
+- ✅ Dynamic template discovery from repository
 - ✅ Git repository initialization
 - ✅ Docker Compose integration
 - ✅ One-command deployment

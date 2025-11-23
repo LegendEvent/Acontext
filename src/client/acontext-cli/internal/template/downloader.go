@@ -1,11 +1,16 @@
 package template
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
 // Config template configuration (to avoid circular imports)
@@ -17,6 +22,11 @@ type Config struct {
 
 // DownloadTemplate downloads template to target directory
 func DownloadTemplate(template *Config, destDir string) error {
+	return DownloadTemplateWithVars(template, destDir, nil)
+}
+
+// DownloadTemplateWithVars downloads template and replaces template variables
+func DownloadTemplateWithVars(template *Config, destDir string, vars map[string]string) error {
 	fmt.Println("📦 Downloading template...")
 
 	// 1. Create temporary directory
@@ -70,6 +80,13 @@ func DownloadTemplate(template *Config, destDir string) error {
 	fmt.Println("📋 Copying template files...")
 	if err := copyDir(srcDir, destDir); err != nil {
 		return fmt.Errorf("failed to copy template: %w", err)
+	}
+
+	// 6. Replace template variables if provided
+	if len(vars) > 0 {
+		if err := replaceTemplateVars(destDir, vars); err != nil {
+			return fmt.Errorf("failed to replace template variables: %w", err)
+		}
 	}
 
 	fmt.Println("✅ Template downloaded successfully")
@@ -130,4 +147,159 @@ func copyFile(src, dst string, mode os.FileMode) error {
 
 	_, err = io.Copy(destFile, sourceFile)
 	return err
+}
+
+// replaceTemplateVars replaces template variables in configuration files
+func replaceTemplateVars(projectDir string, vars map[string]string) error {
+	// Handle pyproject.toml (Python projects)
+	pyprojectPath := filepath.Join(projectDir, "pyproject.toml")
+	if _, err := os.Stat(pyprojectPath); err == nil {
+		if err := replacePyProjectName(pyprojectPath, vars["project_name"]); err != nil {
+			return fmt.Errorf("failed to update pyproject.toml: %w", err)
+		}
+	}
+
+	// Handle package.json (TypeScript/JavaScript projects)
+	packageJsonPath := filepath.Join(projectDir, "package.json")
+	if _, err := os.Stat(packageJsonPath); err == nil {
+		if err := replacePackageJsonName(packageJsonPath, vars["project_name"]); err != nil {
+			return fmt.Errorf("failed to update package.json: %w", err)
+		}
+	}
+
+	// Handle Cargo.toml (Rust projects)
+	cargoTomlPath := filepath.Join(projectDir, "Cargo.toml")
+	if _, err := os.Stat(cargoTomlPath); err == nil {
+		if err := replaceCargoTomlName(cargoTomlPath, vars["project_name"]); err != nil {
+			return fmt.Errorf("failed to update Cargo.toml: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// replacePyProjectName replaces the name field in pyproject.toml
+func replacePyProjectName(filePath, projectName string) error {
+	if projectName == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Parse TOML
+	var config map[string]interface{}
+	if err := toml.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("failed to parse pyproject.toml: %w", err)
+	}
+
+	// Sanitize project name for Python package naming conventions
+	packageName := sanitizeProjectNameForPackage(projectName, "python")
+
+	// Update project name
+	if project, ok := config["project"].(map[string]interface{}); ok {
+		project["name"] = packageName
+	} else {
+		// If project section doesn't exist, create it
+		config["project"] = map[string]interface{}{
+			"name": packageName,
+		}
+	}
+
+	// Write back
+	updatedData, err := toml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal pyproject.toml: %w", err)
+	}
+
+	return os.WriteFile(filePath, updatedData, 0644)
+}
+
+// replacePackageJsonName replaces the name field in package.json
+func replacePackageJsonName(filePath, projectName string) error {
+	if projectName == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Parse JSON
+	var config map[string]interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("failed to parse package.json: %w", err)
+	}
+
+	// Sanitize project name for npm package naming conventions
+	packageName := sanitizeProjectNameForPackage(projectName, "npm")
+
+	// Update name
+	config["name"] = packageName
+
+	// Write back with proper formatting
+	updatedData, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal package.json: %w", err)
+	}
+	updatedData = append(updatedData, '\n') // Add trailing newline
+
+	return os.WriteFile(filePath, updatedData, 0644)
+}
+
+// replaceCargoTomlName replaces the name field in Cargo.toml
+func replaceCargoTomlName(filePath, projectName string) error {
+	if projectName == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Parse TOML
+	var config map[string]interface{}
+	if err := toml.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("failed to parse Cargo.toml: %w", err)
+	}
+
+	// Update package name
+	if packageSection, ok := config["package"].(map[string]interface{}); ok {
+		packageSection["name"] = projectName
+	} else {
+		// If package section doesn't exist, create it
+		config["package"] = map[string]interface{}{
+			"name": projectName,
+		}
+	}
+
+	// Write back
+	updatedData, err := toml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Cargo.toml: %w", err)
+	}
+
+	return os.WriteFile(filePath, updatedData, 0644)
+}
+
+// sanitizeProjectNameForPackage converts project name to a valid package name
+// For Python: lowercase, replace spaces/hyphens with underscores
+// For npm: lowercase, replace spaces with hyphens
+func sanitizeProjectNameForPackage(name, format string) string {
+	name = strings.ToLower(name)
+	switch format {
+	case "python":
+		// Python package names: lowercase, underscores allowed, no hyphens
+		re := regexp.MustCompile(`[^a-z0-9_]`)
+		name = re.ReplaceAllString(name, "_")
+	case "npm":
+		// npm package names: lowercase, hyphens allowed, no underscores
+		re := regexp.MustCompile(`[^a-z0-9-]`)
+		name = re.ReplaceAllString(name, "-")
+	}
+	return name
 }

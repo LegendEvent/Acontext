@@ -107,6 +107,9 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		if err != nil {
+			return err
+		}
 		fmt.Printf("✓ Selected template: %s\n", preset.Name)
 		fmt.Println()
 
@@ -117,15 +120,25 @@ func runCreate(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid template key: %s", templateKey)
 		}
 
+		// Try to get template from config first
 		tmpl, err := config.GetTemplate(parts[0], parts[1])
 		if err != nil {
-			return fmt.Errorf("failed to get template: %w", err)
-		}
-
-		templateConfig = &template.Config{
-			Repo:        tmpl.Repo,
-			Path:        tmpl.Path,
-			Description: tmpl.Description,
+			// If not found in config, construct path dynamically
+			cfg, err := config.LoadTemplatesConfig()
+			if err != nil {
+				return fmt.Errorf("failed to load templates config: %w", err)
+			}
+			templateConfig = &template.Config{
+				Repo:        cfg.Repo,
+				Path:        fmt.Sprintf("%s/%s", parts[0], parts[1]),
+				Description: fmt.Sprintf("%s template", templateKey),
+			}
+		} else {
+			templateConfig = &template.Config{
+				Repo:        tmpl.Repo,
+				Path:        tmpl.Path,
+				Description: tmpl.Description,
+			}
 		}
 	}
 
@@ -134,9 +147,11 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create project directory: %w", err)
 	}
 
-	// 7. Download template
-
-	if err := template.DownloadTemplate(templateConfig, projectDir); err != nil {
+	// 7. Download template with project name variable
+	vars := map[string]string{
+		"project_name": projectName,
+	}
+	if err := template.DownloadTemplateWithVars(templateConfig, projectDir, vars); err != nil {
 		return fmt.Errorf("failed to download template: %w", err)
 	}
 	fmt.Println()
@@ -237,7 +252,24 @@ func promptLanguage() (string, error) {
 
 // promptTemplate prompts user to select a template
 func promptTemplate(language string) (string, *config.Preset, error) {
+	// Check if we need to discover templates dynamically
+	needsDiscovery, err := config.NeedsTemplateDiscovery(language)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to check template discovery: %w", err)
+	}
+
+	// Show loading indicator if we need to discover templates
+	if needsDiscovery {
+		fmt.Print("🔍 Discovering templates from repository...")
+	}
+
 	presets, err := config.GetPresets(language)
+	
+	// Clear loading message if it was shown
+	if needsDiscovery {
+		fmt.Print("\r" + strings.Repeat(" ", 50) + "\r")
+	}
+	
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get presets: %w", err)
 	}
@@ -246,17 +278,13 @@ func promptTemplate(language string) (string, *config.Preset, error) {
 		return "", nil, fmt.Errorf("no presets available for language: %s", language)
 	}
 
-	// Create options list
+	// Create options list (simplified - just show template names)
 	options := make([]string, len(presets))
-	optionsWithDesc := make(map[string]*config.Preset)
+	optionsMap := make(map[string]*config.Preset)
 
 	for i, preset := range presets {
-		optionText := preset.Name
-		if preset.Description != "" {
-			optionText += " - " + preset.Description
-		}
-		options[i] = optionText
-		optionsWithDesc[optionText] = &presets[i]
+		options[i] = preset.Name
+		optionsMap[preset.Name] = &presets[i]
 	}
 
 	var selectedOption string
@@ -270,7 +298,7 @@ func promptTemplate(language string) (string, *config.Preset, error) {
 		return "", nil, fmt.Errorf("failed to select template: %w", err)
 	}
 
-	preset, ok := optionsWithDesc[selectedOption]
+	preset, ok := optionsMap[selectedOption]
 	if !ok {
 		return "", nil, fmt.Errorf("selected preset not found")
 	}

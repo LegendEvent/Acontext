@@ -1,44 +1,31 @@
 # Acontext CLI Template Configuration File
-# Defines template mapping relationships for different combinations
 # 
 # Template Repository: https://github.com/memodb-io/Acontext-Examples
 # 
-# SDK Notes:
-# - Python: acontext SDK (built-in openai, anthropic)
-# - TypeScript: acontext SDK + @vercel/ai SDK (supports multiple LLM providers)
+# Templates are dynamically discovered from the repository structure.
+# The CLI will automatically list all subdirectories under each language folder.
+#
+# Repository Structure:
+#   python/
+#     ├── openai/
+#     ├── anthropic/
+#     └── ...
+#   typescript/
+#     ├── vercel-ai/
+#     ├── langchain/
+#     └── ...
 
+# Repository URL
+repo: "https://github.com/memodb-io/Acontext-Examples"
+
+# Supported languages (templates will be auto-discovered from these folders)
 templates:
-  # Python Language Templates
-  python:
-    # Python + OpenAI
-    openai:
-      repo: "https://github.com/memodb-io/Acontext-Examples"
-      path: "python/openai"
-      description: "Python template with OpenAI integration"
+  python: {}
+  typescript: {}
 
-  # TypeScript Language Templates
-  typescript:
-    # TypeScript + Vercel AI SDK (Universal AI SDK)
-    vercel-ai:
-      repo: "https://github.com/memodb-io/Acontext-Examples"
-      path: "typescript/vercel-ai"
-      description: "TypeScript with Vercel AI SDK (supports OpenAI, Anthropic, etc.)"
-
-# Simplified Selection Mapping
-presets:
-  python:
-    - name: "Python + OpenAI"
-      description: "OpenAI integration (built-in SDK)"
-      combination:
-        language: "python"
-        sdk: "acontext"
-        provider: "openai"
-      template: "python.openai"
-
-  typescript:
-    - name: "TypeScript + Vercel AI SDK"
-      description: "Universal AI SDK supporting multiple providers"
-      combination:
-        language: "typescript"
-        sdk: "vercel-ai"
-      template: "typescript.vercel-ai"
+# Optional: Define custom presets if you want to override auto-discovery
+# If not specified, templates will be dynamically discovered from the repository
+# presets:
+#   python:
+#     - name: "OpenAI"
+#       template: "python.openai"

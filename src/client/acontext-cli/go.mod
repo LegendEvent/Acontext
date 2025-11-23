@@ -4,6 +4,7 @@ go 1.25.1
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
