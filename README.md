@@ -90,7 +90,7 @@ so that your agent can be more stable and provide greater value to your users.
                   Skills guide agent
 ```
 
-Agent experience will be stored in a structured workspace, with folders, pages and blocks:
+Agent experience will be stored in a structured `Space`, with folders, pages and blocks. For example:
 
 ```txt
 /
@@ -101,6 +101,7 @@ Agent experience will be stored in a structured workspace, with folders, pages a
     └── basic_ops (page)
         ├── create_repo (sop block)
         └── delete_repo (sop block)
+    ...
 ```
 
 
@@ -144,24 +145,30 @@ Once it's done, you can access the following endpoints:
 
 Download end-to-end scripts with `acontext`:
 
-**OpenAI SDK + Acontext**
+**OpenAI SDK + Acontext** (python)
 
 ```bash
 acontext create my-proj --template-path "python/openai-basic"
 ```
-**OpenAI Agent SDK + Acontext**
+**OpenAI SDK + Acontext** (typescript)
+
+```bash
+acontext create my-proj --template-path "typescript/openai-basic"
+```
+
+**OpenAI Agent SDK + Acontext** (python)
 
 ```bash
 acontext create my-proj --template-path "python/openai-agent-basic"
 ```
 
-**Agno + Acontext**
+**Agno + Acontext** (python)
 
 ```bash
 acontext create my-proj --template-path "python/agno-basic"
 ```
 
-**vercel/ai-sdk + Acontext**
+**vercel/ai-sdk + Acontext** (typescript)
 
 ```bash
 # Coming Soon!
