@@ -29,6 +29,19 @@ You only need to connect the Session to a Space when creating it, and Acontext w
 - Properly place these SOPs into the Space
 - Search for relevant experiences from the Space
 
+### WorkSpace Structure
+Agent experience will be stored in a structured workspace, with folders and pages:
+```txt Structure Example
+/
+└── github_ops/ (folder)
+    └── GTM_sop (page)
+        ├── find_trending_repos (sop block)
+        └── find_contributor_emails (sop block)
+    └── basic_ops (page)
+        ├── create_repo (sop block)
+        └── delete_repo (sop block)
+```
+
 ### SOP with Conditions
 How do we store SOPs?
 Acontext automatically learns from context, determines the scenarios where this SOP should be used, and collects complete tool-call patterns:
