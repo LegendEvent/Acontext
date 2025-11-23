@@ -158,24 +158,24 @@ Once it's done, you can access the following endpoints:
 
 Download end-to-end scripts with `acontext`:
 
-- **OpenAI SDK + Acontext**
+**OpenAI SDK + Acontext**
 
 ```bash
 acontext create my-proj --template-path "python/openai_basic"
 ```
-- **OpenAI Agent SDK + Acontext**
+**OpenAI Agent SDK + Acontext**
 
 ```bash
 # Coming Soon!
 ```
 
-- **Agno + Acontext**
+**Agno + Acontext**
 
 ```bash
 acontext create my-proj --template-path "python/agno_basic"
 ```
 
-- **vercel/ai-sdk + Acontext**
+**vercel/ai-sdk + Acontext**
 
 ```bash
 # Coming Soon!
