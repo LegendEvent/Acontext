@@ -66,7 +66,11 @@ func TestReplacePyProjectName(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "test-pyproject-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	// Create a test pyproject.toml
 	pyprojectPath := filepath.Join(tempDir, "pyproject.toml")
@@ -101,7 +105,11 @@ func TestReplacePackageJsonName(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "test-package-json-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	// Create a test package.json
 	packageJsonPath := filepath.Join(tempDir, "package.json")
@@ -131,7 +139,11 @@ func TestReplaceTemplateVars(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "test-template-vars-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	// Create test files
 	pyprojectPath := filepath.Join(tempDir, "pyproject.toml")
