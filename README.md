@@ -161,7 +161,7 @@ Download end-to-end scripts with `acontext`:
 **OpenAI SDK + Acontext**
 
 ```bash
-acontext create my-proj --template-path "python/openai_basic"
+acontext create my-proj --template-path "python/openai-basic"
 ```
 **OpenAI Agent SDK + Acontext**
 
@@ -172,7 +172,7 @@ acontext create my-proj --template-path "python/openai_basic"
 **Agno + Acontext**
 
 ```bash
-acontext create my-proj --template-path "python/agno_basic"
+acontext create my-proj --template-path "python/agno-basic"
 ```
 
 **vercel/ai-sdk + Acontext**
