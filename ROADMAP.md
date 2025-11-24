@@ -21,6 +21,15 @@ Chore
 
 - Telemetry：log detailed callings and latency
 
+Optimization
+
+- Prune prompts to lower cost
+
+Text Match
+
+- Use `pg_trim` to support `grep` and `grop` in Disks
+- Use `pg_trim` to support keyword-matching `grep` and `grop` in Spaces
+
 ## v0.1
 
 Disk - more agentic interface

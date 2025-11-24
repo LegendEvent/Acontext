@@ -149,10 +149,11 @@ Once it's done, you can access the following endpoints:
 
 <div align="center">
     <picture>
-      <img alt="Dashboard" src="./docs/images/dashboard/BI.png" width="80%">
+      <img alt="Dashboard" src="./docs/images/dashboard/BI.png" width="100%">
     </picture>
   <p>Dashboard of Success Rate and other Metrics</p>
 </div>
+
 
 
 
@@ -282,7 +283,7 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 
 <div align="center">
     <picture>
-      <img alt="Session" src="./docs/images/dashboard/message_viewer.png" width="80%">
+      <img alt="Session" src="./docs/images/dashboard/message_viewer.png" width="100%">
     </picture>
   <p>You can view sessions in your local Dashboard</p>
 </div>
@@ -332,7 +333,7 @@ print(f"✓ Download URL: {result.public_url}")
 
 <div align="center">
     <picture>
-      <img alt="Artifacts" src="./docs/images/dashboard/artifact_viewer.png" width="80%">
+      <img alt="Artifacts" src="./docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
   <p>You can view artifacts in your local Dashboard</p>
 </div>
@@ -447,7 +448,7 @@ You can view the session tasks' statuses in the Dashboard:
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./docs/images/dashboard/session_task_viewer.png" width="80%">
+      <img alt="Acontext Learning" src="./docs/images/dashboard/session_task_viewer.png" width="100%">
     </picture>
   <p>A Task Demo</p>
 </div>
@@ -494,7 +495,7 @@ Eventually, SOP blocks with tool-call pattern will be saved to `Space`. You can 
 
 <div align="center">
     <picture>
-      <img alt="A Space Demo" src="./docs/images/dashboard/skill_viewer.png" width="80%">
+      <img alt="A Space Demo" src="./docs/images/dashboard/skill_viewer.png" width="100%">
     </picture>
   <p>A Space Demo</p>
 </div>
