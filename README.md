@@ -90,6 +90,22 @@ so that your agent can be more stable and provide greater value to your users.
                   Skills guide agent
 ```
 
+What's your agent experience look like:
+
+```json
+{
+    "use_when": "star a repo on github.com",
+    "preferences": "use personal account. star but not fork",
+    "tool_sops": [
+        {"tool_name": "goto", "action": "goto the user given github repo url"},
+        {"tool_name": "click", "action": "find login button if any, and start to login first"},
+        ...
+    ]
+}
+```
+
+
+
 Agent experience will be stored in a structured `Space`, with folders, pages and blocks. For example:
 
 ```txt
