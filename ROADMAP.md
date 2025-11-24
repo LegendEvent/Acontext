@@ -11,24 +11,35 @@ We're always welcome to integrations PRs:
 
 ## v0.0
 
-Session - Context Engineering
-
-- Session - Tool Result reduction/artifact offloading
-- Session - Count token
-- Session - Context LLM compression
-
 Chore
 
 - Telemetry：log detailed callings and latency
 
-Optimization
+Prompt
 
-- Prune prompts to lower cost
+- Prune prompts to lower cost, reduce thinking output
+- Optimize task agent prompt to better reserve conditions of tasks
+- Optimize experience agent prompt to act 
 
 Text Match
 
-- Use `pg_trim` to support `grep` and `grop` in Disks
-- Use `pg_trim` to support keyword-matching `grep` and `grop` in Spaces
+- Use `pg_trim` to support `grep` and `glob` in Disks
+- Use `pg_trim` to support keyword-matching `grep` and `glob` in Spaces
+
+Session - Context Engineering
+
+- Session - Count tokens
+- Session - message version control
+- Session - Context Compression based on Tasks
+- Session - Context Offloading based on Disks
+
+Dashboard
+
+- Optimize task viewer to show description, progress and preferences
+
+Core
+
+- Fix bugs for long-handing MQ disconnection.
 
 ## v0.1
 
@@ -42,8 +53,7 @@ Disk - more agentic interface
 Space
 
 - Space: export use_when as system prompt
-
-- Claude Skill integrate
+- Integrate Claude Skill 
 
   - Space: integrate Claude skill into Space
 
