@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://discord.gg/rpZs5TaSuV">
+  <a href="https://discord.acontext.io">
       <img alt="Show Acontext header banner" src="./assets/Acontext-header-banner.png">
   </a>
   <p>
@@ -14,7 +14,7 @@
   </p>
   <p align="center">
     <a href="https://x.com/acontext_io"><img src="https://img.shields.io/twitter/follow/acontext_io?style=social" alt="Twitter Follow"></a>
-    <a href="https://discord.gg/rpZs5TaSuV"><img src="https://dcbadge.limes.pink/api/server/rpZs5TaSuV?style=flat" alt="Discord"></a>
+    <a href="https://discord.acontext.io"><img src="https://dcbadge.limes.pink/api/server/SG9xJcqVBu?style=flat" alt="Discord"></a>
   </p>
   <div align="center">
     <!-- Keep these links. Translations will automatically update with the README. -->
@@ -556,7 +556,7 @@ Star Acontext on Github to support and receive instant notifications
 
 Join the community for support and discussions:
 
--   [Discuss with Builders on Acontext Discord](https://discord.gg/rpZs5TaSuV) 👻 
+-   [Discuss with Builders on Acontext Discord](https://discord.acontext.io) 👻 
 -  [Follow Acontext on X](https://x.com/acontext_io) 𝕏 
 
 
