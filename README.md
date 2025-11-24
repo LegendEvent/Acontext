@@ -66,10 +66,10 @@ so that your agent can be more stable and provide greater value to your users.
 # 🌲 Core Concepts
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - A conversation thread that stores messages with multi-modal support. 
-  - [**Task**](https://docs.acontext.io/observe/agent_tasks) - extracted automatically from conversations. Tasks move through `pending` → `running` → `success`/`failed` states. 
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collect task' status, progress and preferences.
 - [**Disk**](https://docs.acontext.io/store/disk) - File storage for agent artifacts.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - A knowledge repository (like Notion) for agent, where learned skills are stored. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background AI agents that extract tasks and learn skills. 
+- [**Space**](https://docs.acontext.io/learn/skill-space) - A Notion-like `Space` for agent, where learned skills are stored. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills.
 
 ### How They Work Together
 
@@ -90,15 +90,15 @@ so that your agent can be more stable and provide greater value to your users.
                   Skills guide agent
 ```
 
-What's your agent experience look like:
+What's your agent skills look like:
 
 ```json
 {
     "use_when": "star a repo on github.com",
     "preferences": "use personal account. star but not fork",
     "tool_sops": [
-        {"tool_name": "goto", "action": "goto the user given github repo url"},
-        {"tool_name": "click", "action": "find login button if any, and start to login first"},
+        {"tool_name": "goto", "action": "goto github.com"},
+        {"tool_name": "click", "action": "find login button if any. login first"},
         ...
     ]
 }
@@ -110,8 +110,8 @@ Agent experience will be stored in a structured `Space`, with folders, pages and
 
 ```txt
 /
-└── github_ops/ (folder)
-    └── GTM_sop (page)
+└── github/ (folder)
+    └── GTM (page)
         ├── find_trending_repos (sop block)
         └── find_contributor_emails (sop block)
     └── basic_ops (page)
@@ -339,9 +339,9 @@ print(f"✓ Download URL: {result.public_url}")
 
 ## Observe [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will automatically launch a background agent to track the task progress and user feedback. It's like a background TODO agent.
+For every session, Acontext will **automatically** launch a background agent to track the task progress and user feedback. **It's like a background TODO agent**. Acontext will use it to observe your daily Agent success rate.
 
-You can use the SDK to retrieve the current state of the agent session.
+You can use the SDK to retrieve the current state of the agent session, for Context Engineering like Reduction and Compression. 
 
 <details>
 <summary>Full Script</summary>
@@ -423,9 +423,10 @@ Example Task Return:
 ```txt
 Task #1:
   Title: Search for the latest news about iPhone 15 Pro Max and report findings to the user before any landing page coding.
-  Status: running
-  Progress updates: 1
-    - User clarified preference for reporting the collected news before starting coding, and I confirmed that the first step will be reporting before moving on to landing page development.
+  Status: success
+  Progress updates: 2
+    - I confirmed that the first step will be reporting before moving on to landing page development.
+    - I already collect all the iPhone 15 pro max infos and reported to user, waiting for approval for next step.
   User preferences:
     - user expects a report on latest news about iPhone 15 pro max before any coding work on the landing page.
 
