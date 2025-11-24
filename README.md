@@ -190,6 +190,8 @@ acontext create my-proj --template-path "python/agno-basic"
 acontext create my-proj --template-path "typescript/vercel-ai-basic"
 ```
 
+Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+
 
 
 ## Step by Step Explanation
