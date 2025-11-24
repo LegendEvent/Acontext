@@ -66,16 +66,16 @@ so that your agent can be more stable and provide greater value to your users.
 # 🌲 Core Concepts
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - A conversation thread that stores messages with multi-modal support. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collect task' status, progress and preferences.
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collects task's status, progress and preferences.
 - [**Disk**](https://docs.acontext.io/store/disk) - File storage for agent artifacts.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - A Notion-like `Space` for agent, where learned skills are stored. 
+- [**Space**](https://docs.acontext.io/learn/skill-space) - A Notion-like `Space` for agents, where learned skills are stored. 
   - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills.
 
 ### How They Work Together
 
 ```txt
 ┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Aritfact Disk │
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
 └──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
                   │                  │
                   │         ┌────────▼────────┐
@@ -87,10 +87,10 @@ so that your agent can be more stable and provide greater value to your users.
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Skills guide agent
+                  Skills guide the agent
 ```
 
-What's your agent skills look like:
+Your agent skills look like:
 
 ```json
 {
@@ -136,7 +136,7 @@ You should have [docker](https://www.docker.com/get-started/) installed and an O
 acontext docker up
 ```
 
-> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key.  We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
+> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
 
 
 
@@ -200,7 +200,7 @@ Check our example repo for more templates: [Acontext-Examples](https://github.co
 <summary>Click to Open</summary>
 
 
-We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)]("https://www.npmjs.com/package/@acontext/acontext") SDKs. The snippets below are using Python.
+We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDKs. The snippets below are using Python.
 
 ## Install SDKs
 
@@ -217,7 +217,7 @@ npm i @acontext/acontext # for Typescript
 from acontext import AcontextClient
 
 client = AcontextClient(
-    base_url="http://localhost:8029/api/v1"
+    base_url="http://localhost:8029/api/v1",
     api_key="sk-ac-your-root-api-bearer-token"
 )
 client.ping()
@@ -272,7 +272,7 @@ Obtain your session messages using `sessions.get_messages`
 r = client.sessions.get_messages(session.id)
 new_msg = r.items
 
-new_msg.append({"role": "user", "content": "How you doing?"})
+new_msg.append({"role": "user", "content": "How are you doing?"})
 r = openai_client.chat.completions.create(model="gpt-4.1", messages=new_msg)
 print(r.choices[0].message.content)
 client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
@@ -341,7 +341,7 @@ print(f"✓ Download URL: {result.public_url}")
 
 ## Observe [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will **automatically** launch a background agent to track the task progress and user feedback. **It's like a background TODO agent**. Acontext will use it to observe your daily Agent success rate.
+For every session, Acontext will **automatically** launch a background agent to track the task progress and user feedback. **It's like a background TODO agent**. Acontext will use it to observe your daily agent success rate.
 
 You can use the SDK to retrieve the current state of the agent session, for Context Engineering like Reduction and Compression. 
 
@@ -428,7 +428,7 @@ Task #1:
   Status: success
   Progress updates: 2
     - I confirmed that the first step will be reporting before moving on to landing page development.
-    - I already collect all the iPhone 15 pro max infos and reported to user, waiting for approval for next step.
+    - I have already collected all the iPhone 15 pro max info and reported to the user, waiting for approval for next step.
   User preferences:
     - user expects a report on latest news about iPhone 15 pro max before any coding work on the landing page.
 
