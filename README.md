@@ -187,7 +187,7 @@ acontext create my-proj --template-path "python/agno-basic"
 **vercel/ai-sdk + Acontext** (typescript)
 
 ```bash
-# Coming Soon!
+acontext create my-proj --template-path "typescript/vercel-ai-basic"
 ```
 
 
