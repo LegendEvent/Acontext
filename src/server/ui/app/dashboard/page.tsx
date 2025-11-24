@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Rectangle } from "recharts"
 import { useTranslations } from "next-intl"
 import {
   Select,
@@ -207,6 +207,39 @@ export default function DashboardPage() {
       </div>
     )
 
+  // Create a Bar shape function with dynamic rounded corners
+  // Determine the topmost field with a value based on the data point, and set rounded corners for the corresponding Bar
+  const createStackedBarShape = (dataKey: string, fill: string) => {
+    // Bar order from bottom to top: completed -> inProgress -> pending -> failed
+    const order = ["completed", "inProgress", "pending", "failed"]
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ShapeComponent = (props: any) => {
+      const { payload, ...rest } = props
+
+      // Check the order from bottom to top, find the last field with a value
+      let topDataKey: string | null = null
+      if (payload) {
+        for (let i = order.length - 1; i >= 0; i--) {
+          const key = order[i]
+          const value = payload[key as keyof typeof payload]
+          if (typeof value === "number" && value > 0) {
+            topDataKey = key
+            break
+          }
+        }
+      }
+
+      // If the current Bar is the topmost field with a value, set rounded corners
+      const radius: [number, number, number, number] = topDataKey === dataKey ? [4, 4, 0, 0] : [0, 0, 0, 0]
+
+      return <Rectangle {...rest} fill={fill} radius={radius} />
+    }
+
+    ShapeComponent.displayName = `StackedBarShape-${dataKey}`
+    return ShapeComponent
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Page header with title and time range selector */}
@@ -313,28 +346,28 @@ export default function DashboardPage() {
                   stackId="a"
                   fill="#10b981"
                   name={t("completed")}
-                  radius={[0, 0, 0, 0]}
+                  shape={createStackedBarShape("completed", "#10b981")}
                 />
                 <Bar
                   dataKey="inProgress"
                   stackId="a"
                   fill="#3b82f6"
                   name={t("inProgress")}
-                  radius={[0, 0, 0, 0]}
+                  shape={createStackedBarShape("inProgress", "#3b82f6")}
                 />
                 <Bar
                   dataKey="pending"
                   stackId="a"
                   fill="#f59e0b"
                   name={t("pending")}
-                  radius={[0, 0, 0, 0]}
+                  shape={createStackedBarShape("pending", "#f59e0b")}
                 />
                 <Bar
                   dataKey="failed"
                   stackId="a"
                   fill="#ef4444"
                   name={t("failed")}
-                  radius={[4, 4, 0, 0]}
+                  shape={createStackedBarShape("failed", "#ef4444")}
                 />
               </BarChart>
             )
