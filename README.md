@@ -47,7 +47,7 @@ Acontext is a context data platform that:
     <picture>
       <img alt="Acontext Learning" src="./assets/acontext_dataflow.png" width="100%">
     </picture>
-  <p>Store Contexts, Observe Tasks, then Learn Skills</p>
+  <p>Store, Observe and Learn</p>
 </div>
 
 
