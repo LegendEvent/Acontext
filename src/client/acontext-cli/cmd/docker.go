@@ -296,25 +296,23 @@ func promptEnvConfig() (*docker.EnvConfig, error) {
 		return nil, fmt.Errorf("failed to get LLM Base URL: %w", err)
 	}
 
-	// Prompt for Root API Bearer Token (with default)
+	// Prompt for Root API Bearer Token
 	var rootAPIBearerToken string
-	rootTokenPrompt := &survey.Input{
-		Message: "4. Set up Root API Bearer Token:",
+	if err := survey.AskOne(&survey.Input{
+		Message: "4. Pass a string to build Acontext token (format: sk-ac-xxxx):",
 		Default: "your-root-api-bearer-token",
-		Help:    "This token is used for root API access (e.g., for creating projects)",
-	}
-	if err := survey.AskOne(rootTokenPrompt, &rootAPIBearerToken); err != nil {
+		Help:    "'sk-ac-' prefix will be added automatically. Enter token part only (xxxx).",
+	}, &rootAPIBearerToken); err != nil {
 		return nil, fmt.Errorf("failed to get Root API Bearer Token: %w", err)
 	}
 
 	// Prompt for Core Config YAML File (optional)
 	var coreConfigYAMLFile string
-	coreConfigPrompt := &survey.Input{
-		Message: "5. Enter Core Config YAML File path (optional):",
+	if err := survey.AskOne(&survey.Input{
+		Message: "5. Configure Acontext by Passing an existing config.yaml (optional):",
 		Default: "./config.yaml",
-		Help:    "Path to your core config.yaml file (e.g., ./config.yaml). Leave empty to use env vars only.",
-	}
-	if err := survey.AskOne(coreConfigPrompt, &coreConfigYAMLFile); err != nil {
+		Help:    "Path to config.yaml file. Leave empty to use env vars only.",
+	}, &coreConfigYAMLFile); err != nil {
 		return nil, fmt.Errorf("failed to get Core Config YAML File: %w", err)
 	}
 

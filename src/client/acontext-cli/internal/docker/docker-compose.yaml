@@ -157,7 +157,7 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-helloworld}
       DATABASE_NAME: ${DATABASE_NAME:-acontext}
       DATABASE_EXPORT_PORT: ${DATABASE_EXPORT_PORT:-5432}
-      REDIST_HOST: acontext-server-redis
+      REDIS_HOST: acontext-server-redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:-helloworld}
       REDIS_EXPORT_PORT: ${REDIS_EXPORT_PORT:-6379}
       RABBITMQ_HOST: ${RABBITMQ_HOST:-acontext-server-rabbitmq}
