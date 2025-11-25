@@ -180,7 +180,7 @@ func TestSessionService_Create(t *testing.T) {
 					},
 				},
 			}
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			err := service.Create(ctx, tt.session)
 
@@ -258,7 +258,7 @@ func TestSessionService_Delete(t *testing.T) {
 					},
 				},
 			}
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			err := service.Delete(ctx, tt.projectID, tt.sessionID)
 
@@ -343,7 +343,7 @@ func TestSessionService_GetByID(t *testing.T) {
 					},
 				},
 			}
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			result, err := service.GetByID(ctx, tt.session)
 
@@ -415,7 +415,7 @@ func TestSessionService_UpdateByID(t *testing.T) {
 					},
 				},
 			}
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			err := service.UpdateByID(ctx, tt.session)
 
@@ -553,7 +553,7 @@ func TestSessionService_List(t *testing.T) {
 					},
 				},
 			}
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			result, err := service.List(ctx, tt.input)
 
@@ -790,7 +790,7 @@ func TestSessionService_GetMessages(t *testing.T) {
 				},
 			}
 			// Note: blob is nil in test, so GetMessages will skip DownloadJSON and PresignGet
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			result, err := service.GetMessages(ctx, tt.input)
 
@@ -950,7 +950,7 @@ func TestSessionService_GetMessages_SortOrder(t *testing.T) {
 					},
 				},
 			}
-			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg)
+			service := NewSessionService(repo, mockAssetRefRepo, logger, nil, nil, cfg, nil)
 
 			result, err := service.GetMessages(ctx, tt.input)
 

@@ -90,6 +90,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("database.dsn", "host=127.0.0.1 user=acontext password=helloworld dbname=acontext port=15432 sslmode=disable TimeZone=UTC")
 	v.SetDefault("redis.addr", "127.0.0.1:16379")
 	v.SetDefault("redis.password", "helloworld")
+	v.SetDefault("redis.db", 0)
+	v.SetDefault("redis.poolSize", 10)
 	v.SetDefault("s3.endpoint", "http://127.0.0.1:19000")
 	v.SetDefault("s3.internalEndpoint", "http://127.0.0.1:19000")
 	v.SetDefault("s3.region", "auto")

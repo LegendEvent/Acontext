@@ -7,7 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func New(cfg *config.Config) *redis.Client {
+func New(cfg *config.Config) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
 		Password: cfg.Redis.Password,
@@ -15,9 +15,11 @@ func New(cfg *config.Config) *redis.Client {
 		PoolSize: cfg.Redis.PoolSize,
 	})
 
-	_ = rdb.Ping(context.Background()).Err()
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		return nil, err
+	}
 
-	return rdb
+	return rdb, nil
 }
 
 func Close(rdb *redis.Client) error {

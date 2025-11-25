@@ -72,8 +72,7 @@ func BuildContainer() *do.Injector {
 	// Redis
 	do.Provide(inj, func(i *do.Injector) (*redis.Client, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		rdb := cache.New(cfg)
-		return rdb, nil
+		return cache.New(cfg)
 	})
 
 	// RabbitMQ Connection
@@ -161,6 +160,7 @@ func BuildContainer() *do.Injector {
 			do.MustInvoke[*blob.S3Deps](i),
 			do.MustInvoke[*mq.Publisher](i),
 			do.MustInvoke[*config.Config](i),
+			do.MustInvoke[*redis.Client](i),
 		), nil
 	})
 	do.Provide(inj, func(i *do.Injector) (service.BlockService, error) {

@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/memodb-io/Acontext/internal/config"
@@ -16,6 +17,7 @@ import (
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"github.com/memodb-io/Acontext/internal/modules/repo"
 	"github.com/memodb-io/Acontext/internal/pkg/paging"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
 )
@@ -37,9 +39,17 @@ type sessionService struct {
 	s3                 *blob.S3Deps
 	publisher          *mq.Publisher
 	cfg                *config.Config
+	redis              *redis.Client
 }
 
-func NewSessionService(sessionRepo repo.SessionRepo, assetReferenceRepo repo.AssetReferenceRepo, log *zap.Logger, s3 *blob.S3Deps, publisher *mq.Publisher, cfg *config.Config) SessionService {
+const (
+	// Redis key prefix for message parts cache
+	redisKeyPrefixParts = "message:parts:"
+	// Default TTL for message parts cache (1 hour)
+	defaultPartsCacheTTL = time.Hour
+)
+
+func NewSessionService(sessionRepo repo.SessionRepo, assetReferenceRepo repo.AssetReferenceRepo, log *zap.Logger, s3 *blob.S3Deps, publisher *mq.Publisher, cfg *config.Config, redis *redis.Client) SessionService {
 	return &sessionService{
 		sessionRepo:        sessionRepo,
 		assetReferenceRepo: assetReferenceRepo,
@@ -47,6 +57,7 @@ func NewSessionService(sessionRepo repo.SessionRepo, assetReferenceRepo repo.Ass
 		s3:                 s3,
 		publisher:          publisher,
 		cfg:                cfg,
+		redis:              redis,
 	}
 }
 
@@ -239,6 +250,14 @@ func (s *sessionService) SendMessage(ctx context.Context, in SendMessageInput) (
 		return nil, fmt.Errorf("increment asset reference: %w", err)
 	}
 
+	// Cache parts data in Redis after successful S3 upload
+	if s.redis != nil {
+		if err := s.cachePartsInRedis(ctx, asset.SHA256, parts); err != nil {
+			// Log error but don't fail the request if Redis caching fails
+			s.log.Warn("failed to cache parts in Redis", zap.String("sha256", asset.SHA256), zap.Error(err))
+		}
+	}
+
 	// Prepare message metadata
 	messageMeta := in.MessageMeta
 	if messageMeta == nil {
@@ -312,14 +331,35 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 	for i, m := range msgs {
 		meta := m.PartsAssetMeta.Data()
 
-		// Only download parts if blob service is available
-		if s.s3 != nil {
-			parts := []model.Part{}
+		// Try to get parts from Redis cache first, fallback to S3 if not found
+		parts := []model.Part{}
+		cacheHit := false
+
+		if s.redis != nil {
+			if cachedParts, err := s.getPartsFromRedis(ctx, meta.SHA256); err == nil {
+				parts = cachedParts
+				cacheHit = true
+			} else if err != redis.Nil {
+				// Log actual Redis errors (not cache misses)
+				s.log.Warn("failed to get parts from Redis", zap.String("sha256", meta.SHA256), zap.Error(err))
+			}
+		}
+
+		// If cache miss, download from S3
+		if !cacheHit && s.s3 != nil {
 			if err := s.s3.DownloadJSON(ctx, meta.S3Key, &parts); err != nil {
 				continue
 			}
-			msgs[i].Parts = parts
+			// Cache the parts in Redis after successful S3 download
+			if s.redis != nil {
+				if err := s.cachePartsInRedis(ctx, meta.SHA256, parts); err != nil {
+					// Log error but don't fail the request if Redis caching fails
+					s.log.Warn("failed to cache parts in Redis", zap.String("sha256", meta.SHA256), zap.Error(err))
+				}
+			}
 		}
+
+		msgs[i].Parts = parts
 	}
 
 	// Always sort messages from old to new (ascending by created_at)
@@ -362,4 +402,56 @@ func (s *sessionService) GetMessages(ctx context.Context, in GetMessagesInput) (
 	}
 
 	return out, nil
+}
+
+// cachePartsInRedis stores message parts in Redis with a fixed TTL
+func (s *sessionService) cachePartsInRedis(ctx context.Context, sha256 string, parts []model.Part) error {
+	if s.redis == nil {
+		return errors.New("redis client is not available")
+	}
+
+	// Serialize parts to JSON
+	jsonData, err := sonic.Marshal(parts)
+	if err != nil {
+		return fmt.Errorf("marshal parts to JSON: %w", err)
+	}
+
+	// Use SHA256 as part of Redis key for content-based caching
+	redisKey := redisKeyPrefixParts + sha256
+
+	// Store in Redis with fixed TTL
+	if err := s.redis.Set(ctx, redisKey, jsonData, defaultPartsCacheTTL).Err(); err != nil {
+		return fmt.Errorf("set Redis key %s: %w", redisKey, err)
+	}
+
+	return nil
+}
+
+// getPartsFromRedis retrieves message parts from Redis cache
+// Returns (nil, redis.Nil) on cache miss, which is a normal condition
+func (s *sessionService) getPartsFromRedis(ctx context.Context, sha256 string) ([]model.Part, error) {
+	if s.redis == nil {
+		return nil, errors.New("redis client is not available")
+	}
+
+	redisKey := redisKeyPrefixParts + sha256
+
+	// Get from Redis
+	val, err := s.redis.Get(ctx, redisKey).Result()
+	if err != nil {
+		// redis.Nil means key doesn't exist (cache miss), which is normal
+		if err == redis.Nil {
+			return nil, redis.Nil
+		}
+		// Other errors are actual Redis errors
+		return nil, fmt.Errorf("get Redis key %s: %w", redisKey, err)
+	}
+
+	// Deserialize JSON to parts
+	var parts []model.Part
+	if err := sonic.Unmarshal([]byte(val), &parts); err != nil {
+		return nil, fmt.Errorf("unmarshal parts from JSON: %w", err)
+	}
+
+	return parts, nil
 }
