@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://discord.acontext.io">
-      <img alt="Show Acontext header banner" src="./assets/Acontext-header-banner.png">
+      <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>Scale Context, Learn Experience</h3>
+    <h3>扩展上下文，学习经验</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -18,14 +18,14 @@
   </p>
   <div align="center">
     <!-- Keep these links. Translations will automatically update with the README. -->
-    <a href="./readme/de/README.md">Deutsch</a> | 
-    <a href="./readme/es/README.md">Español</a> | 
-    <a href="./readme/fr/README.md">Français</a> | 
-    <a href="./readme/ja/README.md">日本語</a> | 
-    <a href="./readme/ko/README.md">한국어</a> | 
-    <a href="./readme/pt/README.md">Português</a> | 
-    <a href="./readme/ru/README.md">Русский</a> | 
-    <a href="./readme/zh/README.md">中文</a>
+    <a href="../../readme/de/README.md">Deutsch</a> | 
+    <a href="../../readme/es/README.md">Español</a> | 
+    <a href="../../readme/fr/README.md">Français</a> | 
+    <a href="../../readme/ja/README.md">日本語</a> | 
+    <a href="../../readme/ko/README.md">한국어</a> | 
+    <a href="../../readme/pt/README.md">Português</a> | 
+    <a href="../../readme/ru/README.md">Русский</a> | 
+    <a href="../../readme/zh/README.md">中文</a>
   </div>
   <br/>
 </div>
@@ -34,44 +34,44 @@
 
 
 
-Acontext is a context data platform that:
+Acontext 是一个上下文数据平台，它：
 
-- **Stores** contexts & artifacts
-- **Observes** agent tasks and user feedback.
-- Enables agent **self-learning** by collecting experiences (SOPs) into long-term memory.
-- Offers a **local Dashboard** to view messages, tasks, artifacts and experiences.
+- **存储** 上下文和工件
+- **观察** 代理任务和用户反馈。
+- 通过将经验（SOP）收集到长期记忆中，实现代理**自我学习**。
+- 提供**本地仪表板**来查看消息、任务、工件和经验。
 
 
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./assets/acontext_dataflow.png" width="100%">
+      <img alt="Acontext Learning" src="../../assets/acontext_dataflow.png" width="100%">
     </picture>
-  <p>Store, Observe and Learn</p>
+  <p>存储、观察和学习</p>
 </div>
 
 
 
 
 
-We're building it because we believe Acontext can help you:
+我们正在构建它，因为我们相信 Acontext 可以帮助您：
 
-- **Build a more scalable agent product**
-- **Improve your agent success rate and reduce running steps**
+- **构建更具可扩展性的代理产品**
+- **提高代理成功率并减少运行步骤**
 
-so that your agent can be more stable and provide greater value to your users.
+这样您的代理可以更加稳定，并为用户提供更大的价值。
 
 
 
-# 🌲 Core Concepts
+# 🌲 核心概念
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - A conversation thread that stores messages with multi-modal support. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collects task's status, progress and preferences.
-- [**Disk**](https://docs.acontext.io/store/disk) - File storage for agent artifacts.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - A Notion-like `Space` for agents, where learned skills are stored. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills.
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - 一个对话线程，支持多模态消息存储。 
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 后台 TODO 代理，收集任务的状态、进度和偏好。
+- [**Disk**](https://docs.acontext.io/store/disk) - 用于代理工件的文件存储。
+- [**Space**](https://docs.acontext.io/learn/skill-space) - 一个类似 Notion 的代理 `Space`，用于存储学习的技能。 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 后台代理，用于提炼、保存和搜索技能。
 
-### How They Work Together
+### 它们如何协同工作
 
 ```txt
 ┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
@@ -87,10 +87,10 @@ so that your agent can be more stable and provide greater value to your users.
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Skills guide the agent
+                  技能指导代理
 ```
 
-Your agent skills look like:
+您的代理技能看起来像：
 
 ```json
 {
@@ -106,7 +106,7 @@ Your agent skills look like:
 
 
 
-Agent experience will be stored in a structured `Space`, with folders, pages and blocks. For example:
+代理经验将存储在结构化的 `Space` 中，包含文件夹、页面和块。例如：
 
 ```txt
 /
@@ -122,25 +122,25 @@ Agent experience will be stored in a structured `Space`, with folders, pages and
 
 
 
-# 🚀 How to Start It?
+# 🚀 如何开始？
 
-We have an `acontext-cli` to help you do quick proof-of-concept. Download it first in your terminal:
+我们有一个 `acontext-cli` 来帮助您快速进行概念验证。首先在终端中下载它：
 
 ```bash
 curl -fsSL https://install.acontext.io | sh
 ```
 
-You should have [docker](https://www.docker.com/get-started/) installed and an OpenAI API Key to start an Acontext backend on your computer:
+您应该安装 [docker](https://www.docker.com/get-started/) 并拥有 OpenAI API 密钥，以便在计算机上启动 Acontext 后端：
 
 ```bash
 acontext docker up
 ```
 
-> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
+> [📖 本地设置](https://docs.acontext.io/local#start-acontext-server-locally) Acontext 至少需要一个 OpenAI API 密钥。我们推荐使用 `gpt-5.1` 或 `gpt-4.1` 作为 LLM 模型
 
 
 
-Once it's done, you can access the following endpoints:
+完成后，您可以访问以下端点：
 
 - Acontext API Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
@@ -149,18 +149,18 @@ Once it's done, you can access the following endpoints:
 
 <div align="center">
     <picture>
-      <img alt="Dashboard" src="./docs/images/dashboard/BI.png" width="100%">
+      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="100%">
     </picture>
-  <p>Dashboard of Success Rate and other Metrics</p>
+  <p>成功率和其他指标的仪表板</p>
 </div>
 
 
 
 
 
-# 🧐 How to Use It?
+# 🧐 如何使用？
 
-Download end-to-end scripts with `acontext`:
+使用 `acontext` 下载端到端脚本：
 
 **OpenAI SDK + Acontext** (python)
 
@@ -191,19 +191,19 @@ acontext create my-proj --template-path "python/agno-basic"
 acontext create my-proj --template-path "typescript/vercel-ai-basic"
 ```
 
-Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+查看我们的示例仓库以获取更多模板：[Acontext-Examples](https://github.com/memodb-io/Acontext-Examples)。
 
 
 
-## Step by Step Explanation
+## 逐步说明
 
 <details>
-<summary>Click to Open</summary>
+<summary>点击打开</summary>
 
 
-We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDKs. The snippets below are using Python.
+我们维护 Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) 和 Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDK。下面的代码片段使用 Python。
 
-## Install SDKs
+## 安装 SDK
 
 ```
 pip install acontext # for Python
@@ -212,7 +212,7 @@ npm i @acontext/acontext # for Typescript
 
 
 
-## Initialize Client
+## 初始化客户端
 
 ```python
 from acontext import AcontextClient
@@ -226,20 +226,20 @@ client.ping()
 # yes, the default api_key is sk-ac-your-root-api-bearer-token
 ```
 
-> [📖 async client doc](https://docs.acontext.io/settings/core)
+> [📖 异步客户端文档](https://docs.acontext.io/settings/core)
 
 
 
-## Store
+## 存储
 
-Acontext can manage agent sessions and artifacts.
+Acontext 可以管理代理会话和工件。
 
-### Save Messages [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
+### 保存消息 [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
-Acontext offers persistent storage for message data. When you call `session.send_message`, Acontext will persist the message and start to monitor this session:
+Acontext 为消息数据提供持久化存储。当您调用 `session.send_message` 时，Acontext 将持久化消息并开始监控此会话：
 
 <details>
-<summary>Code Snippet</summary>
+<summary>代码片段</summary>
 
 ```python
 session = client.sessions.create()
@@ -257,17 +257,17 @@ for msg in messages:
     client.sessions.send_message(session_id=session.id, blob=msg, format="openai")
 ```
 
-> [📖](https://docs.acontext.io/store/messages/multi-modal) We also support multi-modal message storage and anthropic SDK.
+> [📖](https://docs.acontext.io/store/messages/multi-modal) 我们还支持多模态消息存储和 anthropic SDK。
 
 
 </details>
 
-### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
+### 加载消息 [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
-Obtain your session messages using `sessions.get_messages`
+使用 `sessions.get_messages` 获取您的会话消息
 
 <details>
-<summary>Code Snippet</summary>
+<summary>代码片段</summary>
 
 ```python
 r = client.sessions.get_messages(session.id)
@@ -283,18 +283,18 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 
 <div align="center">
     <picture>
-      <img alt="Session" src="./docs/images/dashboard/message_viewer.png" width="100%">
+      <img alt="Session" src="../../docs/images/dashboard/message_viewer.png" width="100%">
     </picture>
-  <p>You can view sessions in your local Dashboard</p>
+  <p>您可以在本地仪表板中查看会话</p>
 </div>
 
 
-### Artifacts [📖](https://docs.acontext.io/store/disk)
+### 工件 [📖](https://docs.acontext.io/store/disk)
 
-Create a disk for your agent to store and read artifacts using file paths:
+为您的代理创建一个磁盘，使用文件路径存储和读取工件：
 
 <details>
-<summary>Code Snippet</summary>
+<summary>代码片段</summary>
 
 ```python
 from acontext import FileUpload
@@ -333,21 +333,21 @@ print(f"✓ Download URL: {result.public_url}")
 
 <div align="center">
     <picture>
-      <img alt="Artifacts" src="./docs/images/dashboard/artifact_viewer.png" width="100%">
+      <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>You can view artifacts in your local Dashboard</p>
+  <p>您可以在本地仪表板中查看工件</p>
 </div>
 
 
 
-## Observe [📖](https://docs.acontext.io/observe)
+## 观察 [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will **automatically** launch a background agent to track the task progress and user feedback. **It's like a background TODO agent**. Acontext will use it to observe your daily agent success rate.
+对于每个会话，Acontext 将**自动**启动一个后台代理来跟踪任务进度和用户反馈。**它就像一个后台 TODO 代理**。Acontext 将使用它来观察您日常代理的成功率。
 
-You can use the SDK to retrieve the current state of the agent session, for Context Engineering like Reduction and Compression. 
+您可以使用 SDK 检索代理会话的当前状态，用于上下文工程，如减少和压缩。 
 
 <details>
-<summary>Full Script</summary>
+<summary>完整脚本</summary>
 
 ```python
 from acontext import AcontextClient
@@ -416,12 +416,12 @@ for task in tasks_response.items:
             print(f"    - {pref}")
 
 ```
-> `flush` is a blocking call, it will wait for the task extraction to complete.
-> You don't need to call it in production, Acontext has a buffer mechanism to ensure the task extraction is completed right on time.
+> `flush` 是一个阻塞调用，它将等待任务提取完成。
+> 您不需要在生产环境中调用它，Acontext 有一个缓冲机制来确保任务提取在正确的时间完成。
 
 </details>
 
-Example Task Return:
+示例任务返回：
 
 ```txt
 Task #1:
@@ -444,24 +444,24 @@ Task #3:
 
 
 
-You can view the session tasks' statuses in the Dashboard:
+您可以在仪表板中查看会话任务的状态：
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./docs/images/dashboard/session_task_viewer.png" width="100%">
+      <img alt="Acontext Learning" src="../../docs/images/dashboard/session_task_viewer.png" width="100%">
     </picture>
-  <p>A Task Demo</p>
+  <p>任务演示</p>
 </div>
 
 
 
-## Self-learning
+## 自我学习
 
-Acontext can gather a bunch of sessions and learn skills (SOPs) on how to call tools for certain tasks.
+Acontext 可以收集大量会话，并学习如何为某些任务调用工具的技能（SOP）。
 
-### Learn Skills to a `Space` [📖](https://docs.acontext.io/learn/skill-space)
+### 将技能学习到 `Space` [📖](https://docs.acontext.io/learn/skill-space)
 
-A `Space` can store skills, experiences, and memories in a Notion-like system. You first need to connect a session to `Space` to enable the learning process:
+`Space` 可以在类似 Notion 的系统中存储技能、经验和记忆。您首先需要将会话连接到 `Space` 以启用学习过程：
 
 ```python
 # Step 1: Create a Space for skill learning
@@ -474,9 +474,9 @@ session = client.sessions.create(space_id=space.id)
 # ... push the agent working context
 ```
 
-The learning happens in the background and is not real-time (delay around 10-30s). 
+学习在后台进行，不是实时的（延迟约 10-30 秒）。 
 
-What Acontext will do in the background:
+Acontext 在后台将执行的操作：
 
 ```mermaid
 graph LR
@@ -491,21 +491,21 @@ graph LR
     I --> J[Available for Future Sessions]
 ```
 
-Eventually, SOP blocks with tool-call pattern will be saved to `Space`. You can view every `Space` in the Dashboard:
+最终，带有工具调用模式的 SOP 块将被保存到 `Space`。您可以在仪表板中查看每个 `Space`：
 
 <div align="center">
     <picture>
-      <img alt="A Space Demo" src="./docs/images/dashboard/skill_viewer.png" width="100%">
+      <img alt="A Space Demo" src="../../docs/images/dashboard/skill_viewer.png" width="100%">
     </picture>
-  <p>A Space Demo</p>
+  <p>Space 演示</p>
 </div>
 
 
 
 
-### Search Skills from a `Space` [📖](https://docs.acontext.io/learn/search-skills)
+### 从 `Space` 搜索技能 [📖](https://docs.acontext.io/learn/search-skills)
 
-To search skills from a `Space` and use them in the next session:
+要从 `Space` 搜索技能并在下一个会话中使用它们：
 
 ```python
 result = client.spaces.experience_search(
@@ -515,9 +515,9 @@ result = client.spaces.experience_search(
 )
 ```
 
-Acontext supports `fast` and `agentic` modes for search. The former uses embeddings to match skills. The latter uses an Experience Agent to explore the entire `Space` and tries to cover every skill needed.
+Acontext 支持 `fast` 和 `agentic` 搜索模式。前者使用嵌入来匹配技能。后者使用经验代理探索整个 `Space`，并尝试涵盖所需的每个技能。
 
-The return is a list of sop blocks, which look like below:
+返回的是一个 sop 块列表，如下所示：
 
 ```json
 {
@@ -538,49 +538,49 @@ The return is a list of sop blocks, which look like below:
 
 
 
+# 🔍 文档
 
-# 🔍 Document
-
-To understand what Acontext can do better, please view [our docs](https://docs.acontext.io/)
-
-
-
-# ❤️ Stay Updated
-
-Star Acontext on Github to support and receive instant notifications 
-
-![click_star](./assets/star_acontext.gif)
+要更好地了解 Acontext 的功能，请查看 [我们的文档](https://docs.acontext.io/)
 
 
 
-# 🤝 Stay Together
+# ❤️ 保持更新
 
-Join the community for support and discussions:
+在 Github 上为 Acontext 加星标以支持并接收即时通知 
 
--   [Discuss with Builders on Acontext Discord](https://discord.acontext.io) 👻 
--  [Follow Acontext on X](https://x.com/acontext_io) 𝕏 
-
-
-
-# 🌟 Contributing
-
-- Check our [roadmap.md](./ROADMAP.md) first.
-- Read [contributing.md](./CONTRIBUTING.md)
+![click_star](../../assets/star_acontext.gif)
 
 
 
-# 📑 LICENSE
+# 🤝 保持联系
 
-This project is currently licensed under [Apache License 2.0](LICENSE).
+加入社区以获得支持和讨论：
+
+-   [在 Acontext Discord 上与构建者讨论](https://discord.acontext.io) 👻 
+-  [在 X 上关注 Acontext](https://x.com/acontext_io) 𝕏 
 
 
 
-# 🥇 Badges
+# 🌟 贡献
 
-![Made with Acontext](./assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](./assets/badge-made-with-acontext-dark.svg)
+- 首先查看我们的 [roadmap.md](../../ROADMAP.md)。
+- 阅读 [contributing.md](../../CONTRIBUTING.md)
+
+
+
+# 📑 许可证
+
+本项目目前根据 [Apache License 2.0](LICENSE) 许可。
+
+
+
+# 🥇 徽章
+
+![Made with Acontext](../../assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](../../assets/badge-made-with-acontext-dark.svg)
 
 ```md
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext.svg)](https://acontext.io)
 
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext-dark.svg)](https://acontext.io)
 ```
+

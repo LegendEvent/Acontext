@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://discord.acontext.io">
-      <img alt="Show Acontext header banner" src="./assets/Acontext-header-banner.png">
+      <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>Scale Context, Learn Experience</h3>
+    <h3>컨텍스트 확장, 경험 학습</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -18,14 +18,14 @@
   </p>
   <div align="center">
     <!-- Keep these links. Translations will automatically update with the README. -->
-    <a href="./readme/de/README.md">Deutsch</a> | 
-    <a href="./readme/es/README.md">Español</a> | 
-    <a href="./readme/fr/README.md">Français</a> | 
-    <a href="./readme/ja/README.md">日本語</a> | 
-    <a href="./readme/ko/README.md">한국어</a> | 
-    <a href="./readme/pt/README.md">Português</a> | 
-    <a href="./readme/ru/README.md">Русский</a> | 
-    <a href="./readme/zh/README.md">中文</a>
+    <a href="../../readme/de/README.md">Deutsch</a> | 
+    <a href="../../readme/es/README.md">Español</a> | 
+    <a href="../../readme/fr/README.md">Français</a> | 
+    <a href="../../readme/ja/README.md">日本語</a> | 
+    <a href="../../readme/ko/README.md">한국어</a> | 
+    <a href="../../readme/pt/README.md">Português</a> | 
+    <a href="../../readme/ru/README.md">Русский</a> | 
+    <a href="../../readme/zh/README.md">中文</a>
   </div>
   <br/>
 </div>
@@ -34,44 +34,44 @@
 
 
 
-Acontext is a context data platform that:
+Acontext는 다음과 같은 컨텍스트 데이터 플랫폼입니다:
 
-- **Stores** contexts & artifacts
-- **Observes** agent tasks and user feedback.
-- Enables agent **self-learning** by collecting experiences (SOPs) into long-term memory.
-- Offers a **local Dashboard** to view messages, tasks, artifacts and experiences.
+- **저장** 컨텍스트 및 아티팩트
+- **관찰** 에이전트 작업 및 사용자 피드백.
+- 경험(SOP)을 장기 메모리에 수집하여 에이전트 **자기 학습**을 가능하게 합니다.
+- 메시지, 작업, 아티팩트 및 경험을 볼 수 있는 **로컬 대시보드**를 제공합니다.
 
 
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./assets/acontext_dataflow.png" width="100%">
+      <img alt="Acontext Learning" src="../../assets/acontext_dataflow.png" width="100%">
     </picture>
-  <p>Store, Observe and Learn</p>
+  <p>저장, 관찰 및 학습</p>
 </div>
 
 
 
 
 
-We're building it because we believe Acontext can help you:
+우리가 이를 구축하는 이유는 Acontext가 다음과 같은 도움을 줄 수 있다고 믿기 때문입니다:
 
-- **Build a more scalable agent product**
-- **Improve your agent success rate and reduce running steps**
+- **더 확장 가능한 에이전트 제품 구축**
+- **에이전트 성공률 향상 및 실행 단계 감소**
 
-so that your agent can be more stable and provide greater value to your users.
+이를 통해 에이전트가 더 안정적이고 사용자에게 더 큰 가치를 제공할 수 있습니다.
 
 
 
-# 🌲 Core Concepts
+# 🌲 핵심 개념
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - A conversation thread that stores messages with multi-modal support. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collects task's status, progress and preferences.
-- [**Disk**](https://docs.acontext.io/store/disk) - File storage for agent artifacts.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - A Notion-like `Space` for agents, where learned skills are stored. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills.
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - 멀티 모달 지원으로 메시지를 저장하는 대화 스레드. 
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 작업의 상태, 진행 상황 및 선호도를 수집하는 백그라운드 TODO 에이전트.
+- [**Disk**](https://docs.acontext.io/store/disk) - 에이전트 아티팩트용 파일 저장소.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - 학습된 스킬이 저장되는 Notion과 유사한 에이전트용 `Space`. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 스킬을 추출, 저장 및 검색하는 백그라운드 에이전트.
 
-### How They Work Together
+### 함께 작동하는 방식
 
 ```txt
 ┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
@@ -87,10 +87,10 @@ so that your agent can be more stable and provide greater value to your users.
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Skills guide the agent
+                  스킬이 에이전트를 안내
 ```
 
-Your agent skills look like:
+에이전트 스킬은 다음과 같습니다:
 
 ```json
 {
@@ -106,7 +106,7 @@ Your agent skills look like:
 
 
 
-Agent experience will be stored in a structured `Space`, with folders, pages and blocks. For example:
+에이전트 경험은 폴더, 페이지 및 블록이 있는 구조화된 `Space`에 저장됩니다. 예를 들어:
 
 ```txt
 /
@@ -122,25 +122,25 @@ Agent experience will be stored in a structured `Space`, with folders, pages and
 
 
 
-# 🚀 How to Start It?
+# 🚀 시작하는 방법
 
-We have an `acontext-cli` to help you do quick proof-of-concept. Download it first in your terminal:
+빠른 개념 증명을 위해 `acontext-cli`가 있습니다. 먼저 터미널에서 다운로드하세요:
 
 ```bash
 curl -fsSL https://install.acontext.io | sh
 ```
 
-You should have [docker](https://www.docker.com/get-started/) installed and an OpenAI API Key to start an Acontext backend on your computer:
+컴퓨터에서 Acontext 백엔드를 시작하려면 [docker](https://www.docker.com/get-started/)가 설치되어 있고 OpenAI API 키가 있어야 합니다:
 
 ```bash
 acontext docker up
 ```
 
-> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
+> [📖 로컬 설정](https://docs.acontext.io/local#start-acontext-server-locally) Acontext는 최소한 OpenAI API 키가 필요합니다. LLM 모델로 `gpt-5.1` 또는 `gpt-4.1`을 권장합니다
 
 
 
-Once it's done, you can access the following endpoints:
+완료되면 다음 엔드포인트에 액세스할 수 있습니다:
 
 - Acontext API Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
@@ -149,18 +149,18 @@ Once it's done, you can access the following endpoints:
 
 <div align="center">
     <picture>
-      <img alt="Dashboard" src="./docs/images/dashboard/BI.png" width="100%">
+      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="100%">
     </picture>
-  <p>Dashboard of Success Rate and other Metrics</p>
+  <p>성공률 및 기타 메트릭 대시보드</p>
 </div>
 
 
 
 
 
-# 🧐 How to Use It?
+# 🧐 사용 방법
 
-Download end-to-end scripts with `acontext`:
+`acontext`로 엔드투엔드 스크립트 다운로드:
 
 **OpenAI SDK + Acontext** (python)
 
@@ -191,19 +191,19 @@ acontext create my-proj --template-path "python/agno-basic"
 acontext create my-proj --template-path "typescript/vercel-ai-basic"
 ```
 
-Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+더 많은 템플릿은 예제 저장소를 확인하세요: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
 
 
 
-## Step by Step Explanation
+## 단계별 설명
 
 <details>
-<summary>Click to Open</summary>
+<summary>클릭하여 열기</summary>
 
 
-We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDKs. The snippets below are using Python.
+Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) 및 Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDK를 유지 관리합니다. 아래 코드 스니펫은 Python을 사용합니다.
 
-## Install SDKs
+## SDK 설치
 
 ```
 pip install acontext # for Python
@@ -212,7 +212,7 @@ npm i @acontext/acontext # for Typescript
 
 
 
-## Initialize Client
+## 클라이언트 초기화
 
 ```python
 from acontext import AcontextClient
@@ -230,16 +230,16 @@ client.ping()
 
 
 
-## Store
+## 저장
 
-Acontext can manage agent sessions and artifacts.
+Acontext는 에이전트 세션 및 아티팩트를 관리할 수 있습니다.
 
-### Save Messages [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
+### 메시지 저장 [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
-Acontext offers persistent storage for message data. When you call `session.send_message`, Acontext will persist the message and start to monitor this session:
+Acontext는 메시지 데이터에 대한 영구 저장소를 제공합니다. `session.send_message`를 호출하면 Acontext는 메시지를 영구 저장하고 이 세션 모니터링을 시작합니다:
 
 <details>
-<summary>Code Snippet</summary>
+<summary>코드 스니펫</summary>
 
 ```python
 session = client.sessions.create()
@@ -257,17 +257,17 @@ for msg in messages:
     client.sessions.send_message(session_id=session.id, blob=msg, format="openai")
 ```
 
-> [📖](https://docs.acontext.io/store/messages/multi-modal) We also support multi-modal message storage and anthropic SDK.
+> [📖](https://docs.acontext.io/store/messages/multi-modal) 멀티 모달 메시지 저장 및 anthropic SDK도 지원합니다.
 
 
 </details>
 
-### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
+### 메시지 로드 [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
-Obtain your session messages using `sessions.get_messages`
+`sessions.get_messages`를 사용하여 세션 메시지 가져오기
 
 <details>
-<summary>Code Snippet</summary>
+<summary>코드 스니펫</summary>
 
 ```python
 r = client.sessions.get_messages(session.id)
@@ -283,18 +283,18 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 
 <div align="center">
     <picture>
-      <img alt="Session" src="./docs/images/dashboard/message_viewer.png" width="100%">
+      <img alt="Session" src="../../docs/images/dashboard/message_viewer.png" width="100%">
     </picture>
-  <p>You can view sessions in your local Dashboard</p>
+  <p>로컬 대시보드에서 세션을 볼 수 있습니다</p>
 </div>
 
 
-### Artifacts [📖](https://docs.acontext.io/store/disk)
+### 아티팩트 [📖](https://docs.acontext.io/store/disk)
 
-Create a disk for your agent to store and read artifacts using file paths:
+파일 경로를 사용하여 아티팩트를 저장하고 읽기 위해 에이전트용 디스크 생성:
 
 <details>
-<summary>Code Snippet</summary>
+<summary>코드 스니펫</summary>
 
 ```python
 from acontext import FileUpload
@@ -333,21 +333,21 @@ print(f"✓ Download URL: {result.public_url}")
 
 <div align="center">
     <picture>
-      <img alt="Artifacts" src="./docs/images/dashboard/artifact_viewer.png" width="100%">
+      <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>You can view artifacts in your local Dashboard</p>
+  <p>로컬 대시보드에서 아티팩트를 볼 수 있습니다</p>
 </div>
 
 
 
-## Observe [📖](https://docs.acontext.io/observe)
+## 관찰 [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will **automatically** launch a background agent to track the task progress and user feedback. **It's like a background TODO agent**. Acontext will use it to observe your daily agent success rate.
+각 세션에 대해 Acontext는 **자동으로** 백그라운드 에이전트를 시작하여 작업 진행 상황 및 사용자 피드백을 추적합니다. **백그라운드 TODO 에이전트와 같습니다**. Acontext는 이를 사용하여 일일 에이전트 성공률을 관찰합니다.
 
-You can use the SDK to retrieve the current state of the agent session, for Context Engineering like Reduction and Compression. 
+SDK를 사용하여 에이전트 세션의 현재 상태를 검색하여 축소 및 압축과 같은 컨텍스트 엔지니어링에 사용할 수 있습니다. 
 
 <details>
-<summary>Full Script</summary>
+<summary>전체 스크립트</summary>
 
 ```python
 from acontext import AcontextClient
@@ -416,12 +416,12 @@ for task in tasks_response.items:
             print(f"    - {pref}")
 
 ```
-> `flush` is a blocking call, it will wait for the task extraction to complete.
-> You don't need to call it in production, Acontext has a buffer mechanism to ensure the task extraction is completed right on time.
+> `flush`는 블로킹 호출이며 작업 추출이 완료될 때까지 기다립니다.
+> 프로덕션에서 호출할 필요가 없습니다. Acontext에는 작업 추출이 적시에 완료되도록 하는 버퍼 메커니즘이 있습니다.
 
 </details>
 
-Example Task Return:
+작업 반환 예시:
 
 ```txt
 Task #1:
@@ -444,24 +444,24 @@ Task #3:
 
 
 
-You can view the session tasks' statuses in the Dashboard:
+대시보드에서 세션 작업 상태를 볼 수 있습니다:
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./docs/images/dashboard/session_task_viewer.png" width="100%">
+      <img alt="Acontext Learning" src="../../docs/images/dashboard/session_task_viewer.png" width="100%">
     </picture>
-  <p>A Task Demo</p>
+  <p>작업 데모</p>
 </div>
 
 
 
-## Self-learning
+## 자기 학습
 
-Acontext can gather a bunch of sessions and learn skills (SOPs) on how to call tools for certain tasks.
+Acontext는 많은 세션을 수집하고 특정 작업에 대해 도구를 호출하는 방법의 스킬(SOP)을 학습할 수 있습니다.
 
-### Learn Skills to a `Space` [📖](https://docs.acontext.io/learn/skill-space)
+### `Space`에 스킬 학습 [📖](https://docs.acontext.io/learn/skill-space)
 
-A `Space` can store skills, experiences, and memories in a Notion-like system. You first need to connect a session to `Space` to enable the learning process:
+`Space`는 Notion과 유사한 시스템에서 스킬, 경험 및 기억을 저장할 수 있습니다. 학습 프로세스를 활성화하려면 먼저 세션을 `Space`에 연결해야 합니다:
 
 ```python
 # Step 1: Create a Space for skill learning
@@ -474,9 +474,9 @@ session = client.sessions.create(space_id=space.id)
 # ... push the agent working context
 ```
 
-The learning happens in the background and is not real-time (delay around 10-30s). 
+학습은 백그라운드에서 발생하며 실시간이 아닙니다(약 10-30초 지연). 
 
-What Acontext will do in the background:
+Acontext가 백그라운드에서 수행할 작업:
 
 ```mermaid
 graph LR
@@ -491,21 +491,21 @@ graph LR
     I --> J[Available for Future Sessions]
 ```
 
-Eventually, SOP blocks with tool-call pattern will be saved to `Space`. You can view every `Space` in the Dashboard:
+최종적으로 도구 호출 패턴이 있는 SOP 블록이 `Space`에 저장됩니다. 대시보드에서 각 `Space`를 볼 수 있습니다:
 
 <div align="center">
     <picture>
-      <img alt="A Space Demo" src="./docs/images/dashboard/skill_viewer.png" width="100%">
+      <img alt="A Space Demo" src="../../docs/images/dashboard/skill_viewer.png" width="100%">
     </picture>
-  <p>A Space Demo</p>
+  <p>Space 데모</p>
 </div>
 
 
 
 
-### Search Skills from a `Space` [📖](https://docs.acontext.io/learn/search-skills)
+### `Space`에서 스킬 검색 [📖](https://docs.acontext.io/learn/search-skills)
 
-To search skills from a `Space` and use them in the next session:
+`Space`에서 스킬을 검색하고 다음 세션에서 사용하려면:
 
 ```python
 result = client.spaces.experience_search(
@@ -515,9 +515,9 @@ result = client.spaces.experience_search(
 )
 ```
 
-Acontext supports `fast` and `agentic` modes for search. The former uses embeddings to match skills. The latter uses an Experience Agent to explore the entire `Space` and tries to cover every skill needed.
+Acontext는 검색을 위해 `fast` 및 `agentic` 모드를 지원합니다. 전자는 임베딩을 사용하여 스킬을 일치시킵니다. 후자는 Experience Agent를 사용하여 전체 `Space`를 탐색하고 필요한 모든 스킬을 다루려고 시도합니다.
 
-The return is a list of sop blocks, which look like below:
+반환값은 sop 블록 목록이며 다음과 같습니다:
 
 ```json
 {
@@ -538,49 +538,49 @@ The return is a list of sop blocks, which look like below:
 
 
 
+# 🔍 문서
 
-# 🔍 Document
-
-To understand what Acontext can do better, please view [our docs](https://docs.acontext.io/)
-
-
-
-# ❤️ Stay Updated
-
-Star Acontext on Github to support and receive instant notifications 
-
-![click_star](./assets/star_acontext.gif)
+Acontext가 무엇을 할 수 있는지 더 잘 이해하려면 [문서](https://docs.acontext.io/)를 확인하세요
 
 
 
-# 🤝 Stay Together
+# ❤️ 최신 정보 유지
 
-Join the community for support and discussions:
+Github에서 Acontext에 별표를 표시하여 지원하고 즉시 알림을 받으세요 
 
--   [Discuss with Builders on Acontext Discord](https://discord.acontext.io) 👻 
--  [Follow Acontext on X](https://x.com/acontext_io) 𝕏 
-
-
-
-# 🌟 Contributing
-
-- Check our [roadmap.md](./ROADMAP.md) first.
-- Read [contributing.md](./CONTRIBUTING.md)
+![click_star](../../assets/star_acontext.gif)
 
 
 
-# 📑 LICENSE
+# 🤝 함께하기
 
-This project is currently licensed under [Apache License 2.0](LICENSE).
+지원 및 토론을 위해 커뮤니티에 가입하세요:
+
+-   [Acontext Discord에서 빌더와 토론](https://discord.acontext.io) 👻 
+-  [X에서 Acontext 팔로우](https://x.com/acontext_io) 𝕏 
 
 
 
-# 🥇 Badges
+# 🌟 기여
 
-![Made with Acontext](./assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](./assets/badge-made-with-acontext-dark.svg)
+- 먼저 [roadmap.md](../../ROADMAP.md)를 확인하세요.
+- [contributing.md](../../CONTRIBUTING.md)를 읽어보세요
+
+
+
+# 📑 라이선스
+
+이 프로젝트는 현재 [Apache License 2.0](LICENSE)에 따라 라이선스됩니다.
+
+
+
+# 🥇 배지
+
+![Made with Acontext](../../assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](../../assets/badge-made-with-acontext-dark.svg)
 
 ```md
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext.svg)](https://acontext.io)
 
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext-dark.svg)](https://acontext.io)
 ```
+

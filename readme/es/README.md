@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://discord.acontext.io">
-      <img alt="Show Acontext header banner" src="./assets/Acontext-header-banner.png">
+      <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>Scale Context, Learn Experience</h3>
+    <h3>Escalar Contexto, Aprender Experiencia</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -18,14 +18,14 @@
   </p>
   <div align="center">
     <!-- Keep these links. Translations will automatically update with the README. -->
-    <a href="./readme/de/README.md">Deutsch</a> | 
-    <a href="./readme/es/README.md">Español</a> | 
-    <a href="./readme/fr/README.md">Français</a> | 
-    <a href="./readme/ja/README.md">日本語</a> | 
-    <a href="./readme/ko/README.md">한국어</a> | 
-    <a href="./readme/pt/README.md">Português</a> | 
-    <a href="./readme/ru/README.md">Русский</a> | 
-    <a href="./readme/zh/README.md">中文</a>
+    <a href="../../readme/de/README.md">Deutsch</a> | 
+    <a href="../../readme/es/README.md">Español</a> | 
+    <a href="../../readme/fr/README.md">Français</a> | 
+    <a href="../../readme/ja/README.md">日本語</a> | 
+    <a href="../../readme/ko/README.md">한국어</a> | 
+    <a href="../../readme/pt/README.md">Português</a> | 
+    <a href="../../readme/ru/README.md">Русский</a> | 
+    <a href="../../readme/zh/README.md">中文</a>
   </div>
   <br/>
 </div>
@@ -34,44 +34,44 @@
 
 
 
-Acontext is a context data platform that:
+Acontext es una plataforma de datos de contexto que:
 
-- **Stores** contexts & artifacts
-- **Observes** agent tasks and user feedback.
-- Enables agent **self-learning** by collecting experiences (SOPs) into long-term memory.
-- Offers a **local Dashboard** to view messages, tasks, artifacts and experiences.
+- **Almacena** contextos y artefactos
+- **Observa** tareas de agentes y retroalimentación del usuario.
+- Habilita el **autoaprendizaje** de agentes mediante la recopilación de experiencias (SOPs) en memoria a largo plazo.
+- Ofrece un **Dashboard local** para ver mensajes, tareas, artefactos y experiencias.
 
 
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./assets/acontext_dataflow.png" width="100%">
+      <img alt="Acontext Learning" src="../../assets/acontext_dataflow.png" width="100%">
     </picture>
-  <p>Store, Observe and Learn</p>
+  <p>Almacenar, Observar y Aprender</p>
 </div>
 
 
 
 
 
-We're building it because we believe Acontext can help you:
+Lo estamos construyendo porque creemos que Acontext puede ayudarte a:
 
-- **Build a more scalable agent product**
-- **Improve your agent success rate and reduce running steps**
+- **Construir un producto de agente más escalable**
+- **Mejorar la tasa de éxito de tu agente y reducir los pasos de ejecución**
 
-so that your agent can be more stable and provide greater value to your users.
+para que tu agente pueda ser más estable y brindar mayor valor a tus usuarios.
 
 
 
-# 🌲 Core Concepts
+# 🌲 Conceptos Centrales
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - A conversation thread that stores messages with multi-modal support. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collects task's status, progress and preferences.
-- [**Disk**](https://docs.acontext.io/store/disk) - File storage for agent artifacts.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - A Notion-like `Space` for agents, where learned skills are stored. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills.
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Un hilo de conversación que almacena mensajes con soporte multi-modal. 
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Agente TODO en segundo plano que recopila el estado, progreso y preferencias de la tarea.
+- [**Disk**](https://docs.acontext.io/store/disk) - Almacenamiento de archivos para artefactos de agentes.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Un `Space` similar a Notion para agentes, donde se almacenan las habilidades aprendidas. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Agentes en segundo plano que destilan, guardan y buscan habilidades.
 
-### How They Work Together
+### Cómo Trabajan Juntos
 
 ```txt
 ┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
@@ -87,10 +87,10 @@ so that your agent can be more stable and provide greater value to your users.
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Skills guide the agent
+                  Las habilidades guían al agente
 ```
 
-Your agent skills look like:
+Tus habilidades de agente se ven así:
 
 ```json
 {
@@ -106,7 +106,7 @@ Your agent skills look like:
 
 
 
-Agent experience will be stored in a structured `Space`, with folders, pages and blocks. For example:
+La experiencia del agente se almacenará en un `Space` estructurado, con carpetas, páginas y bloques. Por ejemplo:
 
 ```txt
 /
@@ -122,25 +122,25 @@ Agent experience will be stored in a structured `Space`, with folders, pages and
 
 
 
-# 🚀 How to Start It?
+# 🚀 ¿Cómo Empezar?
 
-We have an `acontext-cli` to help you do quick proof-of-concept. Download it first in your terminal:
+Tenemos un `acontext-cli` para ayudarte a hacer una prueba de concepto rápida. Descárgalo primero en tu terminal:
 
 ```bash
 curl -fsSL https://install.acontext.io | sh
 ```
 
-You should have [docker](https://www.docker.com/get-started/) installed and an OpenAI API Key to start an Acontext backend on your computer:
+Deberías tener [docker](https://www.docker.com/get-started/) instalado y una Clave API de OpenAI para iniciar un backend de Acontext en tu computadora:
 
 ```bash
 acontext docker up
 ```
 
-> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
+> [📖 configuración local](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requiere al menos una Clave API de OpenAI. Recomendamos `gpt-5.1` o `gpt-4.1` como modelo LLM
 
 
 
-Once it's done, you can access the following endpoints:
+Una vez completado, puedes acceder a los siguientes endpoints:
 
 - Acontext API Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
@@ -149,18 +149,18 @@ Once it's done, you can access the following endpoints:
 
 <div align="center">
     <picture>
-      <img alt="Dashboard" src="./docs/images/dashboard/BI.png" width="100%">
+      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="100%">
     </picture>
-  <p>Dashboard of Success Rate and other Metrics</p>
+  <p>Dashboard de Tasa de Éxito y otras Métricas</p>
 </div>
 
 
 
 
 
-# 🧐 How to Use It?
+# 🧐 ¿Cómo Usarlo?
 
-Download end-to-end scripts with `acontext`:
+Descarga scripts de extremo a extremo con `acontext`:
 
 **OpenAI SDK + Acontext** (python)
 
@@ -191,19 +191,19 @@ acontext create my-proj --template-path "python/agno-basic"
 acontext create my-proj --template-path "typescript/vercel-ai-basic"
 ```
 
-Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+Consulta nuestro repositorio de ejemplos para más plantillas: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
 
 
 
-## Step by Step Explanation
+## Explicación Paso a Paso
 
 <details>
-<summary>Click to Open</summary>
+<summary>Haz clic para abrir</summary>
 
 
-We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDKs. The snippets below are using Python.
+Mantenemos SDKs de Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) y Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext). Los fragmentos de código a continuación usan Python.
 
-## Install SDKs
+## Instalar SDKs
 
 ```
 pip install acontext # for Python
@@ -212,7 +212,7 @@ npm i @acontext/acontext # for Typescript
 
 
 
-## Initialize Client
+## Inicializar Cliente
 
 ```python
 from acontext import AcontextClient
@@ -230,16 +230,16 @@ client.ping()
 
 
 
-## Store
+## Almacenar
 
-Acontext can manage agent sessions and artifacts.
+Acontext puede gestionar sesiones de agentes y artefactos.
 
-### Save Messages [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
+### Guardar Mensajes [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
-Acontext offers persistent storage for message data. When you call `session.send_message`, Acontext will persist the message and start to monitor this session:
+Acontext ofrece almacenamiento persistente para datos de mensajes. Cuando llamas a `session.send_message`, Acontext persistirá el mensaje y comenzará a monitorear esta sesión:
 
 <details>
-<summary>Code Snippet</summary>
+<summary>Fragmento de Código</summary>
 
 ```python
 session = client.sessions.create()
@@ -257,17 +257,17 @@ for msg in messages:
     client.sessions.send_message(session_id=session.id, blob=msg, format="openai")
 ```
 
-> [📖](https://docs.acontext.io/store/messages/multi-modal) We also support multi-modal message storage and anthropic SDK.
+> [📖](https://docs.acontext.io/store/messages/multi-modal) También admitimos almacenamiento de mensajes multi-modal y SDK de anthropic.
 
 
 </details>
 
-### Load Messages [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
+### Cargar Mensajes [📖](https://docs.acontext.io/api-reference/session/get-messages-from-session)
 
-Obtain your session messages using `sessions.get_messages`
+Obtén los mensajes de tu sesión usando `sessions.get_messages`
 
 <details>
-<summary>Code Snippet</summary>
+<summary>Fragmento de Código</summary>
 
 ```python
 r = client.sessions.get_messages(session.id)
@@ -283,18 +283,18 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 
 <div align="center">
     <picture>
-      <img alt="Session" src="./docs/images/dashboard/message_viewer.png" width="100%">
+      <img alt="Session" src="../../docs/images/dashboard/message_viewer.png" width="100%">
     </picture>
-  <p>You can view sessions in your local Dashboard</p>
+  <p>Puedes ver sesiones en tu Dashboard local</p>
 </div>
 
 
-### Artifacts [📖](https://docs.acontext.io/store/disk)
+### Artefactos [📖](https://docs.acontext.io/store/disk)
 
-Create a disk for your agent to store and read artifacts using file paths:
+Crea un disco para tu agente para almacenar y leer artefactos usando rutas de archivos:
 
 <details>
-<summary>Code Snippet</summary>
+<summary>Fragmento de Código</summary>
 
 ```python
 from acontext import FileUpload
@@ -333,21 +333,21 @@ print(f"✓ Download URL: {result.public_url}")
 
 <div align="center">
     <picture>
-      <img alt="Artifacts" src="./docs/images/dashboard/artifact_viewer.png" width="100%">
+      <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>You can view artifacts in your local Dashboard</p>
+  <p>Puedes ver artefactos en tu Dashboard local</p>
 </div>
 
 
 
-## Observe [📖](https://docs.acontext.io/observe)
+## Observar [📖](https://docs.acontext.io/observe)
 
-For every session, Acontext will **automatically** launch a background agent to track the task progress and user feedback. **It's like a background TODO agent**. Acontext will use it to observe your daily agent success rate.
+Para cada sesión, Acontext **automáticamente** lanzará un agente en segundo plano para rastrear el progreso de la tarea y la retroalimentación del usuario. **Es como un agente TODO en segundo plano**. Acontext lo usará para observar tu tasa de éxito diaria del agente.
 
-You can use the SDK to retrieve the current state of the agent session, for Context Engineering like Reduction and Compression. 
+Puedes usar el SDK para recuperar el estado actual de la sesión del agente, para Context Engineering como Reducción y Compresión. 
 
 <details>
-<summary>Full Script</summary>
+<summary>Script Completo</summary>
 
 ```python
 from acontext import AcontextClient
@@ -416,12 +416,12 @@ for task in tasks_response.items:
             print(f"    - {pref}")
 
 ```
-> `flush` is a blocking call, it will wait for the task extraction to complete.
-> You don't need to call it in production, Acontext has a buffer mechanism to ensure the task extraction is completed right on time.
+> `flush` es una llamada bloqueante, esperará a que se complete la extracción de tareas.
+> No necesitas llamarlo en producción, Acontext tiene un mecanismo de buffer para asegurar que la extracción de tareas se complete en el momento adecuado.
 
 </details>
 
-Example Task Return:
+Ejemplo de Retorno de Tarea:
 
 ```txt
 Task #1:
@@ -444,24 +444,24 @@ Task #3:
 
 
 
-You can view the session tasks' statuses in the Dashboard:
+Puedes ver los estados de las tareas de sesión en el Dashboard:
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="./docs/images/dashboard/session_task_viewer.png" width="100%">
+      <img alt="Acontext Learning" src="../../docs/images/dashboard/session_task_viewer.png" width="100%">
     </picture>
-  <p>A Task Demo</p>
+  <p>Una Demostración de Tarea</p>
 </div>
 
 
 
-## Self-learning
+## Autoaprendizaje
 
-Acontext can gather a bunch of sessions and learn skills (SOPs) on how to call tools for certain tasks.
+Acontext puede recopilar un montón de sesiones y aprender habilidades (SOPs) sobre cómo llamar herramientas para ciertas tareas.
 
-### Learn Skills to a `Space` [📖](https://docs.acontext.io/learn/skill-space)
+### Aprender Habilidades a un `Space` [📖](https://docs.acontext.io/learn/skill-space)
 
-A `Space` can store skills, experiences, and memories in a Notion-like system. You first need to connect a session to `Space` to enable the learning process:
+Un `Space` puede almacenar habilidades, experiencias y recuerdos en un sistema similar a Notion. Primero necesitas conectar una sesión a `Space` para habilitar el proceso de aprendizaje:
 
 ```python
 # Step 1: Create a Space for skill learning
@@ -474,9 +474,9 @@ session = client.sessions.create(space_id=space.id)
 # ... push the agent working context
 ```
 
-The learning happens in the background and is not real-time (delay around 10-30s). 
+El aprendizaje ocurre en segundo plano y no es en tiempo real (retraso alrededor de 10-30 segundos). 
 
-What Acontext will do in the background:
+Lo que Acontext hará en segundo plano:
 
 ```mermaid
 graph LR
@@ -491,21 +491,21 @@ graph LR
     I --> J[Available for Future Sessions]
 ```
 
-Eventually, SOP blocks with tool-call pattern will be saved to `Space`. You can view every `Space` in the Dashboard:
+Finalmente, los bloques SOP con patrón de llamada de herramienta se guardarán en `Space`. Puedes ver cada `Space` en el Dashboard:
 
 <div align="center">
     <picture>
-      <img alt="A Space Demo" src="./docs/images/dashboard/skill_viewer.png" width="100%">
+      <img alt="A Space Demo" src="../../docs/images/dashboard/skill_viewer.png" width="100%">
     </picture>
-  <p>A Space Demo</p>
+  <p>Una Demostración de Space</p>
 </div>
 
 
 
 
-### Search Skills from a `Space` [📖](https://docs.acontext.io/learn/search-skills)
+### Buscar Habilidades desde un `Space` [📖](https://docs.acontext.io/learn/search-skills)
 
-To search skills from a `Space` and use them in the next session:
+Para buscar habilidades desde un `Space` y usarlas en la próxima sesión:
 
 ```python
 result = client.spaces.experience_search(
@@ -515,9 +515,9 @@ result = client.spaces.experience_search(
 )
 ```
 
-Acontext supports `fast` and `agentic` modes for search. The former uses embeddings to match skills. The latter uses an Experience Agent to explore the entire `Space` and tries to cover every skill needed.
+Acontext admite modos `fast` y `agentic` para la búsqueda. El primero usa embeddings para coincidir habilidades. El segundo usa un Experience Agent para explorar todo el `Space` e intenta cubrir cada habilidad necesaria.
 
-The return is a list of sop blocks, which look like below:
+El retorno es una lista de bloques sop, que se ven así:
 
 ```json
 {
@@ -538,49 +538,49 @@ The return is a list of sop blocks, which look like below:
 
 
 
+# 🔍 Documentación
 
-# 🔍 Document
-
-To understand what Acontext can do better, please view [our docs](https://docs.acontext.io/)
-
-
-
-# ❤️ Stay Updated
-
-Star Acontext on Github to support and receive instant notifications 
-
-![click_star](./assets/star_acontext.gif)
+Para entender mejor lo que Acontext puede hacer, por favor consulta [nuestra documentación](https://docs.acontext.io/)
 
 
 
-# 🤝 Stay Together
+# ❤️ Mantente Actualizado
 
-Join the community for support and discussions:
+Marca Acontext con una estrella en Github para apoyar y recibir notificaciones instantáneas 
 
--   [Discuss with Builders on Acontext Discord](https://discord.acontext.io) 👻 
--  [Follow Acontext on X](https://x.com/acontext_io) 𝕏 
-
-
-
-# 🌟 Contributing
-
-- Check our [roadmap.md](./ROADMAP.md) first.
-- Read [contributing.md](./CONTRIBUTING.md)
+![click_star](../../assets/star_acontext.gif)
 
 
 
-# 📑 LICENSE
+# 🤝 Mantente Conectado
 
-This project is currently licensed under [Apache License 2.0](LICENSE).
+Únete a la comunidad para obtener apoyo y discusiones:
+
+-   [Discute con Constructores en Acontext Discord](https://discord.acontext.io) 👻 
+-  [Sigue a Acontext en X](https://x.com/acontext_io) 𝕏 
 
 
 
-# 🥇 Badges
+# 🌟 Contribuir
 
-![Made with Acontext](./assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](./assets/badge-made-with-acontext-dark.svg)
+- Revisa primero nuestro [roadmap.md](../../ROADMAP.md).
+- Lee [contributing.md](../../CONTRIBUTING.md)
+
+
+
+# 📑 LICENCIA
+
+Este proyecto está actualmente licenciado bajo [Apache License 2.0](LICENSE).
+
+
+
+# 🥇 Insignias
+
+![Made with Acontext](../../assets/badge-made-with-acontext.svg) ![Made with Acontext (dark)](../../assets/badge-made-with-acontext-dark.svg)
 
 ```md
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext.svg)](https://acontext.io)
 
 [![Made with Acontext](https://assets.memodb.io/Acontext/badge-made-with-acontext-dark.svg)](https://acontext.io)
 ```
+
