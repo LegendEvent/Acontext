@@ -1,0 +1,26 @@
+# [TYPE](SCOPE): DESCRIPTION #[ISSUE]
+#
+# TYPE: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
+# SCOPE: client, server, core, api, ui, cli, docs, deps, config, etc.
+#
+# Examples:
+# feat(client): add support for streaming responses #123
+# fix(core): resolve message storage race condition #456
+# docs(api): update authentication guide #789
+# refactor(ui): improve dashboard performance
+# chore(deps): update dependencies to latest versions
+#
+# Write your commit message above this line.
+# The first line is the subject line (required)
+# Leave a blank line before the body if you want to add more details
+#
+# Body (optional):
+# - Explain what and why vs. how
+# - Reference issues and pull requests
+# - Include breaking changes if any
+#
+# Footer (optional):
+# BREAKING CHANGE: description of breaking change
+# Closes #123
+# Fixes #456
+
