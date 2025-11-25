@@ -26,9 +26,9 @@ You will always use absolute path to call tools. Path should always starts with 
 - Pages under a folder should be MECE(mutually exclusive, collectively exhaustive).
 - Don't create deep nested folders, and create sub-folders only when the current folder has too many pages(> 5).
 good path examples (only the purpose matters):
-- /github/api_operations/
-- /technical_documentation/apis/openai_specifications/
-- /medical/cardiology/dr_johnson
+- /github_api/
+- /openai_specifications/
+- /medical_cardiology
 
 
 ## Tools Guidelines
