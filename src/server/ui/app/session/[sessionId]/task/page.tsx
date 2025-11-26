@@ -28,7 +28,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Loader2, RefreshCw, ArrowLeft } from "lucide-react";
+import { Loader2, RefreshCw, ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { getTasks, getSessionConfigs } from "@/api/models/space";
 import { Task } from "@/types";
 import ReactCodeMirror from "@uiw/react-codemirror";
@@ -54,6 +54,7 @@ export default function TasksPage() {
 
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isDataExpanded, setIsDataExpanded] = useState(false);
 
   const totalPages = Math.ceil(allTasks.length / PAGE_SIZE);
   const paginatedTasks = allTasks.slice(
@@ -351,19 +352,29 @@ export default function TasksPage() {
       </div>
 
       {/* Task Detail Dialog */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+      <Dialog
+        open={detailDialogOpen}
+        onOpenChange={(open) => {
+          setDetailDialogOpen(open);
+          if (!open) {
+            setIsDataExpanded(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{t("taskDetail") || "Task Detail"}</DialogTitle>
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>
+              {t("taskDetail") || "Task Detail"}
+            </DialogTitle>
           </DialogHeader>
           {selectedTask && (
-            <div className="rounded-md border bg-card p-6 overflow-y-auto flex-1">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {/* Task header */}
-              <div className="border-b pb-4">
-                <h3 className="text-xl font-semibold mb-2 font-mono">
-                  {selectedTask.id}
-                </h3>
-                <div className="flex items-center gap-2">
+              <div className="border-b pb-4 space-y-3 mb-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center justify-center rounded-md bg-secondary border border-border px-2 py-1 text-xs font-medium">
+                    {t("order") || "Order"}: {selectedTask.order}
+                  </span>
                   <span
                     className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${getStatusColor(
                       selectedTask.status
@@ -384,75 +395,129 @@ export default function TasksPage() {
                 </div>
               </div>
 
-              {/* Task details in grid */}
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {t("sessionId") || "Session ID"}
-                  </p>
-                  <p className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                    {selectedTask.session_id}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {t("projectId") || "Project ID"}
-                  </p>
-                  <p className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                    {selectedTask.project_id}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {t("order") || "Order"}
-                  </p>
-                  <p className="text-sm bg-muted px-2 py-1 rounded">
-                    {selectedTask.order}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {t("createdAt")}
-                  </p>
-                  <p className="text-sm bg-muted px-2 py-1 rounded">
-                    {new Date(selectedTask.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {t("updatedAt")}
-                  </p>
-                  <p className="text-sm bg-muted px-2 py-1 rounded">
-                    {new Date(selectedTask.updated_at).toLocaleString()}
-                  </p>
-                </div>
-              </div>
+              {/* Task details - reordered */}
+              <div className="space-y-4">
+                {/* 1. Task Description */}
+                {selectedTask.data?.task_description != null && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Task Description
+                    </p>
+                    <p className="text-sm bg-muted px-2 py-1 rounded whitespace-pre-wrap">
+                      {typeof selectedTask.data.task_description === "string"
+                        ? selectedTask.data.task_description
+                        : JSON.stringify(selectedTask.data.task_description, null, 2)}
+                    </p>
+                  </div>
+                )}
 
-              {/* Task data */}
-              <div className="border-t pt-6 mt-6">
-                <p className="text-sm font-medium text-muted-foreground mb-3">
-                  {t("taskData") || "Task Data"}
-                </p>
-                <div className="border rounded-md overflow-hidden">
-                  <ReactCodeMirror
-                    value={JSON.stringify(selectedTask.data, null, 2)}
-                    height="400px"
-                    theme={resolvedTheme === "dark" ? okaidia : "light"}
-                    extensions={[json(), EditorView.lineWrapping]}
-                    editable={false}
-                    basicSetup={{
-                      lineNumbers: true,
-                      foldGutter: true,
-                    }}
-                  />
+                {/* 2. Progresses */}
+                {selectedTask.data?.progresses != null &&
+                  Array.isArray(selectedTask.data.progresses) &&
+                  selectedTask.data.progresses.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        Progresses
+                      </p>
+                      <div className="space-y-1.5">
+                        {selectedTask.data.progresses.map(
+                          (progress: unknown, index: number) => (
+                            <div
+                              key={index}
+                              className="text-sm bg-muted px-3 py-1.5 rounded border-l-2 border-primary/30"
+                            >
+                              {typeof progress === "string" ? progress : String(progress)}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* 3. User Preferences */}
+                {selectedTask.data?.user_preferences != null &&
+                  Array.isArray(selectedTask.data.user_preferences) &&
+                  selectedTask.data.user_preferences.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        User Preferences
+                      </p>
+                      <div className="space-y-1">
+                        {selectedTask.data.user_preferences.map(
+                          (pref: unknown, index: number) => (
+                            <div
+                              key={index}
+                              className="text-sm bg-muted px-3 py-2 rounded border-l-2 border-primary/20"
+                            >
+                              {typeof pref === "string" ? pref : String(pref)}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* 4. Created At & Updated At */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      {t("createdAt")}
+                    </p>
+                    <p className="text-sm bg-muted px-2 py-1 rounded">
+                      {new Date(selectedTask.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      {t("updatedAt")}
+                    </p>
+                    <p className="text-sm bg-muted px-2 py-1 rounded">
+                      {new Date(selectedTask.updated_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 5. Task data - Collapsible */}
+                <div className="border-t pt-4 mt-4">
+                  <button
+                    onClick={() => setIsDataExpanded(!isDataExpanded)}
+                    className="flex items-center gap-2 w-full text-left mb-3 hover:opacity-80 transition-opacity"
+                  >
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {t("taskData") || "Task Data"}
+                    </p>
+                    {isDataExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                  {isDataExpanded && (
+                    <div className="border rounded-md overflow-hidden">
+                      <ReactCodeMirror
+                        value={JSON.stringify(selectedTask.data, null, 2)}
+                        height="400px"
+                        theme={resolvedTheme === "dark" ? okaidia : "light"}
+                        extensions={[json(), EditorView.lineWrapping]}
+                        editable={false}
+                        basicSetup={{
+                          lineNumbers: true,
+                          foldGutter: true,
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button
               variant="outline"
-              onClick={() => setDetailDialogOpen(false)}
+              onClick={() => {
+                setDetailDialogOpen(false);
+                setIsDataExpanded(false);
+              }}
             >
               {t("close")}
             </Button>
