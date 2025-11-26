@@ -11,27 +11,16 @@ We're always welcome to integrations PRs:
 
 ## v0.0
 
-Chore
-
-- Telemetry：log detailed callings and latency
-
 Prompt
 
 - Prune prompts to lower cost, reduce thinking output
 - Optimize task agent prompt to better reserve conditions of tasks
 - Optimize experience agent prompt to act 
 
-Text Match
-
-- Use `pg_trim` to support `grep` and `glob` in Disks
-- Use `pg_trim` to support keyword-matching `grep` and `glob` in Spaces
-
 Session - Context Engineering
 
 - Session - Count tokens
-- Session - message version control
 - Session - Context Compression based on Tasks
-- Session - Context Offloading based on Disks
 
 Dashboard
 
@@ -40,6 +29,14 @@ Dashboard
 Core
 
 - Fix bugs for long-handing MQ disconnection.
+
+SDK: Design `agent` interface: `tool_pool`
+
+- Offer tool_schema for openai/anthropic can directly operate artifacts
+
+Chore
+
+- Telemetry：log detailed callings and latency
 
 ## v0.1
 
@@ -53,8 +50,18 @@ Disk - more agentic interface
 Space
 
 - Space: export use_when as system prompt
+- Text Match
+
+  - Use `pg_trim` to support `grep` and `glob` in Disks
+  - Use `pg_trim` to support keyword-matching `grep` and `glob` in Spaces
+
 - Integrate Claude Skill 
 
   - Space: integrate Claude skill into Space
 
   - Sandbox with Artifacts：Simple Code Sandbox
+
+Session - Context Engineering
+
+- Session - message version control
+- Session - Context Offloading based on Disks
