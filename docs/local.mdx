@@ -15,8 +15,11 @@ LLM_API_KEY="YOUR_OPENAI_API_KEY"
 ```
 Place your `.env` file and run `acontext docker up` at the same directory:
 ```bash server
+mkdir acontext_server && cd acontext_server
 acontext docker up
 ```
+`acontext docker up` will create/use the existing `.env` and `config.yaml` for Acontext, and create a `db` folder to persist data.
+
 Once it's done, you can the following endpoints enabled:
 - Acontext Base URL: http://localhost:8029/api/v1
 - Acontext Dashboard: http://localhost:3000/
