@@ -83,7 +83,7 @@ so that your agent can be more stable and provide greater value to your users.
                   │         └────────┬────────┘
                   │                  │
                   │         ┌────────▼────────┐
-                  │         │  Space (learn)  │
+                  │         │  Space (learn)  │ # or wait for user confirmation
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
@@ -139,7 +139,7 @@ acontext docker up
 
 > [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
 
-`acontext docker up` will create/use the existing `.env` and `config.yaml` for Acontext, and create a `db` folder to persist data.
+`acontext docker up` will create/use  `.env` and `config.yaml` for Acontext, and create a `db` folder to persist data.
 
 
 
@@ -165,34 +165,29 @@ Once it's done, you can access the following endpoints:
 
 Download end-to-end scripts with `acontext`:
 
-**OpenAI SDK + Acontext** (python)
+**Python**
 
 ```bash
 acontext create my-proj --template-path "python/openai-basic"
 ```
-**OpenAI SDK + Acontext** (typescript)
+
+> More examples on Python:
+>
+> - `python/openai-agent-basic`: self-learning agent in openai agent sdk.
+> - `python/agno-basic`: self-learning agent in agno frameworkd.
+> - `python/openai-agent-artifacts`: agent that can edit and download artifacts.
+
+**Typescript**
 
 ```bash
 acontext create my-proj --template-path "typescript/openai-basic"
 ```
 
-**OpenAI Agent SDK + Acontext** (python)
+> More examples on Typescript:
+>
+> - `typescript/vercel-ai-basic`: self-learning agent in @vercel/ai-sdk
 
-```bash
-acontext create my-proj --template-path "python/openai-agent-basic"
-```
 
-**Agno + Acontext** (python)
-
-```bash
-acontext create my-proj --template-path "python/agno-basic"
-```
-
-**vercel/ai-sdk + Acontext** (typescript)
-
-```bash
-acontext create my-proj --template-path "typescript/vercel-ai-basic"
-```
 
 Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
 
