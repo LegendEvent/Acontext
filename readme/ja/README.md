@@ -36,10 +36,10 @@
 
 Acontextは、以下の機能を提供するコンテキストデータプラットフォームです：
 
-- **保存** コンテキストとアーティファクト
-- **観察** エージェントタスクとユーザーフィードバック。
-- 経験（SOP）を長期記憶に収集することで、エージェントの**自己学習**を可能にします。
-- メッセージ、タスク、アーティファクト、経験を表示する**ローカルダッシュボード**を提供します。
+- **保存** コンテキストと Artifacts
+- **観察** Agentタスクとユーザーフィードバック。
+- 経験（SOP）を長期記憶に収集することで、Agentの**自己学習**を可能にします。
+- メッセージ、タスク、 Artifacts、経験を表示する**ローカルダッシュボード**を提供します。
 
 
 
@@ -56,20 +56,20 @@ Acontextは、以下の機能を提供するコンテキストデータプラッ
 
 私たちがこれを構築している理由は、Acontextが以下を支援できると信じているからです：
 
-- **よりスケーラブルなエージェント製品を構築する**
-- **エージェントの成功率を向上させ、実行ステップを削減する**
+- **よりスケーラブルな Agent 製品を構築する**
+- **Agent の成功率を向上させ、実行ステップを削減する**
 
-これにより、エージェントがより安定し、ユーザーに大きな価値を提供できるようになります。
+これにより、Agent がより安定し、ユーザーに大きな価値を提供できるようになります。
 
 
 
 # 🌲 コアコンセプト
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - マルチモーダルサポートでメッセージを保存する会話スレッド。 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドTODOエージェント。
-- [**Disk**](https://docs.acontext.io/store/disk) - エージェントアーティファクト用のファイルストレージ。
-- [**Space**](https://docs.acontext.io/learn/skill-space) - 学習したスキルが保存される、Notionのようなエージェント用の`Space`。 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - スキルを蒸留、保存、検索するバックグラウンドエージェント。
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドTODO Agent。
+- [**Disk**](https://docs.acontext.io/store/disk) - Agent Artifacts用のファイルストレージ。
+- [**Space**](https://docs.acontext.io/learn/skill-space) - 学習したスキルが保存される、Notionのような Agents 用の`Space`。 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - スキルを蒸留、保存、検索するバックグラウンド Agents。
 
 ### 連携の仕組み
 
@@ -87,10 +87,10 @@ Acontextは、以下の機能を提供するコンテキストデータプラッ
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  スキルがエージェントをガイド
+                  スキルが Agent をガイド
 ```
 
-エージェントスキルは次のようになります：
+Agent スキルは次のようになります：
 
 ```json
 {
@@ -106,7 +106,7 @@ Acontextは、以下の機能を提供するコンテキストデータプラッ
 
 
 
-エージェントの経験は、フォルダ、ページ、ブロックを含む構造化された`Space`に保存されます。例えば：
+Agent の経験は、フォルダ、ページ、ブロックを含む構造化された`Space`に保存されます。例えば：
 
 ```txt
 /
@@ -173,9 +173,9 @@ acontext create my-proj --template-path "python/openai-basic"
 
 > Pythonのその他の例：
 >
-> - `python/openai-agent-basic`: openai agent sdkの自己学習エージェント。
-> - `python/agno-basic`: agno frameworkの自己学習エージェント。
-> - `python/openai-agent-artifacts`: アーティファクトを編集およびダウンロードできるエージェント。
+> - `python/openai-agent-basic`: openai agent sdkの自己学習 Agent。
+> - `python/agno-basic`: agno frameworkの自己学習 Agent。
+> - `python/openai-agent-artifacts`: Artifacts を編集およびダウンロードできる Agent。
 
 **Typescript**
 
@@ -185,7 +185,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 > Typescriptのその他の例：
 >
-> - `typescript/vercel-ai-basic`: @vercel/ai-sdkの自己学習エージェント
+> - `typescript/vercel-ai-basic`: @vercel/ai-sdkの自己学習 Agent
 
 
 
@@ -230,7 +230,7 @@ client.ping()
 
 ## 保存
 
-Acontextはエージェントセッションとアーティファクトを管理できます。
+Acontextは Agent セッションと Artifacts を管理できます.
 
 ### メッセージの保存 [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
@@ -287,9 +287,9 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 </div>
 
 
-### アーティファクト [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-ファイルパスを使用してアーティファクトを保存および読み取るために、エージェント用のディスクを作成：
+ファイルパスを使用して Artifacts を保存および読み取るために、Agent 用のディスクを作成：
 
 <details>
 <summary>コードスニペット</summary>
@@ -333,16 +333,16 @@ print(f"✓ Download URL: {result.public_url}")
     <picture>
       <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>ローカルダッシュボードでアーティファクトを表示できます</p>
+  <p>ローカルダッシュボードで Artifacts を表示できます</p>
 </div>
 
 
 
 ## 観察 [📖](https://docs.acontext.io/observe)
 
-各セッションについて、Acontextは**自動的に**バックグラウンドエージェントを起動して、タスクの進捗とユーザーフィードバックを追跡します。**バックグラウンドTODOエージェントのようなものです**。Acontextはこれを使用して、日常のエージェント成功率を観察します。
+各セッションについて、Acontextは**自動的に**バックグラウンド Agent を起動して、タスクの進捗とユーザーフィードバックを追跡します。**バックグラウンド TODO Agent のようなものです**。Acontextはこれを使用して、日常の Agent 成功率を観察します。
 
-SDKを使用して、エージェントセッションの現在の状態を取得し、削減や圧縮などのコンテキストエンジニアリングに使用できます。 
+SDKを使用して、Agent セッションの現在の状態を取得し、削減や圧縮などのコンテキストエンジニアリングに使用できます。 
 
 <details>
 <summary>完全なスクリプト</summary>

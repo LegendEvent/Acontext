@@ -36,10 +36,10 @@
 
 Acontext는 다음과 같은 컨텍스트 데이터 플랫폼입니다:
 
-- **저장** 컨텍스트 및 아티팩트
-- **관찰** 에이전트 작업 및 사용자 피드백.
-- 경험(SOP)을 장기 메모리에 수집하여 에이전트 **자기 학습**을 가능하게 합니다.
-- 메시지, 작업, 아티팩트 및 경험을 볼 수 있는 **로컬 대시보드**를 제공합니다.
+- **저장** 컨텍스트 및 Artifacts
+- **관찰** Agent 작업 및 사용자 피드백.
+- 경험(SOP)을 장기 메모리에 수집하여 Agent **자기 학습**을 가능하게 합니다.
+- 메시지, 작업, Artifacts 및 경험을 볼 수 있는 **로컬 대시보드**를 제공합니다.
 
 
 
@@ -56,20 +56,20 @@ Acontext는 다음과 같은 컨텍스트 데이터 플랫폼입니다:
 
 우리가 이를 구축하는 이유는 Acontext가 다음과 같은 도움을 줄 수 있다고 믿기 때문입니다:
 
-- **더 확장 가능한 에이전트 제품 구축**
-- **에이전트 성공률 향상 및 실행 단계 감소**
+- **더 확장 가능한 Agent 제품 구축**
+- **Agent 성공률 향상 및 실행 단계 감소**
 
-이를 통해 에이전트가 더 안정적이고 사용자에게 더 큰 가치를 제공할 수 있습니다.
+이를 통해 Agent가 더 안정적이고 사용자에게 더 큰 가치를 제공할 수 있습니다.
 
 
 
 # 🌲 핵심 개념
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - 멀티 모달 지원으로 메시지를 저장하는 대화 스레드. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 작업의 상태, 진행 상황 및 선호도를 수집하는 백그라운드 TODO 에이전트.
-- [**Disk**](https://docs.acontext.io/store/disk) - 에이전트 아티팩트용 파일 저장소.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - 학습된 스킬이 저장되는 Notion과 유사한 에이전트용 `Space`. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 스킬을 추출, 저장 및 검색하는 백그라운드 에이전트.
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 작업의 상태, 진행 상황 및 선호도를 수집하는 백그라운드 TODO Agent.
+- [**Disk**](https://docs.acontext.io/store/disk) - Agent Artifacts용 파일 저장소.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - 학습된 스킬이 저장되는 Notion과 유사한 Agents용 `Space`. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 스킬을 추출, 저장 및 검색하는 백그라운드 Agents.
 
 ### 함께 작동하는 방식
 
@@ -87,10 +87,10 @@ Acontext는 다음과 같은 컨텍스트 데이터 플랫폼입니다:
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  스킬이 에이전트를 안내
+                  스킬이 Agent를 안내
 ```
 
-에이전트 스킬은 다음과 같습니다:
+Agent 스킬은 다음과 같습니다:
 
 ```json
 {
@@ -106,7 +106,7 @@ Acontext는 다음과 같은 컨텍스트 데이터 플랫폼입니다:
 
 
 
-에이전트 경험은 폴더, 페이지 및 블록이 있는 구조화된 `Space`에 저장됩니다. 예를 들어:
+Agent 경험은 폴더, 페이지 및 블록이 있는 구조화된 `Space`에 저장됩니다. 예를 들어:
 
 ```txt
 /
@@ -173,9 +173,9 @@ acontext create my-proj --template-path "python/openai-basic"
 
 > Python의 더 많은 예제:
 >
-> - `python/openai-agent-basic`: openai agent sdk의 자기 학습 에이전트.
-> - `python/agno-basic`: agno framework의 자기 학습 에이전트.
-> - `python/openai-agent-artifacts`: 아티팩트를 편집하고 다운로드할 수 있는 에이전트.
+> - `python/openai-agent-basic`: openai agent sdk의 자기 학습 Agent.
+> - `python/agno-basic`: agno framework의 자기 학습 Agent.
+> - `python/openai-agent-artifacts`: Artifacts를 편집하고 다운로드할 수 있는 Agent.
 
 **Typescript**
 
@@ -185,7 +185,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 > Typescript의 더 많은 예제:
 >
-> - `typescript/vercel-ai-basic`: @vercel/ai-sdk의 자기 학습 에이전트
+> - `typescript/vercel-ai-basic`: @vercel/ai-sdk의 자기 학습 Agent
 
 
 
@@ -230,7 +230,7 @@ client.ping()
 
 ## 저장
 
-Acontext는 에이전트 세션 및 아티팩트를 관리할 수 있습니다.
+Acontext는 Agent 세션 및 Artifacts를 관리할 수 있습니다.
 
 ### 메시지 저장 [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
@@ -287,9 +287,9 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 </div>
 
 
-### 아티팩트 [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-파일 경로를 사용하여 아티팩트를 저장하고 읽기 위해 에이전트용 디스크 생성:
+파일 경로를 사용하여 Artifacts를 저장하고 읽기 위해 Agent용 디스크 생성:
 
 <details>
 <summary>코드 스니펫</summary>
@@ -333,16 +333,16 @@ print(f"✓ Download URL: {result.public_url}")
     <picture>
       <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>로컬 대시보드에서 아티팩트를 볼 수 있습니다</p>
+  <p>로컬 대시보드에서 Artifacts를 볼 수 있습니다</p>
 </div>
 
 
 
 ## 관찰 [📖](https://docs.acontext.io/observe)
 
-각 세션에 대해 Acontext는 **자동으로** 백그라운드 에이전트를 시작하여 작업 진행 상황 및 사용자 피드백을 추적합니다. **백그라운드 TODO 에이전트와 같습니다**. Acontext는 이를 사용하여 일일 에이전트 성공률을 관찰합니다.
+각 세션에 대해 Acontext는 **자동으로** 백그라운드 Agent를 시작하여 작업 진행 상황 및 사용자 피드백을 추적합니다. **백그라운드 TODO Agent와 같습니다**. Acontext는 이를 사용하여 일일 Agent 성공률을 관찰합니다.
 
-SDK를 사용하여 에이전트 세션의 현재 상태를 검색하여 축소 및 압축과 같은 컨텍스트 엔지니어링에 사용할 수 있습니다. 
+SDK를 사용하여 Agent 세션의 현재 상태를 검색하여 축소 및 압축과 같은 컨텍스트 엔지니어링에 사용할 수 있습니다. 
 
 <details>
 <summary>전체 스크립트</summary>

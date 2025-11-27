@@ -36,10 +36,10 @@
 
 Acontext 是一个上下文数据平台，它：
 
-- **存储** 上下文和工件
-- **观察** 代理任务和用户反馈。
-- 通过将经验（SOP）收集到长期记忆中，实现代理**自我学习**。
-- 提供**本地仪表板**来查看消息、任务、工件和经验。
+- **存储** 上下文和 Artifacts
+- **观察** Agent 任务和用户反馈。
+- 通过将经验（SOP）收集到长期记忆中，实现 Agent **自我学习**。
+- 提供**本地仪表板**来查看消息、任务、 Artifacts 和经验。
 
 
 
@@ -56,20 +56,20 @@ Acontext 是一个上下文数据平台，它：
 
 我们正在构建它，因为我们相信 Acontext 可以帮助您：
 
-- **构建更具可扩展性的代理产品**
-- **提高代理成功率并减少运行步骤**
+- **构建更具可扩展性的 Agent 产品**
+- **提高 Agent 成功率并减少运行步骤**
 
-这样您的代理可以更加稳定，并为用户提供更大的价值。
+这样您的 Agent 可以更加稳定，并为用户提供更大的价值。
 
 
 
 # 🌲 核心概念
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - 一个对话线程，支持多模态消息存储。 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 后台 TODO 代理，收集任务的状态、进度和偏好。
-- [**Disk**](https://docs.acontext.io/store/disk) - 用于代理工件的文件存储。
-- [**Space**](https://docs.acontext.io/learn/skill-space) - 一个类似 Notion 的代理 `Space`，用于存储学习的技能。 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 后台代理，用于提炼、保存和搜索技能。
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 后台 TODO Agent，收集任务的状态、进度和偏好。
+- [**Disk**](https://docs.acontext.io/store/disk) - 用于 Agent Artifacts 的文件存储。
+- [**Space**](https://docs.acontext.io/learn/skill-space) - 一个类似 Notion 的 Agents `Space`，用于存储学习的技能。 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 后台 Agents，用于提炼、保存和搜索技能。
 
 ### 它们如何协同工作
 
@@ -87,10 +87,10 @@ Acontext 是一个上下文数据平台，它：
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  技能指导代理
+                  技能指导 Agent
 ```
 
-您的代理技能看起来像：
+您的 Agent 技能看起来像：
 
 ```json
 {
@@ -106,7 +106,7 @@ Acontext 是一个上下文数据平台，它：
 
 
 
-代理经验将存储在结构化的 `Space` 中，包含文件夹、页面和块。例如：
+Agent 经验将存储在结构化的 `Space` 中，包含文件夹、页面和块。例如：
 
 ```txt
 /
@@ -173,9 +173,9 @@ acontext create my-proj --template-path "python/openai-basic"
 
 > Python 的更多示例：
 >
-> - `python/openai-agent-basic`: openai agent sdk 中的自学习代理。
-> - `python/agno-basic`: agno framework 中的自学习代理。
-> - `python/openai-agent-artifacts`: 可以编辑和下载工件的代理。
+> - `python/openai-agent-basic`: openai agent sdk 中的自学习 Agent。
+> - `python/agno-basic`: agno framework 中的自学习 Agent。
+> - `python/openai-agent-artifacts`: 可以编辑和下载 Artifacts 的 Agent。
 
 **Typescript**
 
@@ -185,7 +185,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 > Typescript 的更多示例：
 >
-> - `typescript/vercel-ai-basic`: @vercel/ai-sdk 中的自学习代理
+> - `typescript/vercel-ai-basic`: @vercel/ai-sdk 中的自学习 Agent
 
 
 
@@ -230,7 +230,7 @@ client.ping()
 
 ## 存储
 
-Acontext 可以管理代理会话和工件。
+Acontext 可以管理 Agent 会话和 Artifacts。
 
 ### 保存消息 [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
@@ -287,9 +287,9 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 </div>
 
 
-### 工件 [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-为您的代理创建一个磁盘，使用文件路径存储和读取工件：
+为您的 Agent 创建一个磁盘，使用文件路径存储和读取 Artifacts：
 
 <details>
 <summary>代码片段</summary>
@@ -333,16 +333,16 @@ print(f"✓ Download URL: {result.public_url}")
     <picture>
       <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>您可以在本地仪表板中查看工件</p>
+  <p>您可以在本地仪表板中查看 Artifacts</p>
 </div>
 
 
 
 ## 观察 [📖](https://docs.acontext.io/observe)
 
-对于每个会话，Acontext 将**自动**启动一个后台代理来跟踪任务进度和用户反馈。**它就像一个后台 TODO 代理**。Acontext 将使用它来观察您日常代理的成功率。
+对于每个会话，Acontext 将**自动**启动一个后台 Agent 来跟踪任务进度和用户反馈。**它就像一个后台 TODO Agent**。Acontext 将使用它来观察您日常 Agent 的成功率。
 
-您可以使用 SDK 检索代理会话的当前状态，用于上下文工程，如减少和压缩。 
+您可以使用 SDK 检索 Agent 会话的当前状态，用于上下文工程，如减少和压缩。 
 
 <details>
 <summary>完整脚本</summary>
@@ -513,7 +513,7 @@ result = client.spaces.experience_search(
 )
 ```
 
-Acontext 支持 `fast` 和 `agentic` 搜索模式。前者使用嵌入来匹配技能。后者使用经验代理探索整个 `Space`，并尝试涵盖所需的每个技能。
+Acontext 支持 `fast` 和 `agentic` 搜索模式。前者使用嵌入来匹配技能。后者使用 Experience Agents 探索整个 `Space`，并尝试涵盖所需的每个技能。
 
 返回的是一个 sop 块列表，如下所示：
 

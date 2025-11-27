@@ -36,10 +36,10 @@
 
 Acontext é uma plataforma de dados de contexto que:
 
-- **Armazena** contextos e artefatos
-- **Observa** tarefas de agentes e feedback do usuário.
-- Habilita o **autoaprendizado** de agentes coletando experiências (SOPs) na memória de longo prazo.
-- Oferece um **Painel local** para visualizar mensagens, tarefas, artefatos e experiências.
+- **Armazena** contextos e Artifacts
+- **Observa** tarefas de Agents e feedback do usuário.
+- Habilita o **autoaprendizado** de Agents coletando experiências (SOPs) na memória de longo prazo.
+- Oferece um **Painel local** para visualizar mensagens, tarefas, Artifacts e experiências.
 
 
 
@@ -56,20 +56,20 @@ Acontext é uma plataforma de dados de contexto que:
 
 Estamos construindo isso porque acreditamos que o Acontext pode ajudá-lo a:
 
-- **Construir um produto de agente mais escalável**
-- **Melhorar sua taxa de sucesso do agente e reduzir etapas de execução**
+- **Construir um produto de Agent mais escalável**
+- **Melhorar sua taxa de sucesso do Agent e reduzir etapas de execução**
 
-para que seu agente possa ser mais estável e fornecer maior valor aos seus usuários.
+para que seu Agent possa ser mais estável e fornecer maior valor aos seus usuários.
 
 
 
 # 🌲 Conceitos Centrais
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Um thread de conversa que armazena mensagens com suporte multi-modal. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Agente TODO em segundo plano que coleta status, progresso e preferências da tarefa.
-- [**Disk**](https://docs.acontext.io/store/disk) - Armazenamento de arquivos para artefatos de agentes.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - Um `Space` semelhante ao Notion para agentes, onde habilidades aprendidas são armazenadas. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Agentes em segundo plano que destilam, salvam e pesquisam habilidades.
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Agent TODO em segundo plano que coleta status, progresso e preferências da tarefa.
+- [**Disk**](https://docs.acontext.io/store/disk) - Armazenamento de arquivos para Agent Artifacts.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Um `Space` semelhante ao Notion para Agents, onde habilidades aprendidas são armazenadas. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Agents em segundo plano que destilam, salvam e pesquisam habilidades.
 
 ### Como Eles Trabalham Juntos
 
@@ -87,10 +87,10 @@ para que seu agente possa ser mais estável e fornecer maior valor aos seus usu�
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Habilidades guiam o agente
+                  Habilidades guiam o Agent
 ```
 
-Suas habilidades de agente se parecem com:
+Suas habilidades de Agent se parecem com:
 
 ```json
 {
@@ -106,7 +106,7 @@ Suas habilidades de agente se parecem com:
 
 
 
-A experiência do agente será armazenada em um `Space` estruturado, com pastas, páginas e blocos. Por exemplo:
+A experiência do Agent será armazenada em um `Space` estruturado, com pastas, páginas e blocos. Por exemplo:
 
 ```txt
 /
@@ -173,9 +173,9 @@ acontext create my-proj --template-path "python/openai-basic"
 
 > Mais exemplos em Python:
 >
-> - `python/openai-agent-basic`: agente de autoaprendizado no openai agent sdk.
-> - `python/agno-basic`: agente de autoaprendizado no agno framework.
-> - `python/openai-agent-artifacts`: agente que pode editar e baixar artefatos.
+> - `python/openai-agent-basic`: Agent de autoaprendizado no openai agent sdk.
+> - `python/agno-basic`: Agent de autoaprendizado no agno framework.
+> - `python/openai-agent-artifacts`: Agent que pode editar e baixar Artifacts.
 
 **Typescript**
 
@@ -185,7 +185,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 > Mais exemplos em Typescript:
 >
-> - `typescript/vercel-ai-basic`: agente de autoaprendizado no @vercel/ai-sdk
+> - `typescript/vercel-ai-basic`: Agent de autoaprendizado no @vercel/ai-sdk
 
 
 
@@ -230,7 +230,7 @@ client.ping()
 
 ## Armazenar
 
-Acontext pode gerenciar sessões de agentes e artefatos.
+Acontext pode gerenciar sessões de Agents e Artifacts.
 
 ### Salvar Mensagens [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
@@ -287,9 +287,9 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 </div>
 
 
-### Artefatos [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-Crie um disco para seu agente armazenar e ler artefatos usando caminhos de arquivo:
+Crie um disco para seu Agent armazenar e ler Artifacts usando caminhos de arquivo:
 
 <details>
 <summary>Trecho de Código</summary>
@@ -333,16 +333,16 @@ print(f"✓ Download URL: {result.public_url}")
     <picture>
       <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>Você pode visualizar artefatos no seu Painel local</p>
+  <p>Você pode visualizar Artifacts no seu Painel local</p>
 </div>
 
 
 
 ## Observar [📖](https://docs.acontext.io/observe)
 
-Para cada sessão, o Acontext **automaticamente** iniciará um agente em segundo plano para rastrear o progresso da tarefa e o feedback do usuário. **É como um agente TODO em segundo plano**. Acontext o usará para observar sua taxa de sucesso diária do agente.
+Para cada sessão, o Acontext **automaticamente** iniciará um Agent em segundo plano para rastrear o progresso da tarefa e o feedback do usuário. **É como um Agent TODO em segundo plano**. Acontext o usará para observar sua taxa de sucesso diária do Agent.
 
-Você pode usar o SDK para recuperar o estado atual da sessão do agente, para Context Engineering como Redução e Compressão. 
+Você pode usar o SDK para recuperar o estado atual da sessão do Agent, para Context Engineering como Redução e Compressão. 
 
 <details>
 <summary>Script Completo</summary>

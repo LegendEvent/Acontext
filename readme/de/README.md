@@ -36,10 +36,10 @@
 
 Acontext ist eine Kontextdatenplattform, die:
 
-- **Speichert** Kontexte und Artefakte
-- **Beobachtet** Agent-Aufgaben und Benutzerfeedback.
-- Ermöglicht **Selbstlernen** von Agenten durch Sammeln von Erfahrungen (SOPs) im Langzeitgedächtnis.
-- Bietet ein **lokales Dashboard** zum Anzeigen von Nachrichten, Aufgaben, Artefakten und Erfahrungen.
+- **Speichert** Kontexte und Artifacts
+- **Beobachtet** Agent Tasks und Benutzerfeedback.
+- Ermöglicht **Selbstlernen** von Agents durch Sammeln von Erfahrungen (SOPs) im Langzeitgedächtnis.
+- Bietet ein **lokales Dashboard** zum Anzeigen von Nachrichten, Aufgaben, Artifacts und Erfahrungen.
 
 
 
@@ -56,8 +56,8 @@ Acontext ist eine Kontextdatenplattform, die:
 
 Wir bauen es, weil wir glauben, dass Acontext Ihnen helfen kann:
 
-- **Ein skalierbareres Agent-Produkt zu erstellen**
-- **Ihre Agent-Erfolgsrate zu verbessern und die Ausführungsschritte zu reduzieren**
+- **Ein skalierbareres Agent Product zu erstellen**
+- **Ihre Agent Success Rate zu verbessern und die Ausführungsschritte zu reduzieren**
 
 damit Ihr Agent stabiler sein und Ihren Benutzern einen größeren Wert bieten kann.
 
@@ -66,10 +66,10 @@ damit Ihr Agent stabiler sein und Ihren Benutzern einen größeren Wert bieten k
 # 🌲 Kernkonzepte
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Ein Konversations-Thread, der Nachrichten mit Multi-Modal-Unterstützung speichert. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Hintergrund-TODO-Agent, der den Status, Fortschritt und Präferenzen der Aufgabe sammelt.
-- [**Disk**](https://docs.acontext.io/store/disk) - Dateispeicher für Agent-Artefakte.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - Ein Notion-ähnlicher `Space` für Agenten, in dem gelernte Fähigkeiten gespeichert werden. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Hintergrund-Agenten, die Fähigkeiten destillieren, speichern und durchsuchen.
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Hintergrund TODO Agent, der den Status, Fortschritt und Präferenzen der Aufgabe sammelt.
+- [**Disk**](https://docs.acontext.io/store/disk) - Dateispeicher für Agent Artifacts.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Ein Notion-ähnlicher `Space` für Agents, in dem gelernte Fähigkeiten gespeichert werden. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Hintergrund Agents, die Fähigkeiten destillieren, speichern und durchsuchen.
 
 ### Wie sie zusammenarbeiten
 
@@ -87,10 +87,10 @@ damit Ihr Agent stabiler sein und Ihren Benutzern einen größeren Wert bieten k
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Fähigkeiten leiten den Agenten
+                  Fähigkeiten leiten den Agent
 ```
 
-Ihre Agent-Fähigkeiten sehen so aus:
+Ihre Agent Skills sehen so aus:
 
 ```json
 {
@@ -106,7 +106,7 @@ Ihre Agent-Fähigkeiten sehen so aus:
 
 
 
-Agent-Erfahrungen werden in einem strukturierten `Space` gespeichert, mit Ordnern, Seiten und Blöcken. Zum Beispiel:
+Agent Experiences werden in einem strukturierten `Space` gespeichert, mit Ordnern, Seiten und Blöcken. Zum Beispiel:
 
 ```txt
 /
@@ -175,7 +175,7 @@ acontext create my-proj --template-path "python/openai-basic"
 >
 > - `python/openai-agent-basic`: Selbstlernender Agent im OpenAI Agent SDK.
 > - `python/agno-basic`: Selbstlernender Agent im Agno Framework.
-> - `python/openai-agent-artifacts`: Agent, der Artefakte bearbeiten und herunterladen kann.
+> - `python/openai-agent-artifacts`: Agent, der Artifacts bearbeiten und herunterladen kann.
 
 **Typescript**
 
@@ -230,7 +230,7 @@ client.ping()
 
 ## Speichern
 
-Acontext kann Agent-Sitzungen und Artefakte verwalten.
+Acontext kann Agent Sessions und Artifacts verwalten.
 
 ### Nachrichten speichern [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
@@ -287,9 +287,9 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 </div>
 
 
-### Artefakte [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-Erstellen Sie eine Festplatte für Ihren Agenten, um Artefakte mit Dateipfaden zu speichern und zu lesen:
+Erstellen Sie eine Festplatte für Ihren Agent, um Artifacts mit Dateipfaden zu speichern und zu lesen:
 
 <details>
 <summary>Code-Snippet</summary>
@@ -333,16 +333,16 @@ print(f"✓ Download URL: {result.public_url}")
     <picture>
       <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>Sie können Artefakte in Ihrem lokalen Dashboard anzeigen</p>
+  <p>Sie können Artifacts in Ihrem lokalen Dashboard anzeigen</p>
 </div>
 
 
 
 ## Beobachten [📖](https://docs.acontext.io/observe)
 
-Für jede Sitzung startet Acontext **automatisch** einen Hintergrund-Agenten, um den Aufgabenfortschritt und das Benutzerfeedback zu verfolgen. **Es ist wie ein Hintergrund-TODO-Agent**. Acontext verwendet ihn, um Ihre tägliche Agent-Erfolgsrate zu beobachten.
+Für jede Sitzung startet Acontext **automatisch** einen Hintergrund Agent, um den Aufgabenfortschritt und das Benutzerfeedback zu verfolgen. **Es ist wie ein Hintergrund TODO Agent**. Acontext verwendet ihn, um Ihre tägliche Agent Success Rate zu beobachten.
 
-Sie können das SDK verwenden, um den aktuellen Status der Agent-Sitzung abzurufen, für Context Engineering wie Reduktion und Kompression. 
+Sie können das SDK verwenden, um den aktuellen Status der Agent Session abzurufen, für Context Engineering wie Reduktion und Kompression. 
 
 <details>
 <summary>Vollständiges Skript</summary>

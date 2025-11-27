@@ -36,10 +36,10 @@
 
 Acontext es una plataforma de datos de contexto que:
 
-- **Almacena** contextos y artefactos
-- **Observa** tareas de agentes y retroalimentación del usuario.
-- Habilita el **autoaprendizaje** de agentes mediante la recopilación de experiencias (SOPs) en memoria a largo plazo.
-- Ofrece un **Dashboard local** para ver mensajes, tareas, artefactos y experiencias.
+- **Almacena** contextos y Artifacts
+- **Observa** tareas de Agents y retroalimentación del usuario.
+- Habilita el **autoaprendizaje** de Agents mediante la recopilación de experiencias (SOPs) en memoria a largo plazo.
+- Ofrece un **Dashboard local** para ver mensajes, tareas, Artifacts y experiencias.
 
 
 
@@ -56,20 +56,20 @@ Acontext es una plataforma de datos de contexto que:
 
 Lo estamos construyendo porque creemos que Acontext puede ayudarte a:
 
-- **Construir un producto de agente más escalable**
-- **Mejorar la tasa de éxito de tu agente y reducir los pasos de ejecución**
+- **Construir un producto de Agent más escalable**
+- **Mejorar la tasa de éxito de tu Agent y reducir los pasos de ejecución**
 
-para que tu agente pueda ser más estable y brindar mayor valor a tus usuarios.
+para que tu Agent pueda ser más estable y brindar mayor valor a tus usuarios.
 
 
 
 # 🌲 Conceptos Centrales
 
 - [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Un hilo de conversación que almacena mensajes con soporte multi-modal. 
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Agente TODO en segundo plano que recopila el estado, progreso y preferencias de la tarea.
-- [**Disk**](https://docs.acontext.io/store/disk) - Almacenamiento de archivos para artefactos de agentes.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - Un `Space` similar a Notion para agentes, donde se almacenan las habilidades aprendidas. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Agentes en segundo plano que destilan, guardan y buscan habilidades.
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Agent TODO en segundo plano que recopila el estado, progreso y preferencias de la tarea.
+- [**Disk**](https://docs.acontext.io/store/disk) - Almacenamiento de archivos para Agent Artifacts.
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Un `Space` similar a Notion para Agents, donde se almacenan las habilidades aprendidas. 
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Agents en segundo plano que destilan, guardan y buscan habilidades.
 
 ### Cómo Trabajan Juntos
 
@@ -87,10 +87,10 @@ para que tu agente pueda ser más estable y brindar mayor valor a tus usuarios.
                   │         └────────┬────────┘
                   │                  │
                   └──────────────────┘
-                  Las habilidades guían al agente
+                  Las habilidades guían al Agent
 ```
 
-Tus habilidades de agente se ven así:
+Tus habilidades de Agent se ven así:
 
 ```json
 {
@@ -106,7 +106,7 @@ Tus habilidades de agente se ven así:
 
 
 
-La experiencia del agente se almacenará en un `Space` estructurado, con carpetas, páginas y bloques. Por ejemplo:
+La experiencia del Agent se almacenará en un `Space` estructurado, con carpetas, páginas y bloques. Por ejemplo:
 
 ```txt
 /
@@ -173,9 +173,9 @@ acontext create my-proj --template-path "python/openai-basic"
 
 > Más ejemplos en Python:
 >
-> - `python/openai-agent-basic`: agente de autoaprendizaje en openai agent sdk.
-> - `python/agno-basic`: agente de autoaprendizaje en agno framework.
-> - `python/openai-agent-artifacts`: agente que puede editar y descargar artefactos.
+> - `python/openai-agent-basic`: Agent de autoaprendizaje en openai agent sdk.
+> - `python/agno-basic`: Agent de autoaprendizaje en agno framework.
+> - `python/openai-agent-artifacts`: Agent que puede editar y descargar Artifacts.
 
 **Typescript**
 
@@ -185,7 +185,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 > Más ejemplos en Typescript:
 >
-> - `typescript/vercel-ai-basic`: agente de autoaprendizaje en @vercel/ai-sdk
+> - `typescript/vercel-ai-basic`: Agent de autoaprendizaje en @vercel/ai-sdk
 
 
 
@@ -230,7 +230,7 @@ client.ping()
 
 ## Almacenar
 
-Acontext puede gestionar sesiones de agentes y artefactos.
+Acontext puede gestionar sesiones de Agents y Artifacts.
 
 ### Guardar Mensajes [📖](https://docs.acontext.io/api-reference/session/send-message-to-session)
 
@@ -287,9 +287,9 @@ client.sessions.send_message(session_id=session.id, blob=r.choices[0].message)
 </div>
 
 
-### Artefactos [📖](https://docs.acontext.io/store/disk)
+### Artifacts [📖](https://docs.acontext.io/store/disk)
 
-Crea un disco para tu agente para almacenar y leer artefactos usando rutas de archivos:
+Crea un disco para tu Agent para almacenar y leer Artifacts usando rutas de archivos:
 
 <details>
 <summary>Fragmento de Código</summary>
@@ -333,16 +333,16 @@ print(f"✓ Download URL: {result.public_url}")
     <picture>
       <img alt="Artifacts" src="../../docs/images/dashboard/artifact_viewer.png" width="100%">
     </picture>
-  <p>Puedes ver artefactos en tu Dashboard local</p>
+  <p>Puedes ver Artifacts en tu Dashboard local</p>
 </div>
 
 
 
 ## Observar [📖](https://docs.acontext.io/observe)
 
-Para cada sesión, Acontext **automáticamente** lanzará un agente en segundo plano para rastrear el progreso de la tarea y la retroalimentación del usuario. **Es como un agente TODO en segundo plano**. Acontext lo usará para observar tu tasa de éxito diaria del agente.
+Para cada sesión, Acontext **automáticamente** lanzará un Agent en segundo plano para rastrear el progreso de la tarea y la retroalimentación del usuario. **Es como un Agent TODO en segundo plano**. Acontext lo usará para observar tu tasa de éxito diaria del Agent.
 
-Puedes usar el SDK para recuperar el estado actual de la sesión del agente, para Context Engineering como Reducción y Compresión. 
+Puedes usar el SDK para recuperar el estado actual de la sesión del Agent, para Context Engineering como Reducción y Compresión. 
 
 <details>
 <summary>Script Completo</summary>
