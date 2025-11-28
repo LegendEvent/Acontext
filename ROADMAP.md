@@ -65,3 +65,7 @@ Session - Context Engineering
 
 - [ ] Session - message version control
 - [ ] Session - Context Offloading based on Disks
+
+Sercurity&Privacy
+
+- [ ] Use project api key to encrypt context data.
