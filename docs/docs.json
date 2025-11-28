@@ -79,9 +79,21 @@
             "group": "Miscellaneous",
             "icon": "ellipsis",
             "pages": [
-              "chore/async_python"
+              "chore/async_python",
+              "chore/badge"
             ]
           }
+        ]
+      },
+      {
+        "tab": "Integrations",
+        "pages": [
+          "integrations/intro",
+          "integrations/agno",
+          "integrations/openai-python",
+          "integrations/openai-typescript",
+          "integrations/openai_agent",
+          "integrations/ai-sdk"
         ]
       },
       {
@@ -120,9 +132,14 @@
           "icon": "newspaper"
         },
         {
-          "anchor": "Documentation",
-          "href": "https://docs.acontext.io",
-          "icon": "book-open-cover"
+          "anchor": "Integrations",
+          "href": "https://docs.acontext.io/integrations",
+          "icon": "plug"
+        },
+        {
+          "anchor": "API",
+          "href": "https://docs.acontext.io/api-reference",
+          "icon": "code"
         }
       ]
     }

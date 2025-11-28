@@ -7,10 +7,50 @@ description: "Acontext will batch process the messages in the session to optimiz
 ## Wait until it's full
 Acontext will start to process the messages once the buffer is full (*i.e.* unprocessed message turns >= `PROJECT_SESSION_MESSAGE_BUFFER_MAX_TURNS`)
 
+
+So if your `PROJECT_SESSION_MESSAGE_BUFFER_MAX_TURNS` is 3:
+```python example
+# this sending won't be processed immediately
+client.sessions.send_message(
+    session_id="session-uuid",
+    blob=message1
+)
+
+# this sending won't be processed immediately
+client.sessions.send_message(
+    session_id="session-uuid",
+    blob=message2
+)
+
+# will trigger the processing immediately
+client.sessions.send_message(
+    session_id="session-uuid",
+    blob=message3
+)
+```
+
 ## Wait until it's IDLE
 Acontext will start to process the messages once the buffer is IDLE for a while (*i.e.* no new messages for `PROJECT_SESSION_MESSAGE_BUFFER_TTL_SECONDS` seconds)
 
+So if your `PROJECT_SESSION_MESSAGE_BUFFER_TTL_SECONDS` is 3:
+```python example
+# this sending won't be processed immediately
+client.sessions.send_message(
+    session_id="session-uuid",
+    blob=message1
+)
 
+sleep(3)
+# Acontext will start to process the messages in background.
+```
+
+
+## Force Buffer Processing
+You can force the buffer processing by calling the `flush` method:
+
+```python flush
+client.sessions.flush(session_id="session-uuid")
+```
 
 ## Customization
 
