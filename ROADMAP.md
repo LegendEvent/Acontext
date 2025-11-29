@@ -20,7 +20,6 @@ Prompt
 Session - Context Engineering
 
 - [x] Session - Count tokens
-- [ ] Session - Context Compression based on Tasks
 
 Dashboard
 
@@ -55,17 +54,16 @@ Space
   - Use `pg_trim` to support `grep` and `glob` in Disks
   - Use `pg_trim` to support keyword-matching `grep` and `glob` in Spaces
 
-- [ ] Integrate Claude Skill 
-
-  - Space: integrate Claude skill into Space
-
-  - Sandbox with Artifacts：Simple Code Sandbox
-
 Session - Context Engineering
 
 - [ ] Session - message version control
 - [ ] Session - Context Offloading based on Disks
 
+Sandbox
+
+- [ ] Add sandbox resource in Acontext
+- [ ] Integrate Claude Skill 
+
 Sercurity&Privacy
 
-- [ ] Use project api key to encrypt context data.
+- [ ] Use project api key to encrypt context data in S3
