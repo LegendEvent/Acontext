@@ -9,17 +9,36 @@ We're always welcome to integrations PRs:
 - If your integrations involve SDK or cli changes, pull requests in this repo.
 - If your integrations are combining Acontext SDK and other frameworks, pull requests to https://github.com/memodb-io/Acontext-Examples where your templates can be downloaded through `acontext-cli`: `acontext create my-proj --template-path "LANGUAGE/YOUR-TEMPLATE"`
 
+
+
+## Long-term effort
+
+- Lower LLM cost
+- Increase robustness; Reduce latency
+- Safer storage
+- Self-learning in more scenarios
+
+
+
 ## v0.0
 
-Prompt
+Algorithms
 
-- [ ] Prune prompts to lower cost, reduce thinking output
-- [x] Optimize task agent prompt to better reserve conditions of tasks
-- [ ] Optimize experience agent prompt to act 
+- [ ] Optimize task agent prompt to better reserve conditions of tasks 
+  - [ ] Task progress should contain more states(which website, database table, city...)
+  - [ ]  `use_when` should reserve the states
+- [ ] Experience agent on replace/update the existing experience.
+
+Text Matching
+
+- [ ] support `grep` and `glob` in Disks
+- [ ] support `grep` and `glob` in Spaces
 
 Session - Context Engineering
 
-- [x] Session - Count tokens
+- [x] Count tokens
+- [ ] Message version control
+- [ ] Context editing ([doc](https://platform.claude.com/docs/en/build-with-claude/context-editing))
 
 Dashboard
 
@@ -37,26 +56,23 @@ Chore
 
 - [ ] Telemetry：log detailed callings and latency
 
+Integration
+
+- [ ] Smolagent for e2e benchmark
+
 ## v0.1
 
 Disk - more agentic interface
 
 - [ ] Disk: file/dir sharing UI Component.
-
 - [ ] Disk:  support get artifact with line number and offset
-- [ ] Disk: SDK, prepare agent tools and schema to navigate and edit artifacts
 
 Space
 
 - [ ] Space: export use_when as system prompt
-- [ ] Text Match
-
-  - Use `pg_trim` to support `grep` and `glob` in Disks
-  - Use `pg_trim` to support keyword-matching `grep` and `glob` in Spaces
 
 Session - Context Engineering
 
-- [ ] Session - message version control
 - [ ] Session - Context Offloading based on Disks
 
 Sandbox
