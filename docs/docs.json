@@ -42,12 +42,13 @@
             ]
           },
           {
-            "group": "Task Observability",
+            "group": "Observability",
             "icon": "radar",
             "pages": [
               "observe/agent_tasks",
               "observe/buffer",
-              "observe/dashboard"
+              "observe/dashboard",
+              "observe/traces"
             ]
           },
           {
