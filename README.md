@@ -91,7 +91,13 @@ so that your agent can be more stable and provide greater value to your users.
                   Skills guide the agent
 ```
 
-For each session, Acontext will automatically track tasks like:
+**Session**
+
+You can store context in Acontext, just like a Database but only used for context&artifact.
+
+**Tasks**
+
+For each session, Acontext will automatically track tasks, for example:
 
 ```json
 {
@@ -106,6 +112,8 @@ For each session, Acontext will automatically track tasks like:
   ]
 }
 ```
+
+**Space**
 
 The self-learned skill will look like this:
 
