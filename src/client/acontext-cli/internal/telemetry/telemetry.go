@@ -104,7 +104,9 @@ func sendEvent(event Event) error {
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check response status
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
