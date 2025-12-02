@@ -60,7 +60,7 @@ jobs:
           release_tag: ${{ github.ref_name }}
           overwrite: true
           pre_command: export CGO_ENABLED=0
-          ldflags: -s -w -extldflags -static -X main.version=${{ github.ref_name }}
+          ldflags: -s -w -extldflags -static -X main.version=${{ github.ref_name }} -X github.com/memodb-io/Acontext/acontext-cli/internal/telemetry.telemetryBearerToken=${{ secrets.CLI_TELEMETRY_BEARER_TOKEN }}
           project_path: src/client/acontext-cli
           binary_name: acontext-cli
           asset_name: "${{ matrix.goos }}_${{ matrix.goarch }}"
