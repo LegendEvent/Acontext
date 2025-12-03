@@ -98,6 +98,12 @@ if tracer_provider:
         )
 
 
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"msg": "ok"}
+
+
 async def semantic_grep_search_func(
     threshold: Optional[float],
     project_id: asUUID,

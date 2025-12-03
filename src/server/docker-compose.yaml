@@ -172,6 +172,15 @@ services:
       - ./core/config.yaml:/app/config.yaml:ro
     ports:
       - "${CORE_EXPORT_PORT:-8019}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O- http://localhost:8000/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     depends_on:
       acontext-server-pg:
         condition: service_healthy
@@ -232,7 +241,7 @@ services:
       retries: 5
     depends_on:
       acontext-server-core:
-        condition: service_started
+        condition: service_healthy
       acontext-server-seaweedfs-setup:
         condition: service_completed_successfully
 
