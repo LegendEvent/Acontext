@@ -11,7 +11,6 @@ import (
 	"github.com/memodb-io/Acontext/acontext-cli/internal/logo"
 	"github.com/memodb-io/Acontext/acontext-cli/internal/telemetry"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 type contextKey string
@@ -32,13 +31,13 @@ func main() {
 		if executedCmd == nil {
 			executedCmd = rootCmd
 		}
-		trackCommandAndWait(executedCmd, os.Args[1:], cmdErr, false)
+		trackCommandAndWait(executedCmd, cmdErr, false)
 		os.Exit(1)
 	}
 }
 
 // trackCommandAndWait tracks a command execution asynchronously and waits for completion
-func trackCommandAndWait(cmd *cobra.Command, args []string, err error, success bool) {
+func trackCommandAndWait(cmd *cobra.Command, err error, success bool) {
 	// Skip telemetry for dev version
 	if version == "dev" {
 		return
@@ -54,17 +53,13 @@ func trackCommandAndWait(cmd *cobra.Command, args []string, err error, success b
 		duration = time.Since(startTime)
 	}
 
-	// Build command path, collect flags, and filter args
+	// Build command path
 	commandPath := buildCommandPath(cmd)
-	flags := collectFlags(cmd)
-	filteredArgs := filterArgs(args)
 
 	// Start async telemetry tracking and wait for completion
 	// This ensures telemetry is sent even for blocking commands
 	wg := telemetry.TrackCommandAsync(
 		commandPath,
-		filteredArgs,
-		flags,
 		success,
 		err,
 		duration,
@@ -105,28 +100,6 @@ func buildCommandPath(cmd *cobra.Command) string {
 	return strings.Join(parts, ".")
 }
 
-// collectFlags collects all flags that were set
-func collectFlags(cmd *cobra.Command) map[string]string {
-	flags := make(map[string]string)
-
-	cmd.Flags().Visit(func(flag *pflag.Flag) {
-		flags[flag.Name] = flag.Value.String()
-	})
-
-	return flags
-}
-
-// filterArgs filters out help-related arguments
-func filterArgs(args []string) []string {
-	var filtered []string
-	for _, arg := range args {
-		if arg != "--help" && arg != "-h" && arg != "help" {
-			filtered = append(filtered, arg)
-		}
-	}
-	return filtered
-}
-
 var rootCmd = &cobra.Command{
 	Use:   "acontext",
 	Short: "Acontext CLI - Build context-aware AI applications",
@@ -147,7 +120,7 @@ Get started by running: acontext create
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 		// Track successful command execution
 		// This is called after the command's Run/RunE completes successfully
-		trackCommandAndWait(cmd, args, nil, true)
+		trackCommandAndWait(cmd, nil, true)
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {

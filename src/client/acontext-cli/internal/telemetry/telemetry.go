@@ -19,17 +19,14 @@ var telemetryBearerToken = ""
 
 // Event represents a telemetry event
 type Event struct {
-	Command     string            `json:"command"`
-	Args        []string          `json:"args,omitempty"`
-	Flags       map[string]string `json:"flags,omitempty"`
-	Success     bool              `json:"success"`
-	Error       string            `json:"error,omitempty"`
-	Duration    int64             `json:"duration_ms"`
-	Timestamp   string            `json:"timestamp"`
-	Version     string            `json:"version"`
-	OS          string            `json:"os"`
-	Arch        string            `json:"arch"`
-	CommandPath string            `json:"command_path,omitempty"`
+	Command   string `json:"command"`
+	Success   bool   `json:"success"`
+	Error     string `json:"error,omitempty"`
+	Duration  int64  `json:"duration_ms"`
+	Timestamp string `json:"timestamp"`
+	Version   string `json:"version"`
+	OS        string `json:"os"`
+	Arch      string `json:"arch"`
 }
 
 // SendEvent sends a telemetry event asynchronously
@@ -117,15 +114,12 @@ func sendEvent(event Event) error {
 }
 
 // TrackCommand tracks a command execution
-func TrackCommand(command string, args []string, flags map[string]string, success bool, err error, duration time.Duration, version string) {
+func TrackCommand(command string, success bool, err error, duration time.Duration, version string) {
 	event := Event{
-		Command:     command,
-		Args:        args,
-		Flags:       flags,
-		Success:     success,
-		Duration:    duration.Milliseconds(),
-		Version:     version,
-		CommandPath: command,
+		Command:  command,
+		Success:  success,
+		Duration: duration.Milliseconds(),
+		Version:  version,
 	}
 
 	if err != nil {
@@ -136,15 +130,12 @@ func TrackCommand(command string, args []string, flags map[string]string, succes
 }
 
 // TrackCommandAsync tracks a command execution asynchronously and returns a WaitGroup to wait for completion
-func TrackCommandAsync(command string, args []string, flags map[string]string, success bool, err error, duration time.Duration, version string) *sync.WaitGroup {
+func TrackCommandAsync(command string, success bool, err error, duration time.Duration, version string) *sync.WaitGroup {
 	event := Event{
-		Command:     command,
-		Args:        args,
-		Flags:       flags,
-		Success:     success,
-		Duration:    duration.Milliseconds(),
-		Version:     version,
-		CommandPath: command,
+		Command:  command,
+		Success:  success,
+		Duration: duration.Milliseconds(),
+		Version:  version,
 	}
 
 	if err != nil {
@@ -155,15 +146,12 @@ func TrackCommandAsync(command string, args []string, flags map[string]string, s
 }
 
 // TrackCommandSync tracks a command execution synchronously and waits for completion
-func TrackCommandSync(command string, args []string, flags map[string]string, success bool, err error, duration time.Duration, version string) error {
+func TrackCommandSync(command string, success bool, err error, duration time.Duration, version string) error {
 	event := Event{
-		Command:     command,
-		Args:        args,
-		Flags:       flags,
-		Success:     success,
-		Duration:    duration.Milliseconds(),
-		Version:     version,
-		CommandPath: command,
+		Command:  command,
+		Success:  success,
+		Duration: duration.Milliseconds(),
+		Version:  version,
 	}
 
 	if err != nil {
