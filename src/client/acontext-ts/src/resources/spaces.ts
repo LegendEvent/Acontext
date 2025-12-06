@@ -11,8 +11,6 @@ import {
   ListExperienceConfirmationsOutputSchema,
   ListSpacesOutput,
   ListSpacesOutputSchema,
-  SearchResultBlockItem,
-  SearchResultBlockItemSchema,
   Space,
   SpaceSchema,
   SpaceSearchResult,
