@@ -3,7 +3,7 @@ Spaces endpoints.
 """
 
 from collections.abc import Mapping
-from typing import Any, List
+from typing import Any
 
 from .._utils import build_params
 from ..client_types import RequesterProtocol
@@ -11,7 +11,6 @@ from ..types.space import (
     ExperienceConfirmation,
     ListExperienceConfirmationsOutput,
     ListSpacesOutput,
-    SearchResultBlockItem,
     Space,
     SpaceSearchResult,
 )

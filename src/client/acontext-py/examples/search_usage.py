@@ -83,8 +83,6 @@ async def example_async_search() -> None:
         print(f"\n=== Async Search Example (Space: {space_id}) ===\n")
 
         # Perform experience search
-        import asyncio
-
         exp_result = await client.spaces.experience_search(
             space_id,
             query="API documentation",
