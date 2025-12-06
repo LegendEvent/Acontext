@@ -469,7 +469,7 @@ for artifact in artifacts.items:
 
 ### Semantic search within spaces
 
-The SDK provides three powerful semantic search APIs for finding content within your spaces:
+The SDK provides a powerful semantic search API for finding content within your spaces:
 
 #### 1. Experience Search (Advanced AI-powered search)
 
@@ -503,41 +503,6 @@ for block in result.cited_blocks:
 
 if result.final_answer:
     print(f"AI Answer: {result.final_answer}")
-```
-
-#### 2. Semantic Glob (Search page/folder titles)
-
-Search for pages and folders by their titles using semantic similarity (like a semantic version of `glob`):
-
-```python
-# Find pages about authentication
-results = client.spaces.semantic_glob(
-    space_id="space-uuid",
-    query="authentication and authorization pages",
-    limit=10,
-    threshold=1.0,  # Only show results with distance < 1.0
-)
-
-for block in results:
-    print(f"{block.title} - {block.type}")
-```
-
-#### 3. Semantic Grep (Search content blocks)
-
-Search through actual content blocks using semantic similarity (like a semantic version of `grep`):
-
-```python
-# Find code examples for JWT validation
-results = client.spaces.semantic_grep(
-    space_id="space-uuid",
-    query="JWT token validation code examples",
-    limit=15,
-    threshold=0.7,
-)
-
-for block in results:
-    print(f"{block.title} - distance: {block.distance}")
-    print(f"Content: {block.props.get('text', '')[:100]}...")
 ```
 
 See `examples/search_usage.py` for more detailed examples including async usage.

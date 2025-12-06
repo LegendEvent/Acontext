@@ -133,62 +133,6 @@ class AsyncSpacesAPI:
         )
         return SpaceSearchResult.model_validate(data)
 
-    async def semantic_glob(
-        self,
-        space_id: str,
-        *,
-        query: str,
-        limit: int | None = None,
-        threshold: float | None = None,
-    ) -> List[SearchResultBlockItem]:
-        """Perform semantic glob (glob) search for page/folder titles.
-
-        Searches specifically for page/folder titles using semantic similarity,
-        similar to a semantic version of the glob command.
-
-        Args:
-            space_id: The UUID of the space.
-            query: Search query for page/folder titles.
-            limit: Maximum number of results to return (1-50, default 10).
-            threshold: Cosine distance threshold (0=identical, 2=opposite).
-
-        Returns:
-            List of SearchResultBlockItem objects matching the query.
-        """
-        params = build_params(query=query, limit=limit, threshold=threshold)
-        data = await self._requester.request(
-            "GET", f"/space/{space_id}/semantic_glob", params=params or None
-        )
-        return [SearchResultBlockItem.model_validate(item) for item in data]
-
-    async def semantic_grep(
-        self,
-        space_id: str,
-        *,
-        query: str,
-        limit: int | None = None,
-        threshold: float | None = None,
-    ) -> List[SearchResultBlockItem]:
-        """Perform semantic grep search for content blocks.
-
-        Searches through content blocks (actual text content) using semantic similarity,
-        similar to a semantic version of the grep command.
-
-        Args:
-            space_id: The UUID of the space.
-            query: Search query for content blocks.
-            limit: Maximum number of results to return (1-50, default 10).
-            threshold: Cosine distance threshold (0=identical, 2=opposite).
-
-        Returns:
-            List of SearchResultBlockItem objects matching the query.
-        """
-        params = build_params(query=query, limit=limit, threshold=threshold)
-        data = await self._requester.request(
-            "GET", f"/space/{space_id}/semantic_grep", params=params or None
-        )
-        return [SearchResultBlockItem.model_validate(item) for item in data]
-
     async def get_unconfirmed_experiences(
         self,
         space_id: str,
