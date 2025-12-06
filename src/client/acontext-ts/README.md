@@ -263,7 +263,7 @@ myPool.addTool(new MyCustomTool());
 
 ## Semantic search within spaces
 
-The SDK provides three powerful semantic search APIs for finding content within your spaces:
+The SDK provides a powerful semantic search API for finding content within your spaces:
 
 ### 1. Experience Search (Advanced AI-powered search)
 
@@ -297,44 +297,6 @@ for (const block of result.cited_blocks) {
 
 if (result.final_answer) {
   console.log(`AI Answer: ${result.final_answer}`);
-}
-```
-
-### 2. Semantic Glob (Search page/folder titles)
-
-Search for pages and folders by their titles using semantic similarity (like a semantic version of `glob`):
-
-```typescript
-// Find pages about authentication
-const results = await client.spaces.semanticGlobal('space-uuid', {
-  query: 'authentication and authorization pages',
-  limit: 10,
-  threshold: 1.0, // Only show results with distance < 1.0
-});
-
-for (const block of results) {
-  console.log(`${block.title} - ${block.type}`);
-}
-```
-
-### 3. Semantic Grep (Search content blocks)
-
-Search through actual content blocks using semantic similarity (like a semantic version of `grep`):
-
-```typescript
-// Find code examples for JWT validation
-const results = await client.spaces.semanticGrep('space-uuid', {
-  query: 'JWT token validation code examples',
-  limit: 15,
-  threshold: 0.7,
-});
-
-for (const block of results) {
-  console.log(`${block.title} - distance: ${block.distance}`);
-  const content = block.props.text || block.props.content;
-  if (content) {
-    console.log(`Content: ${String(content).substring(0, 100)}...`);
-  }
 }
 ```
 
