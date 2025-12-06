@@ -289,6 +289,144 @@ result = client.tools.rename_tool_name(
 print(result.status)  # 0 for success
 ```
 
+### Agent Tools
+
+The SDK provides agent tools that allow LLMs (OpenAI, Anthropic) to interact with Acontext disks through function calling. These tools can be converted to OpenAI or Anthropic tool schemas and executed when the LLM calls them.
+
+#### Pre-configured Disk Tools
+
+The SDK includes a pre-configured `DISK_TOOLS` pool with four disk operation tools:
+
+- **`write_file`**: Write text content to a file
+- **`read_file`**: Read a text file with optional line offset and limit
+- **`replace_string`**: Replace strings in a file
+- **`list_artifacts`**: List files and directories in a path
+
+#### Getting Tool Schemas for LLM APIs
+
+Convert tools to the appropriate format for your LLM provider:
+
+```python
+from acontext import AcontextClient
+from acontext.agent.disk import DISK_TOOLS
+
+client = AcontextClient(api_key="sk-ac-your-root-api-bearer-token")
+
+# Get OpenAI-compatible tool schemas
+openai_tools = DISK_TOOLS.to_openai_tool_schema()
+
+# Get Anthropic-compatible tool schemas
+anthropic_tools = DISK_TOOLS.to_anthropic_tool_schema()
+
+# Use with OpenAI API
+import openai
+openai_client = openai.OpenAI(api_key="your-openai-key")
+completion = openai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": 'Write a file called hello.txt with "Hello, World!"'}],
+    tools=openai_tools,
+)
+```
+
+#### Executing Tools
+
+When an LLM calls a tool, execute it using the tool pool:
+
+```python
+from acontext import AcontextClient
+from acontext.agent.disk import DISK_TOOLS
+
+client = AcontextClient(api_key="sk-ac-your-root-api-bearer-token")
+
+# Create a disk for the tools to operate on
+disk = client.disks.create()
+
+# Create a context for the tools
+ctx = DISK_TOOLS.format_context(client, disk.id)
+
+# Execute a tool (e.g., after LLM returns a tool call)
+result = DISK_TOOLS.execute_tool(
+    ctx,
+    "write_file",
+    {"filename": "hello.txt", "file_path": "/notes/", "content": "Hello, World!"}
+)
+print(result)  # File 'hello.txt' written successfully to '/notes/hello.txt'
+
+# Read the file
+read_result = DISK_TOOLS.execute_tool(
+    ctx,
+    "read_file",
+    {"filename": "hello.txt", "file_path": "/notes/"}
+)
+print(read_result)
+
+# List files in a directory
+list_result = DISK_TOOLS.execute_tool(
+    ctx,
+    "list_artifacts",
+    {"file_path": "/notes/"}
+)
+print(list_result)
+
+# Replace a string in a file
+replace_result = DISK_TOOLS.execute_tool(
+    ctx,
+    "replace_string",
+    {
+        "filename": "hello.txt",
+        "file_path": "/notes/",
+        "old_string": "Hello",
+        "new_string": "Hi",
+    }
+)
+print(replace_result)
+```
+
+#### Creating Custom Tools
+
+You can create custom tools by extending `BaseTool`:
+
+```python
+from acontext.agent.base import BaseTool, BaseToolPool, BaseContext
+from typing import Dict, Any
+
+class MyCustomTool(BaseTool):
+    @property
+    def name(self) -> str:
+        return "my_custom_tool"
+    
+    @property
+    def description(self) -> str:
+        return "A custom tool that does something"
+    
+    @property
+    def arguments(self) -> dict:
+        return {
+            "param1": {
+                "type": "string",
+                "description": "First parameter",
+            }
+        }
+    
+    @property
+    def required_arguments(self) -> list[str]:
+        return ["param1"]
+    
+    def execute(self, ctx: BaseContext, llm_arguments: dict) -> str:
+        param1 = llm_arguments.get("param1")
+        # Your custom logic here
+        return f"Result: {param1}"
+
+# Create a custom tool pool
+class MyToolPool(BaseToolPool):
+    def format_context(self, *args, **kwargs) -> BaseContext:
+        # Create and return your context
+        return BaseContext()
+
+my_pool = MyToolPool()
+my_pool.add_tool(MyCustomTool())
+```
+
 ### Blocks API
 
 #### List blocks
