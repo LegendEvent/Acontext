@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="./assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>Store Contexts, Learn Skills</h3>
+    <h3>Engineer Contexts, Learn Skills</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -29,6 +29,7 @@
   </div>
   <br/>
 </div>
+
 
 
 
