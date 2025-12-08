@@ -160,7 +160,7 @@ so that your agent can be more stable and provide greater value to your users.
 graph TB
     subgraph "Client Layer"
         PY["pip install acontext"]
-        TS["npm i@acontext/acontext"]
+        TS["npm i @acontext/acontext"]
     end
     
     subgraph "Acontext Backend"
