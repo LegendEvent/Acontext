@@ -36,7 +36,7 @@ Text Matching
 Session - Context Engineering
 
 - [x] Count tokens
-- [ ] Context editing ([doc](https://platform.claude.com/docs/en/build-with-claude/context-editing))
+- [x] Context editing ([doc](https://platform.claude.com/docs/en/build-with-claude/context-editing))
 
 Dashboard
 
