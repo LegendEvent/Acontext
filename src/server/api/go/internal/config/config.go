@@ -91,6 +91,7 @@ type Config struct {
 }
 
 func setDefaults(v *viper.Viper) {
+	v.SetDefault("app.env", "debug")
 	v.SetDefault("app.port", 8029)
 	v.SetDefault("root.apiBearerToken", "your-root-api-bearer-token")
 	v.SetDefault("root.projectBearerTokenPrefix", "sk-ac-")
