@@ -207,6 +207,7 @@ services:
     container_name: acontext-server-api
     restart: unless-stopped
     environment:
+      APP_ENV: ${APP_ENV:-release}
       API_EXPORT_PORT: ${API_EXPORT_PORT:-8029}
       ROOT_API_BEARER_TOKEN: ${ROOT_API_BEARER_TOKEN:-your-root-api-bearer-token}
       DATABASE_HOST: ${DATABASE_HOST:-acontext-server-pg}
@@ -231,7 +232,6 @@ services:
       S3_BUCKET: ${S3_BUCKET:-acontext-assets}
       CORE_BASE_URL: http://acontext-server-core:8000
       OTEL_EXPORTER_OTLP_ENDPOINT: acontext-server-jaeger:4317
-      APP_ENV: ${APP_ENV:-development}
     ports:
       - "${API_EXPORT_PORT:-8029}:8029"
     healthcheck:
