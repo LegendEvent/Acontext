@@ -64,7 +64,7 @@ services:
 
   # --- SeaweedFS ---
   acontext-server-seaweedfs:
-    image: chrislusf/seaweedfs:4.00
+    image: chrislusf/seaweedfs:4.02
     container_name: acontext-server-seaweedfs
     restart: unless-stopped
     user: root # https://github.com/seaweedfs/seaweedfs/pull/7399
@@ -116,8 +116,20 @@ services:
     entrypoint: >
       /bin/sh -c "
       aws configure set default.s3.signature_version s3v4 &&
-      aws --endpoint-url=http://acontext-server-seaweedfs:9000 s3 mb s3://${S3_BUCKET:-acontext-assets} 2>/dev/null || true &&
-      echo '✅ SeaweedFS ready with bucket: ${S3_BUCKET:-acontext-assets}'
+      BUCKET_NAME=${S3_BUCKET:-acontext-assets} &&
+      echo 'Creating bucket: $$BUCKET_NAME' &&
+      aws --endpoint-url=http://acontext-server-seaweedfs:9000 s3 mb s3://$$BUCKET_NAME 2>/dev/null || true &&
+      echo 'Verifying bucket exists...' &&
+      for i in 1 2 3 4 5; do
+        if aws --endpoint-url=http://acontext-server-seaweedfs:9000 s3 ls s3://$$BUCKET_NAME >/dev/null 2>&1; then
+          echo '✅ SeaweedFS ready with bucket: '$$BUCKET_NAME &&
+          exit 0
+        fi
+        echo 'Waiting for bucket to be available... (attempt '$$i'/5)' &&
+        sleep 2
+      done &&
+      echo '❌ Failed to verify bucket creation' &&
+      exit 1
       "
     restart: "no"
 
