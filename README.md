@@ -243,8 +243,9 @@ Once it's done, you can access the following endpoints:
     <picture>
       <img alt="Dashboard" src="./docs/images/dashboard/BI.png" width="100%">
     </picture>
-  <p>Dashboard of Success Rate and other Metrics</p>
+  <p>Dashboard of Agent Success Rate and Other Metrics</p>
 </div>
+
 
 
 
