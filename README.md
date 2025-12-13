@@ -58,23 +58,23 @@ Acontext is a **context data platform** for building **cloud-native** AI Agents.
 
 
 
-We're building it because we believe Acontext can help you:
+Acontext can help you:
 
 - **Build a more scalable agent product with better context engineering**
-- **Improve your agent success rate and reduce running steps**
-
-so that your agent can be more stable and provide greater value to your users.
+- **Build a truly observable Agent product.**
+- **Automatically improve your agent success rate**
 
 
 
 # 💡 Core Features
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - You can store context in Acontext, just like a Database but only used for context.
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collects task's status, progress and preferences.
-  - [**Context Editing**](https://docs.acontext.io/store/editing) - Context Engineering in one call.
-- [**Disk**](https://docs.acontext.io/store/disk) - Filesystem for artifacts.
-- [**Space**](https://docs.acontext.io/learn/skill-space) - Notion for agents, where learned skills are stored. 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills.
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Multi-modal Message Storage
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Background TODO agent that collects task's status, progress and preferences
+  - [**Context Editing**](https://docs.acontext.io/store/editing) - Context Engineering in one call
+- [**Disk**](https://docs.acontext.io/store/disk) - Filesystem for artifacts
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Notion for agents
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Background agents that distill, save and search skills
+- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - View messages, artifacts, skills, success rates and everything
 
 ### How They Work Together
 
@@ -88,11 +88,10 @@ so that your agent can be more stable and provide greater value to your users.
                   │         └────────┬────────┘
                   │                  │ # if enable
                   │         ┌────────▼────────┐
-                  │         │   Learn Skills  │ # or wait for user confirmation
+                  │         │   Learn Skills  │
                   │         └────────┬────────┘
-                  │                  │
                   └──────────────────┘
-                  Skills guide the agent
+                      Search skills
 ```
 
 
