@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>コンテキストを保存、スキルを学習</h3>
+    <h3>コンテキストを設計、スキルを学習</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -34,42 +34,44 @@
 
 
 
-Acontextは、**クラウドネイティブ** AI Agentアプリケーション向けの**コンテキストデータプラットフォーム**です。以下のことができます：
+Acontextは、**クラウドネイティブ** AI Agentsを構築するための**コンテキストデータプラットフォーム**です。以下のことができます：
 
-- **保存** コンテキストとartifacts
+- **保存** コンテキストとartifacts。 
+- あなたのために**コンテキストエンジニアリング**を実行。
 - **観察** Agentタスクとユーザーフィードバック。
 - Agentの完了したタスクからスキルを蒸留することで、Agentの**自己学習**を可能にします。
-- すべてのコンテキストを1つの**ダッシュボード**で表示。
+- すべてを1つの**ダッシュボード**で表示。
 
 
 
 <div align="center">
     <picture>
-      <img alt="Acontext Learning" src="../../assets/acontext_dataflow.png" width="100%">
+      <img alt="Acontext Learning" src="../../assets/acontext-components.jpg" width="100%">
     </picture>
-  <p>保存、観察、学習</p>
+  <p>保存、観察、学習するコンテキストデータプラットフォーム</p>
 </div>
 
 
 
 
 
-私たちがこれを構築している理由は、Acontextが以下を支援できると信じているからです：
+Acontextは以下を支援できます：
 
 - **より良いコンテキストエンジニアリングで、よりスケーラブルなAgent製品を構築する**
-- **Agentの成功率を向上させ、実行ステップを削減する**
-
-これにより、Agentがより安定し、ユーザーに大きな価値を提供できるようになります。
-
+- **真に観察可能なAgent製品を構築する。**
+- **Agentの成功率を自動的に向上させる**
 
 
-# 💡 コアコンセプト
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Acontextにコンテキストを保存できます。データベースのように、コンテキスト専用に使用されます。
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドTODO Agent。
-- [**Disk**](https://docs.acontext.io/store/disk) - Agent Artifacts用のファイルストレージ。
-- [**Space**](https://docs.acontext.io/learn/skill-space) - 学習したスキルが保存される、Notionのような Agents 用の`Space`。 
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - スキルを蒸留、保存、検索するバックグラウンド Agents。
+# 💡 主な機能
+
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - マルチモーダルメッセージストレージ
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドTODO Agent
+  - [**Context Editing**](https://docs.acontext.io/store/editing) - 1回の呼び出しでコンテキストエンジニアリング
+- [**Disk**](https://docs.acontext.io/store/disk) - Artifacts用のファイルシステム
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Agents用のNotion
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - スキルを蒸留、保存、検索するバックグラウンド Agents
+- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - メッセージ、artifacts、スキル、成功率などすべてを表示
 
 ### 連携の仕組み
 
@@ -77,23 +79,83 @@ Acontextは、**クラウドネイティブ** AI Agentアプリケーション�
 ┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
 │ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
 └──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │
+                  │                  │ # if enable
                   │         ┌────────▼────────┐
                   │         │ Observed Tasks  │
                   │         └────────┬────────┘
-                  │                  │
+                  │                  │ # if enable
                   │         ┌────────▼────────┐
-                  │         │   Learn Skills  │ # or wait for user confirmation
+                  │         │   Learn Skills  │
                   │         └────────┬────────┘
-                  │                  │
                   └──────────────────┘
-                  スキルがAgentをガイド
+                      Search skills
 ```
 
 
 
+
+</details>
+
+
+
+# 🏗️ アーキテクチャ
+
 <details>
-<summary>📖 Task Structure</summary>
+<summary>興味がある場合は、アーキテクチャ図を開いてください。</summary>
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        PY["pip install acontext"]
+        TS["npm i @acontext/acontext"]
+    end
+    
+    subgraph "Acontext Backend"
+      subgraph " "
+          API["API<br/>localhost:8029"]
+          CORE["Core"]
+          API -->|FastAPI & MQ| CORE
+      end
+      
+      subgraph " "
+          Infrastructure["Infrastructures"]
+          PG["PostgreSQL"]
+          S3["S3"]
+          REDIS["Redis"]
+          MQ["RabbitMQ"]
+      end
+    end
+    
+    subgraph "Dashboard"
+        UI["Web Dashboard<br/>localhost:3000"]
+    end
+    
+    PY -->|RESTFUL API| API
+    TS -->|RESTFUL API| API
+    UI -->|RESTFUL API| API
+    API --> Infrastructure
+    CORE --> Infrastructure
+
+    Infrastructure --> PG
+    Infrastructure --> S3
+    Infrastructure --> REDIS
+    Infrastructure --> MQ
+    
+    
+    style PY fill:#3776ab,stroke:#fff,stroke-width:2px,color:#fff
+    style TS fill:#3178c6,stroke:#fff,stroke-width:2px,color:#fff
+    style API fill:#00add8,stroke:#fff,stroke-width:2px,color:#fff
+    style CORE fill:#ffd43b,stroke:#333,stroke-width:2px,color:#333
+    style UI fill:#000,stroke:#fff,stroke-width:2px,color:#fff
+    style PG fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    style S3 fill:#ff9900,stroke:#fff,stroke-width:2px,color:#fff
+    style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
+    style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
+```
+
+## データ構造
+<details>
+<summary>📖 タスク構造</summary>
 
 ```json
 {
@@ -113,7 +175,7 @@ Acontextは、**クラウドネイティブ** AI Agentアプリケーション�
 
 
 <details>
-<summary>📖 Skill Structure</summary>
+<summary>📖 スキル構造</summary>
 
 
 ```json
@@ -133,7 +195,7 @@ Acontextは、**クラウドネイティブ** AI Agentアプリケーション�
 
 
 <details>
-<summary>📖 Space Structure</summary>
+<summary>📖 Space構造</summary>
 
 ```txt
 /
@@ -147,6 +209,10 @@ Acontextは、**クラウドネイティブ** AI Agentアプリケーション�
     ...
 ```
 </details>
+
+</details>
+
+
 
 
 
@@ -487,7 +553,14 @@ Acontextは多数のセッションを収集し、特定のタスクに対して
 
 ### `Space`にスキルを学習 [📖](https://docs.acontext.io/learn/skill-space)
 
-`Space`は、Notionのようなシステムでスキル、経験、記憶を保存できます。学習プロセスを有効にするには、まずセッションを`Space`に接続する必要があります：
+<div align="center">
+    <picture>
+      <img alt="A Space Demo" src="../../assets/acontext_dataflow.png" width="100%">
+    </picture>
+  <p>自己学習の仕組みは？</p>
+</div>
+
+`Space`は、Notionのようなシステムでスキルと記憶を保存できます。学習プロセスを有効にするには、まずセッションを`Space`に接続する必要があります：
 
 ```python
 # Step 1: Create a Space for skill learning

@@ -508,7 +508,7 @@ for task in tasks_response.items:
 
 ```
 > `flush` is a blocking call, it will wait for the task extraction to complete.
-> You don't need to call it in production, Acontext has a buffer mechanism to ensure the task extraction is completed right on time.
+> You don't need to call it in production, Acontext has a [buffer mechanism](https://docs.acontext.io/observe/buffer) to ensure the task extraction is completed right on time.
 
 </details>
 
