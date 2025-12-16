@@ -496,13 +496,13 @@ for task in tasks_response.items:
     print(f"  Status: {task.status}")
 
     # Show progress updates if available
-    if "progresses" in task.data:
+    if task.data.progresses:
         print(f"  Progress updates: {len(task.data.progresses)}")
         for progress in task.data.progresses:
             print(f"    - {progress}")
 
     # Show user preferences if available
-    if "user_preferences" in task.data:
+    if task.data.user_preferences:
         print("  User preferences:")
         for pref in task.data.user_preferences:
             print(f"    - {pref}")
