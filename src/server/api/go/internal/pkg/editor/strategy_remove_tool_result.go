@@ -59,7 +59,7 @@ func (s *RemoveToolResultStrategy) Apply(messages []model.Message) ([]model.Mess
 	}
 
 	// Replace the text of the oldest tool-result parts
-	for i := 0; i < numToReplace; i++ {
+	for i := range numToReplace {
 		pos := toolResultPositions[i]
 		messages[pos.messageIdx].Parts[pos.partIdx].Text = placeholder
 	}
