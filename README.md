@@ -222,19 +222,16 @@ We have an `acontext-cli` to help you do quick proof-of-concept. Download it fir
 curl -fsSL https://install.acontext.io | sh
 ```
 
-You should have [docker-compose](https://docs.docker.com/compose/install/) installed and [OpenAI API Key](https://platform.openai.com/settings/organization/api-keys) to start an Acontext backend on your computer:
+You should have [docker](https://www.docker.com/get-started/) installed and an OpenAI API Key to start an Acontext backend on your computer:
 
 ```bash
 mkdir acontext_server && cd acontext_server
-
-# 1. this command will start a interactive prompt
-# 2. It requires you to input openai api key
-acontext docker up 
+acontext docker up
 ```
 
 > [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
 
-`acontext docker up` will create/use  `./.env` and `./config.yaml` for Acontext, and create a `db` folder to persist data.
+`acontext docker up` will create/use  `.env` and `config.yaml` for Acontext, and create a `db` folder to persist data.
 
 
 
@@ -289,7 +286,7 @@ Check our example repo for more templates: [Acontext-Examples](https://github.co
 
 
 
-## SDK Walk-through
+## Step-by-step Quickstart
 
 <details>
 <summary>Click to Open</summary>
