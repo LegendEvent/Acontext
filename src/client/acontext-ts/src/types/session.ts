@@ -98,6 +98,7 @@ export type PublicURL = z.infer<typeof PublicURLSchema>;
 
 export const GetMessagesOutputSchema = z.object({
   items: z.array(z.unknown()),
+  ids: z.array(z.string()),
   next_cursor: z.string().nullable().optional(),
   has_more: z.boolean(),
   public_urls: z.record(z.string(), PublicURLSchema).nullable().optional(),
