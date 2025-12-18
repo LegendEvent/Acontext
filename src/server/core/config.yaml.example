@@ -1,1 +1,15 @@
-llm_api_key: YOUR-OPENAI-KEY
+# Chat/completions
+#llm_api_key: YOUR-OPENAI-KEY
+
+# Embeddings
+# Default behavior: if block_embedding_provider=openai but no API key is set,
+# Core will fall back to local CPU embeddings via FastEmbed.
+#
+# To force local embeddings:
+block_embedding_provider: fastembed
+block_embedding_model: BAAI/bge-small-en-v1.5
+block_embedding_dim: 1536  # keep DB schema stable; vectors are padded
+#
+# Optional FastEmbed tuning:
+# block_embedding_fastembed_cache_dir: /app/.cache/fastembed
+# block_embedding_fastembed_add_prefix: false

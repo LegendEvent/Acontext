@@ -21,7 +21,7 @@ core:
   
   service:
     type: ClusterIP
-    port: 8000
+    port: 8005
   
   env:
     # LLM Configuration
@@ -45,7 +45,7 @@ core:
   livenessProbe:
     httpGet:
       path: /health
-      port: 8000
+      port: 8005
     initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
@@ -54,7 +54,7 @@ core:
   readinessProbe:
     httpGet:
       path: /health
-      port: 8000
+      port: 8005
     initialDelaySeconds: 10
     periodSeconds: 5
     timeoutSeconds: 3

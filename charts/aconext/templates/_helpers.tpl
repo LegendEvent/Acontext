@@ -202,7 +202,7 @@ Get Redis URL
 {{- $password = .Values.secrets.redis.password }}
 {{- end }}
 {{- if $password }}
-{{- printf "rediss://:%s@%s:%s" $password $host $port }}
+{{- printf "redis://:%s@%s:%s" $password $host $port }}
 {{- else }}
 {{- printf "redis://%s:%s" $host $port }}
 {{- end }}
@@ -226,7 +226,7 @@ Get RabbitMQ URL
 {{- $password = .Values.secrets.rabbitmq.password }}
 {{- $vhost = .Values.external.rabbitmq.vhost | default "/" }}
 {{- end }}
-{{- printf "amqps://%s:%s@%s:%s%s" $user $password $host $port $vhost }}
+{{- printf "amqp://%s:%s@%s:%s%s" $user $password $host $port $vhost }}
 {{- end }}
 
 {{/*

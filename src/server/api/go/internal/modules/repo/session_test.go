@@ -16,7 +16,7 @@ import (
 // setupSessionTestDB creates a test database connection for session tests
 func setupSessionTestDB(t *testing.T) *gorm.DB {
 	// Skip if no test database is configured
-	dsn := "host=localhost user=acontext password=helloworld dbname=acontext port=15432 sslmode=disable"
+	dsn := "host=localhost user=acontext password=helloworld dbname=acontext port=15437 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Skip("Test database not available, skipping integration tests")

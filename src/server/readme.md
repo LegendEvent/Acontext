@@ -1,6 +1,6 @@
 ## Core Development
 
-1. [Terminal 1] Start dependencies with Docker Compose
+1. [Terminal 1] Start dependencies (Docker + docker compose)
 
 ```bash
 sh scripts/local_dev_deps.sh

@@ -18,7 +18,7 @@ import (
 // For CI/CD, use environment variables to configure the test database
 func setupTestDB(t *testing.T) *gorm.DB {
 	// Skip if no test database is configured
-	dsn := "host=localhost user=acontext password=helloworld dbname=acontext port=15432 sslmode=disable"
+	dsn := "host=localhost user=acontext password=helloworld dbname=acontext port=15437 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Skip("Test database not available, skipping integration tests")

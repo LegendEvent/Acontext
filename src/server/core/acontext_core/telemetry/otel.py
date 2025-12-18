@@ -673,7 +673,10 @@ def instrument_llm_embedding(func):
         phase = kwargs.get("phase", "document")
         model = kwargs.get("model")
 
-        # Get provider and model from config
+        # Get provider and model from config.
+        # Note: get_embedding() may transparently fall back to a different provider/model
+        # (e.g. openai -> fastembed when no API key). We still tag spans with the
+        # configured provider/model here for consistent observability.
         provider = DEFAULT_CORE_CONFIG.block_embedding_provider
         use_model = model or DEFAULT_CORE_CONFIG.block_embedding_model
 

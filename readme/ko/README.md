@@ -127,7 +127,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3000"]
+        UI["Web Dashboard<br/>localhost:3050"]
     end
     
     PY -->|RESTFUL API| API
@@ -243,7 +243,7 @@ acontext docker up
 완료되면 다음 엔드포인트에 액세스할 수 있습니다:
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3000/
+- Acontext Dashboard: http://localhost:3050/
 
 
 

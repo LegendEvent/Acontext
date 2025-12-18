@@ -38,7 +38,7 @@ declare global {
 }
 
 const DEFAULT_CONNECTION_STRING =
-  "postgresql://acontext:helloworld@127.0.0.1:15432/acontext?sslmode=disable";
+  "postgresql://acontext:helloworld@127.0.0.1:15437/acontext?sslmode=disable";
 
 const getPool = () => {
   if (!globalThis.__dashboardPool) {

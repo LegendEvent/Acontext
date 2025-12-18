@@ -1,10 +1,13 @@
 import json
-from typing import Optional
-from .clients import get_openai_async_client_instance
+from time import perf_counter
+from typing import Any, Optional
+
 from openai.types.chat import ChatCompletion
 from openai.types.chat import ChatCompletionMessageToolCall
-from time import perf_counter
-from ...env import LOG, DEFAULT_CORE_CONFIG
+
+from .clients import get_openai_async_client_instance
+from ..copilot_auth import COPILOT_DEFAULT_HEADERS, get_copilot_access_token
+from ...env import DEFAULT_CORE_CONFIG, LOG
 from ...schema.llm import LLMResponse
 
 
@@ -17,6 +20,52 @@ def convert_openai_tool_to_llm_tool(tool_body: ChatCompletionMessageToolCall) ->
             "arguments": json.loads(tool_body.function.arguments),
         },
     }
+
+
+def _is_agent_call(messages: list[dict]) -> bool:
+    # Must match opencode-copilot-auth: agent if any message role is tool/assistant
+    for msg in messages:
+        role = (msg or {}).get("role")
+        if role in ("tool", "assistant"):
+            return True
+    return False
+
+
+def _is_vision_request(messages: list[dict]) -> bool:
+    # Must match opencode-copilot-auth: any message has content list with part.type == image_url
+    for msg in messages:
+        content = (msg or {}).get("content")
+        if isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "image_url":
+                    return True
+    return False
+
+
+async def _build_extra_headers(messages: list[dict]) -> Optional[dict[str, str]]:
+    if not (
+        DEFAULT_CORE_CONFIG.copilot_enabled
+        and not (DEFAULT_CORE_CONFIG.llm_api_key or "").strip()
+    ):
+        return None
+
+    token = await get_copilot_access_token()
+
+    headers: dict[str, str] = {
+        **COPILOT_DEFAULT_HEADERS,
+        "Authorization": f"Bearer {token}",
+        "Openai-Intent": "conversation-edits",
+        "X-Initiator": "agent" if _is_agent_call(messages) else "user",
+    }
+    if _is_vision_request(messages):
+        headers["Copilot-Vision-Request"] = "true"
+
+    # mirror plugin behavior: delete these if present in request headers.
+    # In Python we only control extra_headers, but ensure we never add them.
+    headers.pop("x-api-key", None)
+    headers.pop("authorization", None)
+
+    return headers
 
 
 async def openai_complete(
@@ -38,7 +87,7 @@ async def openai_complete(
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
-    messages = []
+    messages: list[dict[str, Any]] = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.extend(history_messages)
@@ -48,6 +97,8 @@ async def openai_complete(
     if not messages:
         raise ValueError("No messages provided")
 
+    extra_headers = await _build_extra_headers(messages)
+
     _start_s = perf_counter()
     response: ChatCompletion = await openai_async_client.chat.completions.create(
         model=model,
@@ -55,6 +106,7 @@ async def openai_complete(
         timeout=DEFAULT_CORE_CONFIG.llm_response_timeout,
         max_tokens=max_tokens,
         tools=tools,
+        extra_headers=extra_headers,
         **DEFAULT_CORE_CONFIG.llm_openai_completion_kwargs,
         **kwargs,
     )
@@ -66,7 +118,6 @@ async def openai_complete(
         f"time {_end_s - _start_s:.4f}s"
     )
 
-    # Only support tool calls
     _tu = (
         [
             convert_openai_tool_to_llm_tool(tool)
