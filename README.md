@@ -67,6 +67,10 @@ acontext docker up
 - API base URL: http://localhost:8029/api/v1
 - Dashboard: http://localhost:3050/
 
+If you want to access the dashboard from another device in your LAN, set the UI base URL to the server's LAN IP (not `localhost`):
+
+- `NEXT_PUBLIC_BASE_URL=http://192.168.178.219:3050`
+
 ### Local LLM & embeddings (no vendor API keys)
 
 This repo supports running Core without vendor API keys:

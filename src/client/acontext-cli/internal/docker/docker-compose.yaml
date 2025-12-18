@@ -255,7 +255,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3050}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://192.168.178.219:3050}
       NEXT_PUBLIC_BASE_PATH: ""
       API_SERVER_URL: http://acontext-server-api:8029
       ROOT_API_BEARER_TOKEN: ${ROOT_API_BEARER_TOKEN:-your-root-api-bearer-token}

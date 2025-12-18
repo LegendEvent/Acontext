@@ -20,7 +20,9 @@ try {
   }
 
   // Create .env file with default values
-  const defaultEnvContent = `NEXT_PUBLIC_BASE_URL="http://localhost:3050"
+  const defaultEnvContent = `# IMPORTANT: if you want to access the dashboard from another machine in your LAN,
+# set NEXT_PUBLIC_BASE_URL to the server's LAN IP (not localhost).
+NEXT_PUBLIC_BASE_URL="http://192.168.178.219:3050"
 NEXT_PUBLIC_BASE_PATH=""
 API_SERVER_URL="http://localhost:8029"
 ROOT_API_BEARER_TOKEN="your-root-api-bearer-token"
