@@ -476,9 +476,11 @@ const AcontextPlugin: Plugin = async (ctx) => {
       const cacheKey = `${spaceId}|${userText}`;
       const now = Date.now();
       let citedBlocks: any[] = [];
+      let wasCacheHit = false;
       const hit = cache.get(cacheKey);
       if (hit && now - hit.ts < 90_000) {
         citedBlocks = hit.cited_blocks;
+        wasCacheHit = true;
         await debug.log("search.cache_hit", { ageMs: now - hit.ts, citedBlocks: citedBlocks.length });
       } else {
         try {
@@ -495,6 +497,7 @@ const AcontextPlugin: Plugin = async (ctx) => {
       }
 
       const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
+      const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
       if (!skillsText) {
         await debug.log("inject.skip_no_skills", { citedBlocks: citedBlocks.length });
         return;
@@ -503,32 +506,48 @@ const AcontextPlugin: Plugin = async (ctx) => {
       const marker = "<!-- opencode-acontext:v1 -->";
 
       const injectedSkills = `${marker}\n${config.injectHeader ?? "SKILLS REFERENCES:"}\n${skillsText}`;
-      const injected = `${injectedSkills}\n\nUSER REQUEST:\n${userText}`;
+
+      for (const p of output.parts as any[]) {
+        if (p?.type === "text" && typeof p.text === "string" && p.text.includes(marker)) {
+          await debug.log("inject.skip_already_injected", {});
+          return;
+        }
+      }
 
       const newParts: any[] = [];
-      let injectedOnce = false;
+      let inserted = false;
       for (const p of output.parts as any[]) {
-        if (p?.type === "text" && typeof p.text === "string") {
-          if (p.text.includes(marker)) {
-            await debug.log("inject.skip_already_injected", {});
-            return;
-          }
-
-          if (!injectedOnce) {
-            newParts.push({ ...p, text: `${injectedSkills}\n\n${p.text}` });
-            injectedOnce = true;
-          } else {
-            newParts.push(p);
-          }
-          continue;
+        if (!inserted && p?.type === "text" && typeof p.text === "string") {
+          newParts.push({
+            type: "text",
+            text: injectedSkills,
+            synthetic: true,
+          });
+          inserted = true;
         }
         newParts.push(p);
       }
 
-      if (!injectedOnce) return;
+      if (!inserted) return;
 
       output.parts = newParts;
-      await debug.log("inject.done", { injectedChars: injected.length, partsCount: newParts.length });
+
+      ctx.client.tui
+        .showToast({
+          body: {
+            title: "Acontext",
+            message: `Injected ${usedBlocksCount} skill${usedBlocksCount === 1 ? "" : "s"}${wasCacheHit ? " (cache)" : ""}`,
+            variant: "success",
+            duration: 1500,
+          },
+        })
+        .catch(async (e) => {
+          await debug.log("tui.toast_failed", {
+            error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+          });
+        });
+
+      await debug.log("inject.done", { injectedChars: injectedSkills.length, partsCount: newParts.length, usedBlocksCount, wasCacheHit });
     },
   };
 };
