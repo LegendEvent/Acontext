@@ -64,7 +64,7 @@ Acontext can help you:
 # 🏗️ How it works?
 
 <details>
-<summary>Click to open the architecture diagram, if you're interested.</summary>
+<summary>click to open</summary>
 
 ```mermaid
 graph TB
@@ -215,7 +215,7 @@ mkdir acontext_server && cd acontext_server
 acontext docker up
 ```
 
-> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) Acontext requires at least an OpenAI API key. We recommend `gpt-5.1` or `gpt-4.1` as the LLM model
+> [📖 local setup](https://docs.acontext.io/local#start-acontext-server-locally) We recommend `gpt-4.1` as the LLM model
 
 `acontext docker up` will create/use  `.env` and `config.yaml` for Acontext, and create a `db` folder to persist data.
 
@@ -275,7 +275,7 @@ Check our example repo for more templates: [Acontext-Examples](https://github.co
 ## Step-by-step Quickstart
 
 <details>
-<summary>Click to Open</summary>
+<summary>click to open</summary>
 
 
 We're maintaining Python [![pypi](https://img.shields.io/pypi/v/acontext.svg)](https://pypi.org/project/acontext/) and Typescript [![npm](https://img.shields.io/npm/v/@acontext/acontext.svg?logo=npm&logoColor=fff&style=flat&labelColor=2C2C2C&color=28CF8D)](https://www.npmjs.com/package/@acontext/acontext) SDKs. The snippets below are using Python.
