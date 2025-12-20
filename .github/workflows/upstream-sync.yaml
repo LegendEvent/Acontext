@@ -1,0 +1,146 @@
+name: Upstream sync (mirror main + PR into main-dev)
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_repo:
+        description: Upstream repo in owner/name
+        required: true
+        default: memodb-io/Acontext
+      upstream_branch:
+        description: Upstream branch to mirror
+        required: true
+        default: main
+      fork_main_branch:
+        description: Branch in this repo that mirrors upstream
+        required: true
+        default: main
+      target_branch:
+        description: Product branch that receives upstream updates
+        required: true
+        default: main-dev
+      pr_branch:
+        description: Branch name used for the sync PR
+        required: true
+        default: sync/upstream
+      auto_merge:
+        description: Enable auto-merge for the PR
+        required: true
+        type: boolean
+        default: false
+  schedule:
+    - cron: "23 2 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Set variables
+        id: vars
+        run: |
+          UPSTREAM_REPO="${{ github.event.inputs.upstream_repo }}"
+          UPSTREAM_BRANCH="${{ github.event.inputs.upstream_branch }}"
+          FORK_MAIN="${{ github.event.inputs.fork_main_branch }}"
+          TARGET_BRANCH="${{ github.event.inputs.target_branch }}"
+          PR_BRANCH="${{ github.event.inputs.pr_branch }}"
+
+          if [ -z "$UPSTREAM_REPO" ]; then UPSTREAM_REPO="memodb-io/Acontext"; fi
+          if [ -z "$UPSTREAM_BRANCH" ]; then UPSTREAM_BRANCH="main"; fi
+          if [ -z "$FORK_MAIN" ]; then FORK_MAIN="main"; fi
+          if [ -z "$TARGET_BRANCH" ]; then TARGET_BRANCH="main-dev"; fi
+          if [ -z "$PR_BRANCH" ]; then PR_BRANCH="sync/upstream"; fi
+
+          echo "upstream_repo=$UPSTREAM_REPO" >> "$GITHUB_OUTPUT"
+          echo "upstream_branch=$UPSTREAM_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "fork_main=$FORK_MAIN" >> "$GITHUB_OUTPUT"
+          echo "target_branch=$TARGET_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "pr_branch=$PR_BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "https://github.com/${{ steps.vars.outputs.upstream_repo }}.git" || true
+          git fetch upstream "${{ steps.vars.outputs.upstream_branch }}" --tags --prune
+
+      - name: Mirror upstream into fork main
+        run: |
+          git fetch origin "${{ steps.vars.outputs.fork_main }}" --prune
+          git checkout -B "${{ steps.vars.outputs.fork_main }}" "origin/${{ steps.vars.outputs.fork_main }}"
+          git reset --hard "upstream/${{ steps.vars.outputs.upstream_branch }}"
+
+      - name: Push fork main
+        run: |
+          git push origin "${{ steps.vars.outputs.fork_main }}" --force-with-lease
+
+      - name: Prepare PR branch from target
+        run: |
+          git fetch origin "${{ steps.vars.outputs.target_branch }}" --prune
+          git checkout -B "${{ steps.vars.outputs.target_branch }}" "origin/${{ steps.vars.outputs.target_branch }}"
+          git checkout -B "${{ steps.vars.outputs.pr_branch }}"
+
+      - name: Merge fork main into PR branch
+        run: |
+          set -e
+          if git merge --ff-only "${{ steps.vars.outputs.fork_main }}"; then
+            exit 0
+          fi
+          git merge "${{ steps.vars.outputs.fork_main }}" --no-edit
+
+      - name: Push PR branch
+        run: |
+          git push origin "${{ steps.vars.outputs.pr_branch }}" --force-with-lease
+
+      - name: Create or locate PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE="${{ steps.vars.outputs.target_branch }}"
+          HEAD="${{ steps.vars.outputs.pr_branch }}"
+          TITLE="chore: sync upstream into ${BASE}"
+
+          PR_NUMBER=$(gh pr list --state open --base "$BASE" --head "$HEAD" --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$PR_NUMBER" ]; then
+            echo "PR already exists: #$PR_NUMBER"
+            exit 0
+          fi
+
+          printf "%s\n" \
+            "Upstream sync PR (auto-generated)." \
+            "" \
+            "This updates fork main from upstream and merges those changes into the product branch." \
+            "" \
+            "If there are conflicts, this workflow fails intentionally and you should resolve locally." \
+            > /tmp/pr-body.txt
+
+          gh pr create \
+            --base "$BASE" \
+            --head "$HEAD" \
+            --title "$TITLE" \
+            --body-file /tmp/pr-body.txt
+
+      - name: Enable auto-merge (optional)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.auto_merge }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE="${{ steps.vars.outputs.target_branch }}"
+          HEAD="${{ steps.vars.outputs.pr_branch }}"
+          PR_NUMBER=$(gh pr list --state open --base "$BASE" --head "$HEAD" --json number --jq '.[0].number')
+          gh pr merge "$PR_NUMBER" --auto --merge
