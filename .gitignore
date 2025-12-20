@@ -177,6 +177,9 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
+# Local / generated config
+acontext.json
+
 # Created by https://www.toptal.com/developers/gitignore/api/go
 # Edit at https://www.toptal.com/developers/gitignore?templates=go
 
@@ -206,3 +209,4 @@ go.work
 # End of https://www.toptal.com/developers/gitignore/api/go
 
 src/client/acontext-opencode-plugin/acontext.json
+src/server/.env
