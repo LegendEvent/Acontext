@@ -30,6 +30,32 @@
   <br/>
 </div>
 
+## Disclaimer: fork with Copilot-first local dev
+
+This repository is a personal fork of the upstream project **memodb-io/Acontext**:
+- Upstream: https://github.com/memodb-io/Acontext
+
+**Why this fork exists:**
+I wanted an Acontext setup that can run locally with *minimal vendor credentials* while still using a strong hosted model.
+
+**What’s different here (user-visible):**
+- **LLM without OpenAI/Anthropic keys (GitHub Copilot fallback)**
+  - If `LLM_API_KEY` is not set and `copilot_enabled=true`, Core will prompt a **GitHub device auth flow** and then use your **Copilot subscription** via Copilot’s OpenAI-compatible endpoint.
+  - Implementation: `src/server/core/acontext_core/llm/copilot_auth.py`, `src/server/core/acontext_core/llm/complete/clients.py`, `src/server/core/acontext_core/llm/complete/openai_sdk.py`, config in `src/server/core/acontext_core/schema/config.py`.
+  - Token store default: `/app/.acontext/copilot.json`.
+
+- **Embeddings without keys (local CPU fallback)**
+  - If embeddings are configured as `openai` but no embedding/LLM API key is present, embeddings automatically fall back to **FastEmbed** (CPU) with a safe default model (`BAAI/bge-small-en-v1.5`).
+  - Implementation: `src/server/core/acontext_core/llm/embeddings/__init__.py`.
+
+- **Opencode Plugin** 
+  - Added opencode plugin so acontext can be utilized directly!
+
+**Who should use upstream instead:**
+If you’re looking for the official, canonical Acontext repo (less divergence / fewer opinionated local-dev changes), go to the upstream link above.
+
+---
+
 Acontext is a context data platform for building cloud-native AI agents.
 
 It helps you:
