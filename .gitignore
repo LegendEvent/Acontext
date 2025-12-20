@@ -180,6 +180,12 @@ pyrightconfig.json
 # Local / generated config
 acontext.json
 
+# Copilot device-flow token cache (never commit)
+.acontext/
+**/.acontext/
+**/.acontext/copilot.json
+**/copilot.json
+
 # Environment files (never commit secrets)
 .env
 .env.*
