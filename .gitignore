@@ -180,6 +180,18 @@ pyrightconfig.json
 # Local / generated config
 acontext.json
 
+# Environment files (never commit secrets)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# But allow committed examples
+!.env.example
+!.env.example.*
+!**/.env.example
+!**/.env.example.*
+
 # Created by https://www.toptal.com/developers/gitignore/api/go
 # Edit at https://www.toptal.com/developers/gitignore?templates=go
 
@@ -209,4 +221,3 @@ go.work
 # End of https://www.toptal.com/developers/gitignore/api/go
 
 src/client/acontext-opencode-plugin/acontext.json
-src/server/.env
