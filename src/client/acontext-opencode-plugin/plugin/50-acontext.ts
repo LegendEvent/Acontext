@@ -25,6 +25,192 @@ type StateFile = {
   sessions?: Record<string, string>;
 };
 
+type TextPart = {
+  type: "text";
+  text: string;
+};
+
+type FilePart = {
+  type: "file";
+  mime: string;
+  url: string;
+  filename?: string;
+};
+
+type OutputPart = TextPart | FilePart | { type: string; [k: string]: unknown };
+
+function isTextPart(p: unknown): p is TextPart {
+  return Boolean(p) && typeof p === "object" && (p as any).type === "text" && typeof (p as any).text === "string";
+}
+
+function isFilePart(p: unknown): p is FilePart {
+  return (
+    Boolean(p) &&
+    typeof p === "object" &&
+    (p as any).type === "file" &&
+    typeof (p as any).mime === "string" &&
+    typeof (p as any).url === "string"
+  );
+}
+
+function isHttpUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
+function parseBase64DataUrl(url: string): { mime: string; base64: string } | undefined {
+  const m = /^data:([^;,]+);base64,(.+)$/i.exec(url);
+  if (!m) return undefined;
+  return { mime: m[1] ?? "application/octet-stream", base64: m[2] ?? "" };
+}
+
+function fileUrlToPath(url: string): string | undefined {
+  if (!/^file:\/\//i.test(url)) return undefined;
+  try {
+    return decodeURIComponent(new URL(url).pathname);
+  } catch {
+    return undefined;
+  }
+}
+
+async function getFileBase64(filePart: FilePart): Promise<{ mime: string; base64: string } | undefined> {
+  const dataUrl = parseBase64DataUrl(filePart.url);
+  if (dataUrl) return { mime: filePart.mime || dataUrl.mime, base64: dataUrl.base64 };
+
+  const fsPath = fileUrlToPath(filePart.url);
+  if (!fsPath) return undefined;
+
+  try {
+    const buf = await Bun.file(fsPath).arrayBuffer();
+    return { mime: filePart.mime, base64: Buffer.from(buf).toString("base64") };
+  } catch {
+    return undefined;
+  }
+}
+
+type OpenAIMessage = {
+  role: "user" | "assistant" | "system";
+  content:
+    | string
+    | Array<
+        | { type: "text"; text: string }
+        | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
+      >;
+};
+
+type AnthropicMessage = {
+  role: "user" | "assistant";
+  content: Array<
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+    | { type: "document"; source: { type: "base64"; media_type: string; data: string }; title?: string }
+  >;
+};
+
+async function buildOpenAIMessage(parts: OutputPart[], fallbackText: string): Promise<OpenAIMessage> {
+  const hasFiles = parts.some(isFilePart);
+  if (!hasFiles) {
+    return { role: "user", content: fallbackText };
+  }
+
+  const content: Exclude<OpenAIMessage["content"], string> = [];
+
+  for (const p of parts) {
+    if (isTextPart(p)) {
+      const t = p.text.trim();
+      if (t) content.push({ type: "text", text: t });
+      continue;
+    }
+
+    if (isFilePart(p)) {
+      const isImage = p.mime.toLowerCase().startsWith("image/");
+      if (isImage) {
+        const dataUrl = parseBase64DataUrl(p.url);
+        if (dataUrl) {
+          content.push({ type: "image_url", image_url: { url: p.url } });
+          continue;
+        }
+
+        const fsPath = fileUrlToPath(p.url);
+        if (fsPath) {
+          const base64 = await getFileBase64(p);
+          if (base64?.base64) {
+            content.push({ type: "image_url", image_url: { url: `data:${base64.mime};base64,${base64.base64}` } });
+            continue;
+          }
+        }
+
+        if (isHttpUrl(p.url)) {
+          content.push({ type: "image_url", image_url: { url: p.url } });
+          continue;
+        }
+      }
+
+      const label = (p.filename ?? "").trim() || p.url;
+      content.push({ type: "text", text: `[file] ${label}` });
+    }
+  }
+
+  if (content.length === 0) content.push({ type: "text", text: fallbackText || "(no content)" });
+
+  return { role: "user", content };
+}
+
+async function buildAnthropicMessage(parts: OutputPart[], fallbackText: string): Promise<AnthropicMessage> {
+  const content: AnthropicMessage["content"] = [];
+
+  for (const p of parts) {
+    if (isTextPart(p)) {
+      const t = p.text.trim();
+      if (t) content.push({ type: "text", text: t });
+      continue;
+    }
+
+    if (isFilePart(p)) {
+      const mime = p.mime.toLowerCase();
+      const isImage = mime.startsWith("image/");
+      const isPdf = mime === "application/pdf";
+      const base64 = await getFileBase64(p);
+
+      if (base64?.base64 && isImage) {
+        content.push({
+          type: "image",
+          source: { type: "base64", media_type: base64.mime, data: base64.base64 },
+        });
+        continue;
+      }
+
+      if (base64?.base64 && isPdf) {
+        content.push({
+          type: "document",
+          title: p.filename,
+          source: { type: "base64", media_type: base64.mime, data: base64.base64 },
+        });
+        continue;
+      }
+
+      const label = (p.filename ?? "").trim() || p.url;
+      content.push({ type: "text", text: `[file] ${label}` });
+    }
+  }
+
+  if (content.length === 0 && fallbackText) content.push({ type: "text", text: fallbackText });
+  if (content.length === 0) content.push({ type: "text", text: "(no content)" });
+
+  return { role: "user", content };
+}
+
+async function buildAcontextStorePayload(
+  parts: OutputPart[],
+  providerID: unknown,
+  fallbackText: string,
+): Promise<{ format: "openai" | "anthropic"; blob: OpenAIMessage | AnthropicMessage }> {
+  if (providerID === "anthropic") {
+    return { format: "anthropic", blob: await buildAnthropicMessage(parts, fallbackText) };
+  }
+
+  return { format: "openai", blob: await buildOpenAIMessage(parts, fallbackText) };
+}
+
 const DEFAULT_CONFIG: AcontextConfig = {
   baseUrl: "http://127.0.0.1:8029/api/v1",
   apiKey: "sk-ac-your-root-api-bearer-token",
@@ -247,11 +433,17 @@ class AcontextApi {
     return { id: String(r.data.id) };
   }
 
-  async storeMessage(sessionId: string, message: { role: string; content: string }): Promise<void> {
+  async storeMessage(
+    sessionId: string,
+    payload: {
+      format: "openai" | "anthropic";
+      blob: unknown;
+    },
+  ): Promise<void> {
     await this.requestEnvelope(
       "POST",
       `/session/${sessionId}/messages`,
-      { body: { format: "openai", blob: message } },
+      { body: payload },
       { timeoutMs: 5_000 },
     );
   }
@@ -439,11 +631,16 @@ const AcontextPlugin: Plugin = async (ctx) => {
         return;
       }
 
-      const userText = texts.join("\n").trim();
-      if (!userText) {
-        await debug.log("chat.message.empty_text", {});
-        return;
-      }
+       const userText = texts.join("\n").trim();
+       if (!userText) {
+         await debug.log("chat.message.empty_text", {});
+         return;
+       }
+
+       const shouldSkipInjection = userText.startsWith("[BACKGROUND TASK COMPLETED]");
+       if (shouldSkipInjection) {
+         await debug.log("inject.skip_background_task_completed", {});
+       }
 
       const spaceId = await ensureSpaceId().catch(async (e) => {
         await debug.log("space.ensure_failed", {
@@ -467,41 +664,55 @@ const AcontextPlugin: Plugin = async (ctx) => {
         return;
       }
 
-      api.storeMessage(acontextSessionId, { role: "user", content: userText }).catch(async (e) => {
+      const providerID = (output as any)?.message?.model?.providerID;
+      const parts = (Array.isArray(output.parts) ? output.parts : []) as OutputPart[];
+
+      const payload = await buildAcontextStorePayload(parts, providerID, userText).catch(async (e) => {
+        await debug.log("message.build_payload_failed", {
+          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+        });
+        return { format: "openai" as const, blob: { role: "user", content: userText } satisfies OpenAIMessage };
+      });
+
+      api.storeMessage(acontextSessionId, payload).catch(async (e) => {
         await debug.log("message.store_failed", {
           error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+          format: payload.format,
         });
       });
 
-      const cacheKey = `${spaceId}|${userText}`;
-      const now = Date.now();
-      let citedBlocks: any[] = [];
-      let wasCacheHit = false;
-      const hit = cache.get(cacheKey);
-      if (hit && now - hit.ts < 90_000) {
-        citedBlocks = hit.cited_blocks;
-        wasCacheHit = true;
-        await debug.log("search.cache_hit", { ageMs: now - hit.ts, citedBlocks: citedBlocks.length });
-      } else {
-        try {
-          const result = await api.experienceSearch(spaceId, userText, config.mode ?? "fast", config.limit ?? 5);
-          citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
-          cache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
-          await debug.log("search.ok", { citedBlocks: citedBlocks.length });
-        } catch (e) {
-          citedBlocks = [];
-          await debug.log("search.failed", {
-            error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-          });
-        }
-      }
+       if (shouldSkipInjection) return;
 
-      const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
-      const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
-      if (!skillsText) {
-        await debug.log("inject.skip_no_skills", { citedBlocks: citedBlocks.length });
-        return;
-      }
+       const cacheKey = `${spaceId}|${userText}`;
+       const now = Date.now();
+       let citedBlocks: any[] = [];
+       let wasCacheHit = false;
+       const hit = cache.get(cacheKey);
+       if (hit && now - hit.ts < 90_000) {
+         citedBlocks = hit.cited_blocks;
+         wasCacheHit = true;
+         await debug.log("search.cache_hit", { ageMs: now - hit.ts, citedBlocks: citedBlocks.length });
+       } else {
+         try {
+           const result = await api.experienceSearch(spaceId, userText, config.mode ?? "fast", config.limit ?? 5);
+           citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
+           cache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
+           await debug.log("search.ok", { citedBlocks: citedBlocks.length });
+         } catch (e) {
+           citedBlocks = [];
+           await debug.log("search.failed", {
+             error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+           });
+         }
+       }
+
+       const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
+       const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
+       if (!skillsText) {
+         await debug.log("inject.skip_no_skills", { citedBlocks: citedBlocks.length });
+         return;
+       }
+
 
       const marker = "<!-- opencode-acontext:v1 -->";
 
