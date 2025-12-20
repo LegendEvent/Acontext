@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h4>Context Data Platform for Building Cloud-native AI Agents</h4>
+    <h3>Инжиниринг Контекстов, Изучение Навыков</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -32,11 +32,15 @@
 
 
 
-Acontext может помочь вам:
 
-- **Создать масштабируемый агент с лучшей инженерией контекста**
-- **Наблюдать за успешностью вашего агента**
-- **Улучшить вашего агента с самообучением для каждого пользователя**
+
+Acontext — это **платформа данных контекста** для построения **cloud-native** AI Agents. Она может:
+
+- **Хранить** контексты и artifacts. 
+- Выполнять **контекстный инжиниринг** для вас.
+- **Наблюдать** за задачами агентов и обратной связью пользователей.
+- Обеспечивать **самообучение** агентов путем извлечения навыков из завершенных задач агента.
+- Просматривать всё в одной **Панели управления**.
 
 
 
@@ -49,18 +53,48 @@ Acontext может помочь вам:
 
 
 
+
+
+Acontext может помочь вам:
+
+- **Создать более масштабируемый продукт агента с лучшей инженерией контекста**
+- **Создать действительно наблюдаемый продукт Agent.**
+- **Автоматически улучшить успешность вашего агента**
+
+
+
 # 💡 Основные Функции
 
-- **Хранить контексты и artifacts** 
-  - [Session](https://docs.acontext.io/store/messages/multi-provider): Мультимодальное хранилище сообщений
-  - [Disk](https://docs.acontext.io/store/disk): Файловая система для artifacts
-- **Выполнять контекстный инжиниринг для вас**
-  - [Context Editing](https://docs.acontext.io/store/editing) - Контекстный инжиниринг в один вызов
-- **Наблюдать за задачами агентов и обратной связью пользователей**
-  - [Task Agent](https://docs.acontext.io/observe/agent_tasks) - Фоновый агент, который собирает статус, прогресс и предпочтения задачи
-- **Обеспечивать самообучение агентов**
-  - [Experience Agent](https://docs.acontext.io/learn/advance/experience-agent) - Фоновые агенты, которые извлекают, сохраняют и ищут навыки для каждого пользователя.
-- **Просматривать всё в одной [панели управления](https://docs.acontext.io/observe/dashboard)**
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Мультимодальное хранилище сообщений
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Фоновый TODO Agent, который собирает статус, прогресс и предпочтения задачи
+  - [**Context Editing**](https://docs.acontext.io/store/editing) - Контекстный инжиниринг в один вызов
+- [**Disk**](https://docs.acontext.io/store/disk) - Файловая система для artifacts
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Notion для Agents
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Фоновые Agents, которые извлекают, сохраняют и ищут навыки
+- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - Просмотр сообщений, artifacts, навыков, показателей успешности и всего
+
+### Как Они Работают Вместе
+
+```txt
+┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
+└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │ Observed Tasks  │
+                  │         └────────┬────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │   Learn Skills  │
+                  │         └────────┬────────┘
+                  └──────────────────┘
+                      Search skills
+```
+
+
+
+
+</details>
 
 
 
@@ -93,7 +127,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3000"]
+        UI["Web Dashboard<br/>localhost:3050"]
     end
     
     PY -->|RESTFUL API| API
@@ -118,26 +152,6 @@ graph TB
     style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
     style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
 ```
-
-## Как Они Работают Вместе
-
-```txt
-┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
-└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │ Observed Tasks  │
-                  │         └────────┬────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │   Learn Skills  │
-                  │         └────────┬────────┘
-                  └──────────────────┘
-                      Search skills
-```
-
-
 
 ## Структуры Данных
 <details>
@@ -229,7 +243,7 @@ acontext docker up
 После завершения вы можете получить доступ к следующим конечным точкам:
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3000/
+- Acontext Dashboard: http://localhost:3050/
 
 
 
@@ -276,7 +290,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 
 
-## Step-by-step Quickstart
+## SDK Walk-through
 
 <details>
 <summary>Нажмите, чтобы открыть</summary>

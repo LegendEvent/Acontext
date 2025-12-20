@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h4>Context Data Platform for Building Cloud-native AI Agents</h4>
+    <h3>コンテキストを設計、スキルを学習</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -32,11 +32,15 @@
 
 
 
-Acontextは以下を支援できます：
 
-- **より良いコンテキストエンジニアリングでスケーラブルなAgentを構築する**
-- **Agentの成功率を観察する**
-- **各ユーザーの自己学習でAgentを改善する**
+
+Acontextは、**クラウドネイティブ** AI Agentsを構築するための**コンテキストデータプラットフォーム**です。以下のことができます：
+
+- **保存** コンテキストとartifacts。 
+- あなたのために**コンテキストエンジニアリング**を実行。
+- **観察** Agentタスクとユーザーフィードバック。
+- Agentの完了したタスクからスキルを蒸留することで、Agentの**自己学習**を可能にします。
+- すべてを1つの**ダッシュボード**で表示。
 
 
 
@@ -49,22 +53,52 @@ Acontextは以下を支援できます：
 
 
 
+
+
+Acontextは以下を支援できます：
+
+- **より良いコンテキストエンジニアリングで、よりスケーラブルなAgent製品を構築する**
+- **真に観察可能なAgent製品を構築する。**
+- **Agentの成功率を自動的に向上させる**
+
+
+
 # 💡 主な機能
 
-- **コンテキストとartifactsを保存** 
-  - [Session](https://docs.acontext.io/store/messages/multi-provider): マルチモーダルメッセージストレージ
-  - [Disk](https://docs.acontext.io/store/disk): Artifacts用のファイルシステム
-- **コンテキストエンジニアリングを実行**
-  - [Context Editing](https://docs.acontext.io/store/editing) - 1回の呼び出しでコンテキストエンジニアリング
-- **エージェントタスクとユーザーフィードバックを観察**
-  - [Task Agent](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドエージェント
-- **エージェントの自己学習を有効化**
-  - [Experience Agent](https://docs.acontext.io/learn/advance/experience-agent) - 各ユーザーのスキルを蒸留、保存、検索するバックグラウンドエージェント。
-- **すべてを1つの[ダッシュボード](https://docs.acontext.io/observe/dashboard)で表示**
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - マルチモーダルメッセージストレージ
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドTODO Agent
+  - [**Context Editing**](https://docs.acontext.io/store/editing) - 1回の呼び出しでコンテキストエンジニアリング
+- [**Disk**](https://docs.acontext.io/store/disk) - Artifacts用のファイルシステム
+- [**Space**](https://docs.acontext.io/learn/skill-space) - Agents用のNotion
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - スキルを蒸留、保存、検索するバックグラウンド Agents
+- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - メッセージ、artifacts、スキル、成功率などすべてを表示
+
+### 連携の仕組み
+
+```txt
+┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
+└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │ Observed Tasks  │
+                  │         └────────┬────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │   Learn Skills  │
+                  │         └────────┬────────┘
+                  └──────────────────┘
+                      Search skills
+```
 
 
 
-# 🏗️ どのように機能しますか？
+
+</details>
+
+
+
+# 🏗️ アーキテクチャ
 
 <details>
 <summary>興味がある場合は、アーキテクチャ図を開いてください。</summary>
@@ -93,7 +127,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3000"]
+        UI["Web Dashboard<br/>localhost:3050"]
     end
     
     PY -->|RESTFUL API| API
@@ -118,26 +152,6 @@ graph TB
     style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
     style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
 ```
-
-## 連携の仕組み
-
-```txt
-┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
-└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │ Observed Tasks  │
-                  │         └────────┬────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │   Learn Skills  │
-                  │         └────────┬────────┘
-                  └──────────────────┘
-                      Search skills
-```
-
-
 
 ## データ構造
 <details>
@@ -229,7 +243,7 @@ acontext docker up
 完了したら、次のエンドポイントにアクセスできます：
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3000/
+- Acontext Dashboard: http://localhost:3050/
 
 
 
@@ -276,7 +290,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 
 
-## Step-by-step Quickstart
+## SDK Walk-through
 
 <details>
 <summary>クリックして開く</summary>

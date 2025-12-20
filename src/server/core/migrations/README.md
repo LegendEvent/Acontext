@@ -9,13 +9,14 @@ This directory contains SQL migration scripts for the Acontext database schema.
 Connect to your PostgreSQL database and run the migration:
 
 ```bash
-psql -h 127.0.0.1 -p 15432 -U acontext -d acontext -f migrations/001_block_reference_set_null.sql
+psql -h 127.0.0.1 -p 15437 -U acontext -d acontext -f 001_block_reference_set_null.sql
+# (docker compose host-export port; container-internal port is 5432)
 ```
 
-Or using the docker-compose setup:
+Or using the docker compose setup:
 
 ```bash
-docker exec -i acontext-postgres psql -U acontext -d acontext < migrations/001_block_reference_set_null.sql
+docker exec -i acontext-server-pg psql -U acontext -d acontext < 001_block_reference_set_null.sql
 ```
 
 ### Production Environment

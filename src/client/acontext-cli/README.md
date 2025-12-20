@@ -6,7 +6,7 @@ A lightweight command-line tool for quickly creating Acontext projects with temp
 
 - 🚀 **Quick Setup**: Create projects in seconds with interactive templates
 - 🌐 **Multi-Language**: Support for Python and TypeScript
-- 🐳 **Docker Ready**: One-command Docker Compose deployment
+- 🐳 **Docker Ready**: One-command docker compose deployment
 - 🔧 **Auto Git**: Automatic Git repository initialization
 - 🔄 **Auto Update**: Automatic version checking and one-command upgrade
 - 🎯 **Simple**: Minimal configuration, maximum productivity
@@ -84,7 +84,7 @@ The CLI automatically checks for updates after each command execution. If a new 
 - ✅ Multi-language template support (Python/TypeScript)
 - ✅ Dynamic template discovery from repository
 - ✅ Git repository initialization
-- ✅ Docker Compose integration
+- ✅ docker compose integration
 - ✅ One-command deployment
 - ✅ Version checking and auto-update
 - ✅ CI/CD with GitHub Actions

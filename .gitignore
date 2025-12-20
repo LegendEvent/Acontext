@@ -226,26 +226,4 @@ go.work
 
 # End of https://www.toptal.com/developers/gitignore/api/go
 
-# Local / generated config
-acontext.json
-
-# Copilot device-flow token cache (never commit)
-.acontext/
-**/.acontext/
-**/.acontext/copilot.json
-**/copilot.json
-
-# Environment files (never commit secrets)
-.env
-.env.*
-**/.env
-**/.env.*
-
-# But allow committed examples
-!.env.example
-!.env.example.*
-!**/.env.example
-!**/.env.example.*
-
-# Plugin local config (do not commit)
 src/client/acontext-opencode-plugin/acontext.json

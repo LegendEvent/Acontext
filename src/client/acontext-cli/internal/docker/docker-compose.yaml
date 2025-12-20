@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-helloworld}
       POSTGRES_DB: ${DATABASE_NAME:-acontext}
     ports:
-      - "${DATABASE_EXPORT_PORT:-15432}:5432"
+      - "${DATABASE_EXPORT_PORT:-15437}:5432"
     volumes:
       - ${DATABASE_LOCATION:-./acontext_data/pg}:/var/lib/postgresql/data
     healthcheck:
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-helloworld}"]
     ports:
-      - "${REDIS_EXPORT_PORT:-16379}:6379"
+      - "${REDIS_EXPORT_PORT:-16384}:6379"
     volumes:
       - ${REDIS_LOCATION:-./acontext_data/redis}:/data
     healthcheck:
@@ -51,8 +51,8 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-helloworld}
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
     ports:
-      - "${RABBITMQ_EXPORT_PORT:-15672}:5672" # AMQP
-      - "${RABBITMQ_ADMIN_EXPORT_PORT:-25672}:15672" # UI
+      - "${RABBITMQ_EXPORT_PORT:-15682}:5672" # AMQP
+      - "${RABBITMQ_ADMIN_EXPORT_PORT:-25682}:15672" # UI
     volumes:
       - ${RABBITMQ_LOCATION:-./acontext_data/rabbitmq}:/var/lib/rabbitmq
     healthcheck:
@@ -79,11 +79,11 @@ services:
       WEED_MASTER_DEFAULT_REPLICATION: "000"
 
     command: >
-      server -s3 -s3.port=9000 -dir=/data -volume.max=100 -volume.publicUrl=http://acontext-server-seaweedfs:9000 -ip=acontext-server-seaweedfs -ip.bind=0.0.0.0 -metricsPort=9324
+      server -s3 -s3.port=9005 -dir=/data -volume.max=100 -volume.publicUrl=http://acontext-server-seaweedfs:9005 -ip=acontext-server-seaweedfs -ip.bind=0.0.0.0 -metricsPort=9324
 
     ports:
-      - "${S3_API_EXPORT_PORT:-19000}:9000" # S3 API
-      - "${S3_CONSOLE_EXPORT_PORT:-19001}:8888" # Filer UI
+      - "${S3_API_EXPORT_PORT:-19005}:9005" # S3 API
+      - "${S3_CONSOLE_EXPORT_PORT:-19006}:8893" # Filer UI
       - "9333:9333" # Master UI
 
     volumes:
@@ -92,7 +92,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -q -O- http://localhost:9000 >/dev/null 2>&1 || exit 1",
+          "wget -q -O- http://localhost:9005 >/dev/null 2>&1 || exit 1",
         ]
       interval: 10s
       timeout: 5s
@@ -118,7 +118,7 @@ services:
       [
         "/bin/sh",
         "-c",
-        'set -e; BUCKET_NAME=$${S3_BUCKET:-acontext-assets}; echo "Creating bucket: $$BUCKET_NAME"; aws --endpoint-url=http://acontext-server-seaweedfs:9000 s3 mb s3://$$BUCKET_NAME 2>/dev/null || true; echo "Verifying bucket exists..."; for i in 1 2 3 4 5 6 7 8 9 10; do if aws --endpoint-url=http://acontext-server-seaweedfs:9000 s3 ls s3://$$BUCKET_NAME >/dev/null 2>&1; then echo "SeaweedFS ready with bucket: $$BUCKET_NAME"; exit 0; fi; echo "Waiting for bucket... (attempt $$i/10)"; sleep 3; done; echo "Failed to verify bucket creation"; exit 1',
+        'set -e; BUCKET_NAME=$${S3_BUCKET:-acontext-assets}; echo "Creating bucket: $$BUCKET_NAME"; aws --endpoint-url=http://acontext-server-seaweedfs:9005 s3 mb s3://$$BUCKET_NAME 2>/dev/null || true; echo "Verifying bucket exists..."; for i in 1 2 3 4 5 6 7 8 9 10; do if aws --endpoint-url=http://acontext-server-seaweedfs:9005 s3 ls s3://$$BUCKET_NAME >/dev/null 2>&1; then echo "SeaweedFS ready with bucket: $$BUCKET_NAME"; exit 0; fi; echo "Waiting for bucket... (attempt $$i/10)"; sleep 3; done; echo "Failed to verify bucket creation"; exit 1',
       ]
 
   # --- Jaeger (OpenTelemetry Collector) ---
@@ -156,9 +156,9 @@ services:
     container_name: acontext-server-core
     restart: unless-stopped
     environment:
-      LLM_API_KEY: ${LLM_API_KEY}
-      LLM_BASE_URL: ${LLM_BASE_URL}
-      LLM_SDK: ${LLM_SDK}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_SDK: ${LLM_SDK:-openai}
       LLM_SIMPLE_MODEL: ${LLM_SIMPLE_MODEL:-gpt-4.1}
       LLM_RESPONSE_TIMEOUT: ${LLM_RESPONSE_TIMEOUT:-60}
       BLOCK_EMBEDDING_PROVIDER: ${BLOCK_EMBEDDING_PROVIDER:-openai}
@@ -170,14 +170,15 @@ services:
       DATABASE_URL: postgresql://${DATABASE_USER:-acontext}:${DATABASE_PASSWORD:-helloworld}@acontext-server-pg:5432/${DATABASE_NAME:-acontext}
       MQ_URL: amqp://${RABBITMQ_USER:-acontext}:${RABBITMQ_PASSWORD:-helloworld}@acontext-server-rabbitmq:5672/
       REDIS_URL: redis://:${REDIS_PASSWORD:-helloworld}@acontext-server-redis:6379
-      S3_ENDPOINT: http://acontext-server-seaweedfs:9000
+      S3_ENDPOINT: http://acontext-server-seaweedfs:9005
       OTEL_EXPORTER_OTLP_ENDPOINT: acontext-server-jaeger:4317
     ports:
-      - "${CORE_EXPORT_PORT:-8019}:8000"
+      - "${CORE_EXPORT_PORT:-8024}:8005"
     volumes:
       - ${CORE_CONFIG_YAML_FILE:-./config.yaml}:/app/config.yaml:ro
+      - ${ACONTEXT_STATE_LOCATION:-./acontext_data/acontext}:/app/.acontext
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8005/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -220,13 +221,13 @@ services:
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
       RABBITMQ_VHOST_ENCODED: ${RABBITMQ_VHOST_ENCODED:-%2F}
       RABBITMQ_EXPORT_PORT: ${RABBITMQ_EXPORT_PORT:-5672}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://127.0.0.1:19000}
-      S3_INTERNAL_ENDPOINT: http://acontext-server-seaweedfs:9000
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://127.0.0.1:19005}
+      S3_INTERNAL_ENDPOINT: http://acontext-server-seaweedfs:9005
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-acontext}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-helloworld}
       S3_BUCKET: ${S3_BUCKET:-acontext-assets}
-      CORE_BASE_URL: http://acontext-server-core:8000
+      CORE_BASE_URL: http://acontext-server-core:8005
       OTEL_EXPORTER_OTLP_ENDPOINT: acontext-server-jaeger:4317
     ports:
       - "${API_EXPORT_PORT:-8029}:8029"
@@ -254,7 +255,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://192.168.178.219:3050}
       NEXT_PUBLIC_BASE_PATH: ""
       API_SERVER_URL: http://acontext-server-api:8029
       ROOT_API_BEARER_TOKEN: ${ROOT_API_BEARER_TOKEN:-your-root-api-bearer-token}
@@ -262,6 +263,6 @@ services:
       JAEGER_INTERNAL_URL: http://acontext-server-jaeger:16686
       JAEGER_URL: ${JAEGER_URL:-http://localhost:16686}
     ports:
-      - "${UI_EXPORT_PORT:-3000}:3000"
+      - "${UI_EXPORT_PORT:-3050}:3050"
     depends_on:
       - acontext-server-api

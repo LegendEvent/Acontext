@@ -37,12 +37,12 @@ uv run -m fastapi dev
 
 ```bash
 # current path: ./src/server/core
-uv run -m uvicorn api:app --host 0.0.0.0 --port 8000
+uv run -m uvicorn api:app --host 0.0.0.0 --port 8005
 ```
 
 - Service Healthcheck
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8005/health
 ```
 
 - Run Test

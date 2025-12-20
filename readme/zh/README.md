@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h4>Context Data Platform for Building Cloud-native AI Agents</h4>
+    <h3>工程化上下文，学习技能</h3>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -32,11 +32,15 @@
 
 
 
-Acontext 可以帮助您：
 
-- **通过更好的上下文工程构建可扩展的Agent**
-- **观察您的Agent成功率**
-- **通过为每个用户自学习来改进您的Agent**
+
+Acontext 是用于构建**云原生** AI Agents 的**上下文数据平台**。它可以：
+
+- **存储** 上下文和artifacts。 
+- 为您进行**上下文工程**。
+- **观察** Agent 任务和用户反馈。
+- 通过从Agent完成的任务中提取技能，实现Agent **自我学习**。
+- 在一个**仪表板**中查看一切。
 
 
 
@@ -49,18 +53,48 @@ Acontext 可以帮助您：
 
 
 
+
+
+Acontext 可以帮助您：
+
+- **通过更好的上下文工程构建更具可扩展性的Agent产品**
+- **构建真正可观察的Agent产品。**
+- **自动提高您的Agent成功率**
+
+
+
 # 💡 核心功能
 
-- **存储上下文和artifacts** 
-  - [Session](https://docs.acontext.io/store/messages/multi-provider): 多模态消息存储
-  - [Disk](https://docs.acontext.io/store/disk): Artifacts的文件系统
-- **为您进行上下文工程**
-  - [Context Editing](https://docs.acontext.io/store/editing) - 一次调用完成上下文工程
-- **观察Agent任务和用户反馈**
-  - [Task Agent](https://docs.acontext.io/observe/agent_tasks) - 后台Agent，收集任务的状态、进度和偏好
-- **启用Agent自我学习**
-  - [Experience Agent](https://docs.acontext.io/learn/advance/experience-agent) - 后台Agent，为每个用户提炼、保存和搜索技能。
-- **在一个[仪表板](https://docs.acontext.io/observe/dashboard)中查看所有内容**
+- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - 多模态消息存储
+  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 后台 TODO Agent，收集任务的状态、进度和偏好
+  - [**Context Editing**](https://docs.acontext.io/store/editing) - 一次调用完成上下文工程
+- [**Disk**](https://docs.acontext.io/store/disk) - Artifacts的文件系统
+- [**Space**](https://docs.acontext.io/learn/skill-space) - 为Agents设计的Notion
+  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 后台Agents，用于提炼、保存和搜索技能
+- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - 查看消息、artifacts、技能、成功率和一切
+
+### 它们如何协同工作
+
+```txt
+┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
+└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │ Observed Tasks  │
+                  │         └────────┬────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │   Learn Skills  │
+                  │         └────────┬────────┘
+                  └──────────────────┘
+                      Search skills
+```
+
+
+
+
+</details>
 
 
 
@@ -93,7 +127,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3000"]
+        UI["Web Dashboard<br/>localhost:3050"]
     end
     
     PY -->|RESTFUL API| API
@@ -118,26 +152,6 @@ graph TB
     style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
     style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
 ```
-
-## 它们如何协同工作
-
-```txt
-┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
-└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │ Observed Tasks  │
-                  │         └────────┬────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │   Learn Skills  │
-                  │         └────────┬────────┘
-                  └──────────────────┘
-                      Search skills
-```
-
-
 
 ## 数据结构
 <details>
@@ -229,7 +243,7 @@ acontext docker up
 完成后，您可以访问以下端点：
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3000/
+- Acontext Dashboard: http://localhost:3050/
 
 
 
@@ -276,7 +290,7 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 
 
-## Step-by-step Quickstart
+## SDK Walk-through
 
 <details>
 <summary>点击打开</summary>

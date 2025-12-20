@@ -28,8 +28,17 @@ class ProjectConfig(BaseModel):
 
 
 class CoreConfig(BaseModel):
-    llm_api_key: str
+    # LLM Configuration
+    # NOTE: llm_api_key is optional to support GitHub Copilot device-flow auth.
+    llm_api_key: Optional[str] = None
     llm_base_url: Optional[str] = None
+
+    # GitHub Copilot (OpenAI-compatible) fallback
+    # When enabled and llm_api_key is missing/empty, Core will run GitHub device flow on startup
+    # and use Copilot short-lived access tokens.
+    copilot_enabled: bool = True
+    copilot_enterprise_url: Optional[str] = None
+    copilot_token_store_path: str = "/app/.acontext/copilot.json"
     llm_openai_default_query: Optional[Mapping[str, Any]] = None
     llm_openai_default_header: Optional[Mapping[str, Any]] = None
     llm_openai_completion_kwargs: Mapping[str, Any] = {}
@@ -38,9 +47,14 @@ class CoreConfig(BaseModel):
 
     llm_simple_model: str = "gpt-4.1"
 
-    block_embedding_provider: Literal["openai", "jina"] = "openai"
+    block_embedding_provider: Literal["openai", "jina", "fastembed"] = "openai"
     block_embedding_model: str = "text-embedding-3-small"
     block_embedding_dim: int = 1536
+    # Local CPU embedding settings (used when block_embedding_provider == "fastembed")
+    # Default cache_dir for container use can be set via env without needing a volume.
+    block_embedding_fastembed_cache_dir: Optional[str] = None
+    # Optional prefixing for retrieval-style embedding models (e.g. "query: ", "passage: ")
+    block_embedding_fastembed_add_prefix: bool = False
     block_embedding_api_key: Optional[str] = None
     block_embedding_base_url: Optional[str] = None
     block_embedding_search_cosine_distance_threshold: float = 0.8
@@ -52,11 +66,9 @@ class CoreConfig(BaseModel):
     space_task_sop_lock_wait_seconds: int = 1
 
     # MQ Configuration
-    mq_url: str = "amqp://acontext:helloworld@127.0.0.1:15672/"
+    mq_url: str = "amqp://acontext:helloworld@127.0.0.1:15682/"
     mq_connection_name: str = "acontext_core"
-    mq_heartbeat: int = (
-        60  # Heartbeat interval in seconds (should match or be less than RabbitMQ server timeout)
-    )
+    mq_heartbeat: int = 60  # Heartbeat interval in seconds (should match or be less than RabbitMQ server timeout)
     mq_blocked_connection_timeout: int = (
         300  # Timeout for blocked connections in seconds
     )
@@ -71,14 +83,14 @@ class CoreConfig(BaseModel):
 
     # Database Configuration
     database_pool_size: int = 64
-    database_url: str = "postgresql://acontext:helloworld@127.0.0.1:15432/acontext"
+    database_url: str = "postgresql://acontext:helloworld@127.0.0.1:15437/acontext"
 
     # Redis Configuration
     redis_pool_size: int = 32
-    redis_url: str = "redis://:helloworld@127.0.0.1:16379"
+    redis_url: str = "redis://:helloworld@127.0.0.1:16384"
 
     # S3 Configuration (MinIO defaults based on docker-compose)
-    s3_endpoint: str = "http://127.0.0.1:19000"  # MinIO API endpoint
+    s3_endpoint: str = "http://127.0.0.1:19005"  # MinIO API endpoint
     s3_region: str = "auto"  # MinIO region (can be any value)
     s3_access_key: str = "acontext"  # Default MinIO root user
     s3_secret_key: str = "helloworld"  # Default MinIO root password
@@ -103,6 +115,10 @@ def filter_value_from_env(CLS: Type[BaseModel]) -> dict[str, Any]:
         value = os.getenv(key.upper(), None)
         if value is None:
             continue
+        # docker-compose may pass unset variables as empty strings.
+        # Treat empty/whitespace-only values as "not set".
+        if isinstance(value, str) and not value.strip():
+            continue
         env_already_keys[key] = value
     return env_already_keys
 
@@ -125,7 +141,6 @@ def filter_value_from_yaml(yaml_string, CLS: Type[BaseModel]) -> dict[str, Any]:
 def filter_value_from_json(
     json_config_data: dict, CLS: Type[BaseModel]
 ) -> dict[str, Any]:
-
     json_already_keys = {}
     config_keys = CLS.model_fields.keys()
     for key in config_keys:

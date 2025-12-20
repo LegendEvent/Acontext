@@ -4,7 +4,7 @@ Go REST API server for the Acontext platform. Provides project, space, and sessi
 
 ## Prerequisites
 
-- Go 1.25.0+
+- Go 1.25.3+
 - PostgreSQL, Redis, RabbitMQ
 - S3-compatible storage (optional)
 
@@ -13,21 +13,21 @@ Go REST API server for the Acontext platform. Provides project, space, and sessi
 1. **Environment**: Create `.env` in parent directory:
 ```bash
 API_EXPORT_PORT=8029
-ROOT_API_BEARER_TOKEN=your-root-token
+ROOT_API_BEARER_TOKEN=your-root-api-bearer-token
 DATABASE_HOST=127.0.0.1
 DATABASE_USER=acontext
 DATABASE_PASSWORD=your-password
 DATABASE_NAME=acontext
-DATABASE_EXPORT_PORT=5432
+DATABASE_EXPORT_PORT=15437
 REDIS_HOST=127.0.0.1
-REDIS_EXPORT_PORT=6379
+REDIS_EXPORT_PORT=16384
 REDIS_PASSWORD=your-redis-password
 RABBITMQ_HOST=127.0.0.1
 RABBITMQ_USER=acontext
 RABBITMQ_PASSWORD=your-rabbitmq-password
-RABBITMQ_EXPORT_PORT=5672
-RABBITMQ_VHOST_ENCODED=acontext
-S3_ENDPOINT=http://localhost:9000
+RABBITMQ_EXPORT_PORT=15682
+RABBITMQ_VHOST_ENCODED=%2F
+S3_ENDPOINT=http://127.0.0.1:19005
 S3_REGION=us-east-1
 S3_ACCESS_KEY=your-access-key
 S3_SECRET_KEY=your-secret-key

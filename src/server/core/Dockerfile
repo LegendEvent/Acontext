@@ -19,11 +19,11 @@ RUN uv sync --frozen --no-dev --no-cache-dir
 COPY ./acontext_core /app/acontext_core
 COPY ./api.py /app
 
-# Expose port 8000
-EXPOSE 8000
+# Expose port 8005
+EXPOSE 8005
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
 # Run the FastAPI server using uvicorn
-CMD ["/app/.venv/bin/uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/.venv/bin/uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8005"]

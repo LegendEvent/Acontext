@@ -2,7 +2,6 @@ package editor
 
 import (
 	"fmt"
-
 	"github.com/memodb-io/Acontext/internal/modules/model"
 )
 
