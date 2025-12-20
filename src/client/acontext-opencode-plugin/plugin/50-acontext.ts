@@ -4,12 +4,13 @@ import { appendFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+const PLUGIN_INSTANCE_ID = crypto.randomUUID();
+const PLUGIN_LOADED_AT = new Date().toISOString();
+
 type AcontextConfig = {
-  /** Base URL for write APIs: space/session/messages */
   baseUrl: string;
   apiKey: string;
 
-  /** Optional separate base URL + key for experience_search */
   searchBaseUrl?: string;
   searchApiKey?: string;
 
@@ -39,6 +40,12 @@ type FilePart = {
 
 type OutputPart = TextPart | FilePart | { type: string; [k: string]: unknown };
 
+type AcontextMessage = {
+  role: "user" | "assistant";
+  parts: Array<{ type: string; text?: string; meta?: Record<string, unknown>; file_field?: string; [k: string]: unknown }>;
+  meta?: Record<string, unknown>;
+};
+
 function isTextPart(p: unknown): p is TextPart {
   return Boolean(p) && typeof p === "object" && (p as any).type === "text" && typeof (p as any).text === "string";
 }
@@ -53,184 +60,20 @@ function isFilePart(p: unknown): p is FilePart {
   );
 }
 
-function isHttpUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url);
+function truncateText(input: string, maxChars: number): { text: string; truncated: boolean } {
+  if (input.length <= maxChars) return { text: input, truncated: false };
+  return {
+    text: input.slice(0, maxChars) + `\n[TRUNCATED to ${maxChars} chars]`,
+    truncated: true,
+  };
 }
 
-function parseBase64DataUrl(url: string): { mime: string; base64: string } | undefined {
-  const m = /^data:([^;,]+);base64,(.+)$/i.exec(url);
-  if (!m) return undefined;
-  return { mime: m[1] ?? "application/octet-stream", base64: m[2] ?? "" };
-}
-
-function fileUrlToPath(url: string): string | undefined {
-  if (!/^file:\/\//i.test(url)) return undefined;
+function stableJson(value: unknown): string {
   try {
-    return decodeURIComponent(new URL(url).pathname);
+    return JSON.stringify(value, null, 2);
   } catch {
-    return undefined;
+    return String(value);
   }
-}
-
-async function getFileBase64(filePart: FilePart): Promise<{ mime: string; base64: string } | undefined> {
-  const dataUrl = parseBase64DataUrl(filePart.url);
-  if (dataUrl) return { mime: filePart.mime || dataUrl.mime, base64: dataUrl.base64 };
-
-  const fsPath = fileUrlToPath(filePart.url);
-  if (!fsPath) return undefined;
-
-  try {
-    const buf = await Bun.file(fsPath).arrayBuffer();
-    return { mime: filePart.mime, base64: Buffer.from(buf).toString("base64") };
-  } catch {
-    return undefined;
-  }
-}
-
-type OpenAIMessage = {
-  role: "user" | "assistant" | "system";
-  content:
-    | string
-    | Array<
-        | { type: "text"; text: string }
-        | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
-      >;
-};
-
-type AnthropicMessage = {
-  role: "user" | "assistant";
-  content: Array<
-    | { type: "text"; text: string }
-    | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
-    | { type: "document"; source: { type: "base64"; media_type: string; data: string }; title?: string }
-  >;
-};
-
-async function buildOpenAIMessage(parts: OutputPart[], fallbackText: string): Promise<OpenAIMessage> {
-  const hasFiles = parts.some(isFilePart);
-  if (!hasFiles) {
-    return { role: "user", content: fallbackText };
-  }
-
-  const content: Exclude<OpenAIMessage["content"], string> = [];
-
-  for (const p of parts) {
-    if (isTextPart(p)) {
-      const t = p.text.trim();
-      if (t) content.push({ type: "text", text: t });
-      continue;
-    }
-
-    if (isFilePart(p)) {
-      const isImage = p.mime.toLowerCase().startsWith("image/");
-      if (isImage) {
-        const dataUrl = parseBase64DataUrl(p.url);
-        if (dataUrl) {
-          content.push({ type: "image_url", image_url: { url: p.url } });
-          continue;
-        }
-
-        const fsPath = fileUrlToPath(p.url);
-        if (fsPath) {
-          const base64 = await getFileBase64(p);
-          if (base64?.base64) {
-            content.push({ type: "image_url", image_url: { url: `data:${base64.mime};base64,${base64.base64}` } });
-            continue;
-          }
-        }
-
-        if (isHttpUrl(p.url)) {
-          content.push({ type: "image_url", image_url: { url: p.url } });
-          continue;
-        }
-      }
-
-      const label = (p.filename ?? "").trim() || p.url;
-      content.push({ type: "text", text: `[file] ${label}` });
-    }
-  }
-
-  if (content.length === 0) content.push({ type: "text", text: fallbackText || "(no content)" });
-
-  return { role: "user", content };
-}
-
-async function buildAnthropicMessage(parts: OutputPart[], fallbackText: string): Promise<AnthropicMessage> {
-  const content: AnthropicMessage["content"] = [];
-
-  for (const p of parts) {
-    if (isTextPart(p)) {
-      const t = p.text.trim();
-      if (t) content.push({ type: "text", text: t });
-      continue;
-    }
-
-    if (isFilePart(p)) {
-      const mime = p.mime.toLowerCase();
-      const isImage = mime.startsWith("image/");
-      const isPdf = mime === "application/pdf";
-      const base64 = await getFileBase64(p);
-
-      if (base64?.base64 && isImage) {
-        content.push({
-          type: "image",
-          source: { type: "base64", media_type: base64.mime, data: base64.base64 },
-        });
-        continue;
-      }
-
-      if (base64?.base64 && isPdf) {
-        content.push({
-          type: "document",
-          title: p.filename,
-          source: { type: "base64", media_type: base64.mime, data: base64.base64 },
-        });
-        continue;
-      }
-
-      const label = (p.filename ?? "").trim() || p.url;
-      content.push({ type: "text", text: `[file] ${label}` });
-    }
-  }
-
-  if (content.length === 0 && fallbackText) content.push({ type: "text", text: fallbackText });
-  if (content.length === 0) content.push({ type: "text", text: "(no content)" });
-
-  return { role: "user", content };
-}
-
-async function buildAcontextStorePayload(
-  parts: OutputPart[],
-  providerID: unknown,
-  fallbackText: string,
-): Promise<{ format: "openai" | "anthropic"; blob: OpenAIMessage | AnthropicMessage }> {
-  if (providerID === "anthropic") {
-    return { format: "anthropic", blob: await buildAnthropicMessage(parts, fallbackText) };
-  }
-
-  return { format: "openai", blob: await buildOpenAIMessage(parts, fallbackText) };
-}
-
-const DEFAULT_CONFIG: AcontextConfig = {
-  baseUrl: "http://127.0.0.1:8029/api/v1",
-  apiKey: "sk-ac-your-root-api-bearer-token",
-  mode: "fast",
-  limit: 5,
-  maxDistance: 0.8,
-  injectHeader: "SKILLS REFERENCES:",
-};
-
-function envFlag(name: string): boolean {
-  const v = env(name);
-  if (!v) return false;
-  return ["1", "true", "yes", "on"].includes(v.toLowerCase());
-}
-
-function redactSecrets(s: string): string {
-  return s
-    .replace(/(Bearer\s+)([^\s]+)/gi, "$1[REDACTED]")
-    .replace(/("apiKey"\s*:\s*")([^"]+)(")/gi, "$1[REDACTED]$3")
-    .replace(/("searchApiKey"\s*:\s*")([^"]+)(")/gi, "$1[REDACTED]$3");
 }
 
 type DebugLogger = {
@@ -238,6 +81,17 @@ type DebugLogger = {
   filePath: string;
   log: (msg: string, extra?: Record<string, unknown>) => Promise<void>;
 };
+
+function env(name: string): string | undefined {
+  const v = process.env[name];
+  return v && v.trim() ? v.trim() : undefined;
+}
+
+function envFlag(name: string): boolean {
+  const v = env(name);
+  if (!v) return false;
+  return ["1", "true", "yes", "on"].includes(v.toLowerCase());
+}
 
 function createDebugLogger(pluginName: string): DebugLogger {
   const enabled = envFlag("OPENCODE_PLUGIN_DEBUG") || envFlag("ACONTEXT_PLUGIN_DEBUG");
@@ -257,22 +111,31 @@ function createDebugLogger(pluginName: string): DebugLogger {
         msg,
         ...(extra ? { extra } : {}),
       };
-      await appendFile(filePath, redactSecrets(JSON.stringify(line)) + "\n").catch(() => {});
+      await appendFile(filePath, JSON.stringify(line) + "\n").catch(() => {});
     },
   };
 }
 
-function env(name: string): string | undefined {
-  const v = process.env[name];
-  return v && v.trim() ? v.trim() : undefined;
-}
-
-function shaWorktree(worktree: string): string {
-  return crypto.createHash("sha256").update(worktree).digest("hex").slice(0, 16);
-}
-
 function isUuid(v: unknown): v is string {
   return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+function joinUrl(baseUrl: string, route: string): string {
+  return baseUrl.replace(/\/$/, "") + "/" + route.replace(/^\//, "");
+}
+
+function addQuery(url: string, query: Record<string, string | number | boolean | undefined>): string {
+  const u = new URL(url);
+  for (const [k, v] of Object.entries(query)) {
+    if (v === undefined) continue;
+    u.searchParams.set(k, String(v));
+  }
+  return u.toString();
+}
+
+function normalizeBearerToken(token: string): string {
+  const t = token.trim();
+  return /^Bearer\s+/i.test(t) ? t : `Bearer ${t}`;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -298,22 +161,8 @@ async function writeJsonFile(filePath: string, data: unknown): Promise<void> {
   await Bun.write(filePath, text);
 }
 
-function joinUrl(baseUrl: string, route: string): string {
-  return baseUrl.replace(/\/$/, "") + "/" + route.replace(/^\//, "");
-}
-
-function addQuery(url: string, query: Record<string, string | number | boolean | undefined>): string {
-  const u = new URL(url);
-  for (const [k, v] of Object.entries(query)) {
-    if (v === undefined) continue;
-    u.searchParams.set(k, String(v));
-  }
-  return u.toString();
-}
-
-function normalizeBearerToken(token: string): string {
-  const t = token.trim();
-  return /^Bearer\s+/i.test(t) ? t : `Bearer ${t}`;
+function shaWorktree(worktree: string): string {
+  return crypto.createHash("sha256").update(worktree).digest("hex").slice(0, 16);
 }
 
 class AcontextApi {
@@ -339,16 +188,15 @@ class AcontextApi {
       url,
       route,
       hasBody: Boolean(opts?.body),
-      queryKeys: opts?.query ? Object.keys(opts.query) : [],
       timeoutMs,
     });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     let res: Response;
     let rawText = "";
     let parsedBody: unknown = undefined;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       res = await fetch(url, {
@@ -366,14 +214,6 @@ class AcontextApi {
       } catch {
         rawText = await res.text().catch(() => "");
       }
-    } catch (e) {
-      await this.debug?.log("http.fetch_error", {
-        method,
-        url,
-        route,
-        error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-      });
-      throw e;
     } finally {
       clearTimeout(timeout);
     }
@@ -433,17 +273,11 @@ class AcontextApi {
     return { id: String(r.data.id) };
   }
 
-  async storeMessage(
-    sessionId: string,
-    payload: {
-      format: "openai" | "anthropic";
-      blob: unknown;
-    },
-  ): Promise<void> {
+  async storeMessage(sessionId: string, blob: AcontextMessage): Promise<void> {
     await this.requestEnvelope(
       "POST",
       `/session/${sessionId}/messages`,
-      { body: payload },
+      { body: { format: "acontext", blob } },
       { timeoutMs: 5_000 },
     );
   }
@@ -467,9 +301,57 @@ class AcontextApi {
   }
 }
 
+const DEFAULT_CONFIG: AcontextConfig = {
+  baseUrl: "http://127.0.0.1:8029/api/v1",
+  apiKey: "sk-ac-your-root-api-bearer-token",
+  mode: "fast",
+  limit: 5,
+  maxDistance: 0.8,
+  injectHeader: "SKILLS REFERENCES:",
+};
+
+async function loadConfig(ctx: { worktree: string }): Promise<AcontextConfig> {
+  const home = env("HOME") ?? "/home/legendevent";
+  const userCfgPath = path.join(home, ".config", "opencode", "acontext.json");
+  const projectCfgPath = path.join(ctx.worktree, ".opencode", "acontext.json");
+
+  const userCfg = (await readJsonFile<Partial<AcontextConfig>>(userCfgPath)) ?? {};
+  const projectCfg = (await readJsonFile<Partial<AcontextConfig>>(projectCfgPath)) ?? {};
+
+  const cfg: AcontextConfig = {
+    ...DEFAULT_CONFIG,
+    ...userCfg,
+    ...projectCfg,
+  };
+
+  cfg.baseUrl = (env("ACONTEXT_BASE_URL") ?? cfg.baseUrl).trim();
+  cfg.apiKey = (env("ACONTEXT_API_KEY") ?? cfg.apiKey).trim();
+
+  cfg.searchBaseUrl = (env("ACONTEXT_SEARCH_BASE_URL") ?? cfg.searchBaseUrl)?.trim();
+  cfg.searchApiKey = (env("ACONTEXT_SEARCH_API_KEY") ?? cfg.searchApiKey)?.trim();
+
+  cfg.searchBaseUrl = cfg.searchBaseUrl && cfg.searchBaseUrl.trim() ? cfg.searchBaseUrl.trim() : undefined;
+  cfg.searchApiKey = cfg.searchApiKey && cfg.searchApiKey.trim() ? cfg.searchApiKey.trim() : undefined;
+
+  cfg.mode = (env("ACONTEXT_MODE") as any) ?? cfg.mode;
+  cfg.limit = env("ACONTEXT_LIMIT") ? Number(env("ACONTEXT_LIMIT")) : cfg.limit;
+  cfg.maxDistance = env("ACONTEXT_MAX_DISTANCE") ? Number(env("ACONTEXT_MAX_DISTANCE")) : cfg.maxDistance;
+
+  return cfg;
+}
+
+async function loadState(): Promise<{ path: string; state: StateFile }> {
+  const home = env("HOME") ?? "/home/legendevent";
+  const statePath = path.join(home, ".config", "opencode", "acontext-state.json");
+  const state = (await readJsonFile<StateFile>(statePath)) ?? {};
+  state.spaces ??= {};
+  state.sessions ??= {};
+  return { path: statePath, state };
+}
+
 function formatSkillBlocks(citedBlocks: any[], maxDistance: number): string {
   const good = citedBlocks
-    .filter((b) => typeof b?.distance === "number" ? b.distance <= maxDistance : true)
+    .filter((b) => (typeof b?.distance === "number" ? b.distance <= maxDistance : true))
     .slice(0, 5);
 
   if (good.length === 0) return "";
@@ -501,54 +383,41 @@ function formatSkillBlocks(citedBlocks: any[], maxDistance: number): string {
   return parts.join("\n---\n");
 }
 
-async function loadConfig(ctx: { worktree: string }): Promise<AcontextConfig> {
-  const home = env("HOME") ?? "/home/legendevent";
-  const userCfgPath = path.join(home, ".config", "opencode", "acontext.json");
-  const projectCfgPath = path.join(ctx.worktree, ".opencode", "acontext.json");
+function buildAcontextMessageFromOutputParts(
+  role: AcontextMessage["role"],
+  parts: OutputPart[],
+  fallbackText: string,
+  meta?: Record<string, unknown>,
+): AcontextMessage {
+  const outParts: AcontextMessage["parts"] = [];
 
-  const userCfg = (await readJsonFile<Partial<AcontextConfig>>(userCfgPath)) ?? {};
-  const projectCfg = (await readJsonFile<Partial<AcontextConfig>>(projectCfgPath)) ?? {};
+  for (const p of parts) {
+    if (isTextPart(p)) {
+      const t = p.text.trim();
+      if (!t) continue;
+      outParts.push({ type: "text", text: t });
+      continue;
+    }
 
-  const cfg: AcontextConfig = {
-    ...DEFAULT_CONFIG,
-    ...userCfg,
-    ...projectCfg,
-  };
+    if (isFilePart(p)) {
+      // We do NOT upload files (multipart) here. Store as text placeholder.
+      const label = (p.filename ?? "").trim() || p.url;
+      outParts.push({ type: "text", text: `[file] ${label}` });
+      continue;
+    }
+  }
 
-  cfg.baseUrl = (env("ACONTEXT_BASE_URL") ?? cfg.baseUrl).trim();
-  cfg.apiKey = (env("ACONTEXT_API_KEY") ?? cfg.apiKey).trim();
+  if (outParts.length === 0) {
+    const t = fallbackText.trim() || "(no content)";
+    outParts.push({ type: "text", text: t });
+  }
 
-  cfg.baseUrl = cfg.baseUrl.trim();
-  cfg.apiKey = cfg.apiKey.trim();
-
-  cfg.searchBaseUrl = (env("ACONTEXT_SEARCH_BASE_URL") ?? cfg.searchBaseUrl)?.trim();
-  cfg.searchApiKey = (env("ACONTEXT_SEARCH_API_KEY") ?? cfg.searchApiKey)?.trim();
-
-  cfg.searchBaseUrl = cfg.searchBaseUrl && cfg.searchBaseUrl.trim() ? cfg.searchBaseUrl.trim() : undefined;
-  cfg.searchApiKey = cfg.searchApiKey && cfg.searchApiKey.trim() ? cfg.searchApiKey.trim() : undefined;
-
-  cfg.mode = (env("ACONTEXT_MODE") as any) ?? cfg.mode;
-  cfg.limit = env("ACONTEXT_LIMIT") ? Number(env("ACONTEXT_LIMIT")) : cfg.limit;
-  cfg.maxDistance = env("ACONTEXT_MAX_DISTANCE") ? Number(env("ACONTEXT_MAX_DISTANCE")) : cfg.maxDistance;
-
-  return cfg;
-}
-
-async function loadState(): Promise<{ path: string; state: StateFile }> {
-  const home = env("HOME") ?? "/home/legendevent";
-  const statePath = path.join(home, ".config", "opencode", "acontext-state.json");
-  const state = (await readJsonFile<StateFile>(statePath)) ?? {};
-  state.spaces ??= {};
-  state.sessions ??= {};
-  return { path: statePath, state };
+  return { role, parts: outParts, ...(meta ? { meta } : {}) };
 }
 
 const AcontextPlugin: Plugin = async (ctx) => {
   const debug = createDebugLogger("opencode-acontext");
-  await debug.log("plugin.init", {
-    worktree: ctx.worktree,
-    debugFile: debug.filePath,
-  });
+  await debug.log("plugin.init", { worktree: ctx.worktree, debugFile: debug.filePath, pluginInstanceID: PLUGIN_INSTANCE_ID });
 
   const config = await loadConfig({ worktree: ctx.worktree });
   await debug.log("config.loaded", {
@@ -562,20 +431,22 @@ const AcontextPlugin: Plugin = async (ctx) => {
 
   const api = new AcontextApi(config, debug);
 
-  const cache = new Map<string, { ts: number; cited_blocks: any[] }>();
+  const searchCache = new Map<string, { ts: number; cited_blocks: any[] }>();
+
+  // For assistant response capture.
+  const messageRoles = new Map<string, "user" | "assistant">();
+  const pendingAssistantText = new Map<string, Map<string, string>>(); // sessionID -> (messageID -> latest text)
 
   async function ensureSpaceId(): Promise<string> {
     const { path: statePath, state } = await loadState();
     const key = shaWorktree(ctx.worktree);
     const existing = state.spaces?.[key];
     if (isUuid(existing)) {
-      await debug.log("space.cache_hit", { key, spaceId: existing });
       return existing;
     }
 
     const repoName = path.basename(ctx.worktree);
     const desiredName = `opencode:${repoName}`;
-    await debug.log("space.ensure", { key, desiredName });
 
     try {
       const spaces = await api.listSpaces(200);
@@ -583,64 +454,263 @@ const AcontextPlugin: Plugin = async (ctx) => {
       if (found?.id) {
         state.spaces![key] = found.id;
         await writeJsonFile(statePath, state);
-        await debug.log("space.found", { desiredName, spaceId: found.id });
         return found.id;
       }
-    } catch (e) {
-      await debug.log("space.list_failed", {
-        error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-      });
+    } catch {
+      // ignore
     }
 
     const created = await api.createSpace(desiredName);
     state.spaces![key] = created.id;
     await writeJsonFile(statePath, state);
-    await debug.log("space.created", { desiredName, spaceId: created.id });
     return created.id;
   }
 
   async function ensureAcontextSessionId(opencodeSessionId: string, spaceId: string): Promise<string> {
     const { path: statePath, state } = await loadState();
     const existing = state.sessions?.[opencodeSessionId];
-    if (isUuid(existing)) {
-      await debug.log("session.cache_hit", { opencodeSessionId, acontextSessionId: existing });
-      return existing;
-    }
+    if (isUuid(existing)) return existing;
 
     const created = await api.createSession(spaceId);
     state.sessions![opencodeSessionId] = created.id;
     await writeJsonFile(statePath, state);
-    await debug.log("session.created", { opencodeSessionId, acontextSessionId: created.id, spaceId });
     return created.id;
   }
 
-  return {
-    "chat.message": async (input, output) => {
-      await debug.log("chat.message.enter", {
-        opencodeSessionId: input.sessionID,
-        partsCount: Array.isArray(output.parts) ? output.parts.length : undefined,
+  async function storeAcontextMessage(opencodeSessionId: string, msg: AcontextMessage): Promise<void> {
+    const spaceId = await ensureSpaceId().catch(async (e) => {
+      await debug.log("space.ensure_failed", {
+        error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
       });
+      return "";
+    });
+    if (!isUuid(spaceId)) return;
 
+    const acontextSessionId = await ensureAcontextSessionId(opencodeSessionId, spaceId).catch(async (e) => {
+      await debug.log("session.ensure_failed", {
+        opencodeSessionId,
+        error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+      });
+      return "";
+    });
+    if (!isUuid(acontextSessionId)) return;
+
+    await api.storeMessage(acontextSessionId, msg).catch(async (e) => {
+      await debug.log("message.store_failed", {
+        opencodeSessionId,
+        error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+      });
+    });
+  }
+
+  const assistantStored = new Map<string, Set<string>>();
+  const assistantInFlight = new Map<string, Set<string>>();
+
+  function getOrInitSet(map: Map<string, Set<string>>, key: string): Set<string> {
+    let s = map.get(key);
+    if (!s) {
+      s = new Set();
+      map.set(key, s);
+    }
+    return s;
+  }
+
+  async function flushAssistantMessage(sessionID: string, messageID: string, reason: string): Promise<void> {
+    if (!sessionID || !messageID) return;
+
+    const stored = getOrInitSet(assistantStored, sessionID);
+    if (stored.has(messageID)) return;
+
+    const inFlight = getOrInitSet(assistantInFlight, sessionID);
+    if (inFlight.has(messageID)) return;
+    inFlight.add(messageID);
+
+    try {
+      const pending = pendingAssistantText.get(sessionID);
+      const hasTextPart = Boolean(pending?.has(messageID));
+      const text = pending?.get(messageID) ?? "";
+      const trimmed = text.trim();
+
+      if (!hasTextPart || trimmed.length === 0) {
+        stored.add(messageID);
+
+        if (pending?.has(messageID)) {
+          pending.delete(messageID);
+          if (pending.size === 0) pendingAssistantText.delete(sessionID);
+        }
+
+        return;
+      }
+
+      const { text: truncated } = truncateText(trimmed, 200_000);
+
+      const msg: AcontextMessage = {
+        role: "assistant",
+        parts: [
+          {
+            type: "text",
+            text: truncated,
+            meta: {
+              plugin_instance_id: PLUGIN_INSTANCE_ID,
+              plugin_loaded_at: PLUGIN_LOADED_AT,
+              opencode_session_id: sessionID,
+              opencode_message_id: messageID,
+              source: "opencode:event",
+              flush_reason: reason,
+            },
+          },
+        ],
+      };
+
+      await storeAcontextMessage(sessionID, msg);
+
+      stored.add(messageID);
+
+      if (pending?.has(messageID)) {
+        pending.delete(messageID);
+        if (pending.size === 0) pendingAssistantText.delete(sessionID);
+      }
+    } finally {
+      inFlight.delete(messageID);
+      if (inFlight.size === 0) assistantInFlight.delete(sessionID);
+    }
+  }
+
+  async function flushAllPendingAssistant(sessionID: string, reason: string): Promise<void> {
+    const pending = pendingAssistantText.get(sessionID);
+    if (!pending || pending.size === 0) return;
+
+    const messageIDs = Array.from(pending.keys());
+    for (const messageID of messageIDs) {
+      await flushAssistantMessage(sessionID, messageID, reason);
+    }
+  }
+
+  return {
+    // Capture assistant output & lifecycle.
+    event: async ({ event }) => {
+      try {
+        if (event.type === "message.updated") {
+          const info = (event as any).properties?.info;
+          if (info?.id && (info.role === "user" || info.role === "assistant")) {
+            messageRoles.set(String(info.id), info.role);
+          }
+
+          if (info?.role === "assistant" && info?.time?.completed && info?.sessionID) {
+            const messageID = String(info.id ?? "");
+            if (messageID) await flushAssistantMessage(String(info.sessionID), messageID, "message.completed");
+          }
+
+          return;
+        }
+
+        if (event.type === "message.part.updated") {
+          const part = (event as any).properties?.part;
+          if (!part || part.type !== "text") return;
+
+          const messageID = String(part.messageID ?? "");
+          const sessionID = String(part.sessionID ?? "");
+          if (!messageID || !sessionID) return;
+
+          const role = messageRoles.get(messageID);
+          if (role !== "assistant") return;
+
+          const text = typeof part.text === "string" ? part.text : "";
+
+          let perSession = pendingAssistantText.get(sessionID);
+          if (!perSession) {
+            perSession = new Map();
+            pendingAssistantText.set(sessionID, perSession);
+          }
+           perSession.set(messageID, text);
+
+           return;
+
+        }
+
+        if (event.type === "session.idle") {
+          const sessionID = String((event as any).properties?.sessionID ?? "");
+          if (sessionID) await flushAllPendingAssistant(sessionID, "session.idle");
+        }
+      } catch (e) {
+        await debug.log("event.handler_failed", {
+          type: (event as any)?.type,
+          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+        });
+      }
+    },
+
+    "tool.execute.before": async (input, output) => {
+      function safeJsonString(value: unknown): string {
+        try {
+          return JSON.stringify(value ?? {}, null, 2);
+        } catch {
+          return JSON.stringify({ _non_json: String(value) }, null, 2);
+        }
+      }
+
+      const argsJson = safeJsonString(output.args ?? {});
+      const { text: argsText } = truncateText(argsJson, 200_000);
+
+      const msg: AcontextMessage = {
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-call",
+            meta: {
+              id: input.callID,
+              name: input.tool,
+              arguments: argsText,
+              plugin_instance_id: PLUGIN_INSTANCE_ID,
+              plugin_loaded_at: PLUGIN_LOADED_AT,
+              opencode_session_id: input.sessionID,
+              hook: "tool.execute.before",
+            },
+          },
+        ],
+      };
+
+      await storeAcontextMessage(input.sessionID, msg);
+    },
+
+    "tool.execute.after": async (input, output) => {
+      const { text: outText } = truncateText(typeof output.output === "string" ? output.output : stableJson(output.output), 200_000);
+
+      const msg: AcontextMessage = {
+        role: "user",
+        parts: [
+          {
+            type: "tool-result",
+            text: outText,
+            meta: {
+              tool_call_id: input.callID,
+              plugin_instance_id: PLUGIN_INSTANCE_ID,
+              plugin_loaded_at: PLUGIN_LOADED_AT,
+              opencode_session_id: input.sessionID,
+              hook: "tool.execute.after",
+              title: output.title,
+              metadata: output.metadata,
+            },
+          },
+        ],
+      };
+
+      await storeAcontextMessage(input.sessionID, msg);
+    },
+
+    // User messages (and skill injection)
+    "chat.message": async (input, output) => {
       const texts: string[] = [];
       output.parts.forEach((p: any) => {
         if (p?.type === "text" && typeof p.text === "string") texts.push(p.text);
       });
 
-      if (texts.length === 0) {
-        await debug.log("chat.message.no_text_parts", {});
-        return;
-      }
+      if (texts.length === 0) return;
 
-       const userText = texts.join("\n").trim();
-       if (!userText) {
-         await debug.log("chat.message.empty_text", {});
-         return;
-       }
+      const userText = texts.join("\n").trim();
+      if (!userText) return;
 
-       const shouldSkipInjection = userText.startsWith("[BACKGROUND TASK COMPLETED]");
-       if (shouldSkipInjection) {
-         await debug.log("inject.skip_background_task_completed", {});
-       }
+      const shouldSkipInjection = userText.startsWith("[BACKGROUND TASK COMPLETED]");
 
       const spaceId = await ensureSpaceId().catch(async (e) => {
         await debug.log("space.ensure_failed", {
@@ -648,106 +718,101 @@ const AcontextPlugin: Plugin = async (ctx) => {
         });
         return "";
       });
-      if (!isUuid(spaceId)) {
-        await debug.log("space.invalid_id", { spaceId });
-        return;
-      }
+      if (!isUuid(spaceId)) return;
 
-      const acontextSessionId = await ensureAcontextSessionId(input.sessionID, spaceId).catch(async (e) => {
-        await debug.log("session.ensure_failed", {
-          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-        });
-        return "";
-      });
-      if (!isUuid(acontextSessionId)) {
-        await debug.log("session.invalid_id", { acontextSessionId });
-        return;
-      }
-
-      const providerID = (output as any)?.message?.model?.providerID;
       const parts = (Array.isArray(output.parts) ? output.parts : []) as OutputPart[];
 
-      const payload = await buildAcontextStorePayload(parts, providerID, userText).catch(async (e) => {
-        await debug.log("message.build_payload_failed", {
-          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+      // For background task completion messages, store as-is (no injection).
+      if (shouldSkipInjection) {
+        const msg = buildAcontextMessageFromOutputParts("user", parts, userText, {
+          plugin_instance_id: PLUGIN_INSTANCE_ID,
+          plugin_loaded_at: PLUGIN_LOADED_AT,
+          opencode_session_id: input.sessionID,
+          hook: "chat.message",
+          injection: "skipped_background_task_completed",
         });
-        return { format: "openai" as const, blob: { role: "user", content: userText } satisfies OpenAIMessage };
-      });
 
-      api.storeMessage(acontextSessionId, payload).catch(async (e) => {
-        await debug.log("message.store_failed", {
-          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-          format: payload.format,
-        });
-      });
+        await storeAcontextMessage(input.sessionID, msg);
+        return;
+      }
 
-       if (shouldSkipInjection) return;
+      // Search then inject.
+      const cacheKey = `${spaceId}|${userText}`;
+      const now = Date.now();
+      let citedBlocks: any[] = [];
+      let wasCacheHit = false;
+      const hit = searchCache.get(cacheKey);
+      if (hit && now - hit.ts < 90_000) {
+        citedBlocks = hit.cited_blocks;
+        wasCacheHit = true;
+      } else {
+        try {
+          const result = await api.experienceSearch(spaceId, userText, config.mode ?? "fast", config.limit ?? 5);
+          citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
+          searchCache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
+        } catch (e) {
+          citedBlocks = [];
+          await debug.log("search.failed", {
+            error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+          });
+        }
+      }
 
-       const cacheKey = `${spaceId}|${userText}`;
-       const now = Date.now();
-       let citedBlocks: any[] = [];
-       let wasCacheHit = false;
-       const hit = cache.get(cacheKey);
-       if (hit && now - hit.ts < 90_000) {
-         citedBlocks = hit.cited_blocks;
-         wasCacheHit = true;
-         await debug.log("search.cache_hit", { ageMs: now - hit.ts, citedBlocks: citedBlocks.length });
-       } else {
-         try {
-           const result = await api.experienceSearch(spaceId, userText, config.mode ?? "fast", config.limit ?? 5);
-           citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
-           cache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
-           await debug.log("search.ok", { citedBlocks: citedBlocks.length });
-         } catch (e) {
-           citedBlocks = [];
-           await debug.log("search.failed", {
-             error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-           });
-         }
-       }
-
-       const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
-       const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
-       if (!skillsText) {
-         await debug.log("inject.skip_no_skills", { citedBlocks: citedBlocks.length });
-         return;
-       }
-
+      const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
+      const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
 
       const marker = "<!-- opencode-acontext:v1 -->";
+      const injectedSkills = skillsText ? `${marker}\n${config.injectHeader ?? "SKILLS REFERENCES:"}\n${skillsText}` : "";
 
-      const injectedSkills = `${marker}\n${config.injectHeader ?? "SKILLS REFERENCES:"}\n${skillsText}`;
+      const alreadyInjected = (output.parts as any[]).some(
+        (p) => p?.type === "text" && typeof p.text === "string" && p.text.includes(marker),
+      );
 
-      for (const p of output.parts as any[]) {
-        if (p?.type === "text" && typeof p.text === "string" && p.text.includes(marker)) {
-          await debug.log("inject.skip_already_injected", {});
-          return;
+      let storeParts: OutputPart[] = parts;
+
+      if (!alreadyInjected && skillsText) {
+        const newParts: any[] = [];
+        let inserted = false;
+        for (const p of output.parts as any[]) {
+          if (!inserted && p?.type === "text" && typeof p.text === "string") {
+            newParts.push({ type: "text", text: injectedSkills, synthetic: true });
+            inserted = true;
+          }
+          newParts.push(p);
+        }
+        if (inserted) {
+          output.parts = newParts;
+          storeParts = newParts as OutputPart[];
         }
       }
 
-      const newParts: any[] = [];
-      let inserted = false;
-      for (const p of output.parts as any[]) {
-        if (!inserted && p?.type === "text" && typeof p.text === "string") {
-          newParts.push({
-            type: "text",
-            text: injectedSkills,
-            synthetic: true,
-          });
-          inserted = true;
-        }
-        newParts.push(p);
+      const finalUserTextParts: string[] = [];
+      for (const p of storeParts) {
+        if (isTextPart(p)) finalUserTextParts.push(p.text);
       }
+      const finalUserText = finalUserTextParts.join("\n").trim() || userText;
 
-      if (!inserted) return;
+      // IMPORTANT: per your request, no dedupe here. If OpenCode emits multiple chat.message events,
+      // they will be stored multiple times (makes debugging easier).
+      const msg = buildAcontextMessageFromOutputParts("user", storeParts, finalUserText, {
+        plugin_instance_id: PLUGIN_INSTANCE_ID,
+        plugin_loaded_at: PLUGIN_LOADED_AT,
+        opencode_session_id: input.sessionID,
+        hook: "chat.message",
+        injected_skills: Boolean(skillsText),
+        used_blocks_count: usedBlocksCount,
+        was_cache_hit: wasCacheHit,
+      });
 
-      output.parts = newParts;
+      await storeAcontextMessage(input.sessionID, msg);
 
       ctx.client.tui
         .showToast({
           body: {
             title: "Acontext",
-            message: `Injected ${usedBlocksCount} skill${usedBlocksCount === 1 ? "" : "s"}${wasCacheHit ? " (cache)" : ""}`,
+            message: skillsText
+              ? `Injected ${usedBlocksCount} skill${usedBlocksCount === 1 ? "" : "s"}${wasCacheHit ? " (cache)" : ""}`
+              : "No skills injected",
             variant: "success",
             duration: 1500,
           },
@@ -757,8 +822,6 @@ const AcontextPlugin: Plugin = async (ctx) => {
             error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
           });
         });
-
-      await debug.log("inject.done", { injectedChars: injectedSkills.length, partsCount: newParts.length, usedBlocksCount, wasCacheHit });
     },
   };
 };
