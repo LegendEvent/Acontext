@@ -30,6 +30,7 @@ Configuration is loaded (in this order):
 
   "mode": "fast",
   "limit": 5,
+  "maxIterations": 4,
   "maxDistance": 0.8,
   "injectHeader": "SKILLS REFERENCES:"
 }
@@ -38,6 +39,7 @@ Configuration is loaded (in this order):
 Notes:
 - `apiKey`/`searchApiKey` can be either `Bearer <token>` or just `<token>`; the plugin will normalize it to `Bearer <token>`.
 - If you don’t set `searchBaseUrl`/`searchApiKey`, search uses `baseUrl`/`apiKey`.
+- `maxIterations` is sent to Acontext as `max_iterations` (only relevant in `agentic` mode).
 
 ### Environment variables
 
@@ -47,6 +49,7 @@ Notes:
 - `ACONTEXT_SEARCH_API_KEY`
 - `ACONTEXT_MODE` (`fast` or `agentic`)
 - `ACONTEXT_LIMIT`
+- `ACONTEXT_MAX_ITERATIONS`
 - `ACONTEXT_MAX_DISTANCE`
 
 ## State files

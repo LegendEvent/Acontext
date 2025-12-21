@@ -16,6 +16,7 @@ type AcontextConfig = {
 
   mode?: "fast" | "agentic";
   limit?: number;
+  maxIterations?: number;
   maxDistance?: number;
 
   injectHeader?: string;
@@ -282,7 +283,13 @@ class AcontextApi {
     );
   }
 
-  async experienceSearch(spaceId: string, queryText: string, mode: string, limit: number): Promise<any> {
+  async experienceSearch(
+    spaceId: string,
+    queryText: string,
+    mode: string,
+    limit: number,
+    maxIterations?: number,
+  ): Promise<any> {
     const searchBaseUrl = this.cfg.searchBaseUrl ?? this.cfg.baseUrl;
     const searchApiKey = this.cfg.searchApiKey ?? this.cfg.apiKey;
 
@@ -292,7 +299,7 @@ class AcontextApi {
       "GET",
       `/space/${spaceId}/experience_search`,
       {
-        query: { query: queryText, mode, limit },
+        query: { query: queryText, mode, limit, max_iterations: maxIterations },
       },
       { baseUrl: searchBaseUrl, apiKey: searchApiKey, timeoutMs },
     );
@@ -306,6 +313,7 @@ const DEFAULT_CONFIG: AcontextConfig = {
   apiKey: "sk-ac-your-root-api-bearer-token",
   mode: "fast",
   limit: 5,
+  maxIterations: 4,
   maxDistance: 0.8,
   injectHeader: "SKILLS REFERENCES:",
 };
@@ -335,6 +343,7 @@ async function loadConfig(ctx: { worktree: string }): Promise<AcontextConfig> {
 
   cfg.mode = (env("ACONTEXT_MODE") as any) ?? cfg.mode;
   cfg.limit = env("ACONTEXT_LIMIT") ? Number(env("ACONTEXT_LIMIT")) : cfg.limit;
+  cfg.maxIterations = env("ACONTEXT_MAX_ITERATIONS") ? Number(env("ACONTEXT_MAX_ITERATIONS")) : cfg.maxIterations;
   cfg.maxDistance = env("ACONTEXT_MAX_DISTANCE") ? Number(env("ACONTEXT_MAX_DISTANCE")) : cfg.maxDistance;
 
   return cfg;
@@ -425,6 +434,7 @@ const AcontextPlugin: Plugin = async (ctx) => {
     hasSearchBaseUrl: Boolean(config.searchBaseUrl),
     mode: config.mode,
     limit: config.limit,
+    maxIterations: config.maxIterations,
     maxDistance: config.maxDistance,
     injectHeader: config.injectHeader,
   });
@@ -747,7 +757,13 @@ const AcontextPlugin: Plugin = async (ctx) => {
         wasCacheHit = true;
       } else {
         try {
-          const result = await api.experienceSearch(spaceId, userText, config.mode ?? "fast", config.limit ?? 5);
+          const result = await api.experienceSearch(
+            spaceId,
+            userText,
+            config.mode ?? "fast",
+            config.limit ?? 5,
+            config.maxIterations,
+          );
           citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
           searchCache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
         } catch (e) {
