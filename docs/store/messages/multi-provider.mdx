@@ -3,7 +3,7 @@ title: Multi-provider Messages
 description: "Store and retrieve messages from multiple LLM providers"
 ---
 
-Acontext provides a flexible message storage system that supports multiple LLM providers (OpenAI, Anthropic). You can store messages then retrieve them later for analysis, debugging, or continuing conversations.
+Acontext provides a flexible message storage system that supports multiple LLM providers (OpenAI, Anthropic, Google Gemini). You can store messages then retrieve them later for analysis, debugging, or continuing conversations.
 
 ## Prerequisites
 
@@ -51,7 +51,7 @@ console.log(`Session created: ${session.id}`);
 
 ### Store a single message
 
-Store messages in OpenAI or Anthropic format:
+Store messages in OpenAI, Anthropic, or Gemini format:
 
 <Tabs>
 <Tab title="OpenAI Format">
@@ -145,6 +145,57 @@ const message = await client.sessions.storeMessage(session.id, {
     ]
   },
   format: 'anthropic'
+});
+
+console.log(`Message stored: ${message.id}`);
+```
+</CodeGroup>
+</Tab>
+
+<Tab title="Gemini Format">
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+session = client.sessions.create()
+
+# Store a message in Gemini format
+message = client.sessions.store_message(
+    session_id=session.id,
+    blob={
+        "role": "user",
+        "parts": [
+            {"text": "Explain quantum computing"}
+        ]
+    },
+    format="gemini"
+)
+
+print(f"Message stored: {message.id}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+const session = await client.sessions.create();
+
+// Store a message in Gemini format
+const message = await client.sessions.storeMessage(session.id, {
+  blob: {
+    role: 'user',
+    parts: [
+      { text: 'Explain quantum computing' }
+    ]
+  },
+  format: 'gemini'
 });
 
 console.log(`Message stored: ${message.id}`);
@@ -265,17 +316,47 @@ result.items.forEach(msg => {
 ```
 </CodeGroup>
 
-## Message format compatibility
+## Session observability
 
-Acontext supports two message formats for maximum compatibility:
+<Info>
+Acontext provides built-in observability features to help you monitor and analyze your message sessions in real-time.
+</Info>
+
+You can track various metrics and insights about your sessions:
 
 <CardGroup cols={2}>
+<Card title="Message Observing Status" icon="eye" href="/observe/buffer">
+Monitor the processing status of messages in your session: observed, in_process, and pending counts.
+</Card>
+
+<Card title="Session Tasks" icon="list-check" href="/observe/agent_tasks">
+View all tasks and agent operations associated with a session for debugging and analysis.
+</Card>
+
+<Card title="Dashboard Visualization" icon="chart-line" href="/observe/dashboard">
+Access the Acontext dashboard to visualize message flows, traces, and session analytics.
+</Card>
+
+<Card title="Disable Task Tracking" icon="toggle-off" href="/observe/disable_tasks">
+Disable automatic task tracking for sessions that don't need task analysis or monitoring.
+</Card>
+</CardGroup>
+
+## Message format compatibility
+
+Acontext supports three message formats for maximum compatibility:
+
+<CardGroup cols={3}>
 <Card title="OpenAI Format" icon="message">
 Compatible with OpenAI's Chat Completion API format. Use for GPT-3.5, GPT-4, and similar models.
 </Card>
 
 <Card title="Anthropic Format" icon="message">
 Compatible with Anthropic's Messages API format. Use for Claude models.
+</Card>
+
+<Card title="Gemini Format" icon="message">
+Compatible with Google's Gemini API format. Use for Gemini Pro, Gemini Flash, and other Gemini models.
 </Card>
 </CardGroup>
 
@@ -480,7 +561,15 @@ for (const session of sessions.items.slice(10)) {
 <Accordion title="Choose the right message format">
 - Use **OpenAI format** if you're working with OpenAI models or want broad compatibility
 - Use **Anthropic format** if you're primarily using Claude models
+- Use **Gemini format** if you're working with Google Gemini models (Gemini Pro, Gemini Flash, etc.)
 - You can convert between formats when retrieving messages
+</Accordion>
+
+<Accordion title="Monitor session health and performance">
+- Use **message observing status** to track message processing states in real-time
+- Monitor **token counts** to stay within context limits and manage API costs
+- Review **session tasks** to understand agent behavior and debug issues
+- Leverage the **dashboard** for visual insights into message flows and patterns
 </Accordion>
 </AccordionGroup>
 
@@ -492,7 +581,15 @@ for (const session of sessions.items.slice(10)) {
 Learn how to store files and documents alongside your messages
 </Card>
 
-<Card title="Dashboard" icon="robot" href="/observe/dashboard">
-View your messages in the dashboard
+<Card title="Dashboard" icon="chart-line" href="/observe/dashboard">
+View and analyze your messages with visual insights and metrics
+</Card>
+
+<Card title="Traces" icon="route" href="/observe/traces">
+Debug and monitor message flows with detailed execution traces
+</Card>
+
+<Card title="Agent Tasks" icon="robot" href="/observe/agent_tasks">
+Track and observe agent operations and task executions
 </Card>
 </CardGroup>

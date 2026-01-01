@@ -50,13 +50,11 @@ def __get_json_logger():
 
     logger = logging.getLogger("acontext-core")
     logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
     return logger
 
 
 def __get_text_logger():
     logger = logging.getLogger("acontext-core")
-    logger.setLevel(logging.INFO)
 
     formatter = logging.Formatter(
         f"{TerminalColorMarks.BOLD}{TerminalColorMarks.BLUE}>{TerminalColorMarks.END} %(asctime)s - %(levelname)s - %(message)s"
@@ -67,9 +65,10 @@ def __get_text_logger():
     return logger
 
 
-def get_logger(format="text") -> logging.Logger:
+def get_logger(format: str = "text", level: str = "INFO") -> logging.Logger:
     if format == "json":
         LOG = __get_json_logger()
     else:
         LOG = __get_text_logger()
+    LOG.setLevel(level)
     return LOG

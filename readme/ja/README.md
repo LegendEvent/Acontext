@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>コンテキストを設計、スキルを学習</h3>
+    <h4>Context Data Platform for Building Cloud-native AI Agents</h4>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -32,15 +32,11 @@
 
 
 
+Acontextは以下を支援できます：
 
-
-Acontextは、**クラウドネイティブ** AI Agentsを構築するための**コンテキストデータプラットフォーム**です。以下のことができます：
-
-- **保存** コンテキストとartifacts。 
-- あなたのために**コンテキストエンジニアリング**を実行。
-- **観察** Agentタスクとユーザーフィードバック。
-- Agentの完了したタスクからスキルを蒸留することで、Agentの**自己学習**を可能にします。
-- すべてを1つの**ダッシュボード**で表示。
+- **より良いコンテキストエンジニアリングでスケーラブルなAgentを構築する**
+- **Agentの成功率を観察する**
+- **各ユーザーの自己学習でAgentを改善する**
 
 
 
@@ -53,52 +49,36 @@ Acontextは、**クラウドネイティブ** AI Agentsを構築するための*
 
 
 
-
-
-Acontextは以下を支援できます：
-
-- **より良いコンテキストエンジニアリングで、よりスケーラブルなAgent製品を構築する**
-- **真に観察可能なAgent製品を構築する。**
-- **Agentの成功率を自動的に向上させる**
-
-
-
 # 💡 主な機能
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - マルチモーダルメッセージストレージ
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドTODO Agent
-  - [**Context Editing**](https://docs.acontext.io/store/editing) - 1回の呼び出しでコンテキストエンジニアリング
-- [**Disk**](https://docs.acontext.io/store/disk) - Artifacts用のファイルシステム
-- [**Space**](https://docs.acontext.io/learn/skill-space) - Agents用のNotion
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - スキルを蒸留、保存、検索するバックグラウンド Agents
-- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - メッセージ、artifacts、スキル、成功率などすべてを表示
+- Context Engineering
+  - [Session](https://docs.acontext.io/store/messages/multi-provider): マルチモーダル LLM メッセージストレージ
+  - [Disk](https://docs.acontext.io/store/disk): Artifacts用のファイルシステム
+  - [Context Editing](https://docs.acontext.io/store/editing) - 1回の呼び出しでコンテキストエンジニアリング
 
-### 連携の仕組み
+<div align="center">
+    <picture>
+      <img alt="Acontext Learning" src="../../assets/acontext-context-engineering.png" width="80%">
+    </picture>
+  <p>Acontext での Context Engineering</p>
+</div>
 
-```txt
-┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
-└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │ Observed Tasks  │
-                  │         └────────┬────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │   Learn Skills  │
-                  │         └────────┬────────┘
-                  └──────────────────┘
-                      Search skills
-```
+- **エージェントタスクとユーザーフィードバックを観察**
+  - [Task Agent](https://docs.acontext.io/observe/agent_tasks) - タスクのステータス、進捗、好みを収集するバックグラウンドエージェント
+- **エージェントの自己学習を有効化**
+  - [Experience Agent](https://docs.acontext.io/learn/advance/experience-agent) - 各ユーザーのスキルを蒸留、保存、検索するバックグラウンドエージェント。
+- **すべてを1つの[ダッシュボード](https://docs.acontext.io/observe/dashboard)で表示**
 
+<div align="center">
+    <picture>
+      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="80%">
+    </picture>
+  <p>Agent 成功率とその他のメトリクスのダッシュボード</p>
+</div>
 
 
 
-</details>
-
-
-
-# 🏗️ アーキテクチャ
+# 🏗️ どのように機能しますか？
 
 <details>
 <summary>興味がある場合は、アーキテクチャ図を開いてください。</summary>
@@ -127,7 +107,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3050"]
+        UI["Web Dashboard<br/>localhost:3000"]
     end
     
     PY -->|RESTFUL API| API
@@ -152,6 +132,26 @@ graph TB
     style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
     style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
 ```
+
+## 連携の仕組み
+
+```txt
+┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
+└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │ Observed Tasks  │
+                  │         └────────┬────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │   Learn Skills  │
+                  │         └────────┬────────┘
+                  └──────────────────┘
+                      Search skills
+```
+
+
 
 ## データ構造
 <details>
@@ -224,17 +224,14 @@ graph TB
 curl -fsSL https://install.acontext.io | sh
 ```
 
-コンピューターでAcontextバックエンドを起動するには、[docker-compose](https://docs.docker.com/compose/install/)がインストールされ、[OpenAI API Key](https://platform.openai.com/settings/organization/api-keys)が必要です：
+コンピューターでAcontextバックエンドを起動するには、[docker](https://www.docker.com/get-started/)がインストールされ、OpenAI API Keyが必要です：
 
 ```bash
 mkdir acontext_server && cd acontext_server
-
-# 1. このコマンドはインタラクティブなプロンプトを開始します
-# 2. openai api keyの入力が必要です
-acontext docker up 
+acontext docker up
 ```
 
-> [📖 ローカル設定](https://docs.acontext.io/local#start-acontext-server-locally) Acontextには少なくともOpenAI APIキーが必要です。LLMモデルとして`gpt-5.1`または`gpt-4.1`を推奨します
+> [📖 ローカル設定](https://docs.acontext.io/local#start-acontext-server-locally) LLMモデルとして`gpt-4.1`を推奨します
 
 `acontext docker up`は、Acontext用の`.env`と`config.yaml`を作成/使用し、データを永続化するための`db`フォルダを作成します。
 
@@ -243,16 +240,7 @@ acontext docker up
 完了したら、次のエンドポイントにアクセスできます：
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3050/
-
-
-
-<div align="center">
-    <picture>
-      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="100%">
-    </picture>
-  <p>成功率とその他のメトリクスのダッシュボード</p>
-</div>
+- Acontext Dashboard: http://localhost:3000/
 
 
 
@@ -286,11 +274,15 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 
 
-より多くのテンプレートについては、サンプルリポジトリを確認してください：[Acontext-Examples](https://github.com/memodb-io/Acontext-Examples)。
+> [!NOTE]
+>
+> Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+>
+> We're cooking more full-stack Agent Applications! [Tell us what you want!](https://discord.acontext.io)
 
 
 
-## SDK Walk-through
+## Step-by-step Quickstart
 
 <details>
 <summary>クリックして開く</summary>

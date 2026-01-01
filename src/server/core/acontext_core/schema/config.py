@@ -61,6 +61,7 @@ class CoreConfig(BaseModel):
 
     # Core Configuration
     logging_format: str = "text"
+    logging_level: str = "INFO"
     session_message_session_lock_wait_seconds: int = 1
     session_message_processing_timeout_seconds: int = 60
     space_task_sop_lock_wait_seconds: int = 1

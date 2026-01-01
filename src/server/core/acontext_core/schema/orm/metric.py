@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from sqlalchemy import Column, ForeignKey, Index, Integer, String
+from sqlalchemy import Column, ForeignKey, Index, BigInteger, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from typing import TYPE_CHECKING
@@ -35,7 +35,7 @@ class Metric(CommonMixin):
 
     increment: int = field(
         default=0,
-        metadata={"db": Column(Integer, nullable=False, default=0)},
+        metadata={"db": Column(BigInteger, nullable=False, default=0)},
     )
 
     # Relationships

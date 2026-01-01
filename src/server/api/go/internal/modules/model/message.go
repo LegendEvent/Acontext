@@ -14,6 +14,15 @@ const (
 	FormatAcontext  MessageFormat = "acontext"
 	FormatOpenAI    MessageFormat = "openai"
 	FormatAnthropic MessageFormat = "anthropic"
+	FormatGemini    MessageFormat = "gemini"
+)
+
+// Reserved metadata keys that are not allowed in user metadata
+const (
+	// GeminiCallInfoKey is used to store generated Gemini function call information
+	// This key is reserved for storing an array of {id, name} objects that need to be matched with responses
+	// Format: [{"id": "call_xxx", "name": "function_name"}, ...]
+	GeminiCallInfoKey = "__gemini_call_info__"
 )
 
 type Message struct {
@@ -45,6 +54,11 @@ type Message struct {
 }
 
 func (Message) TableName() string { return "messages" }
+
+// GetReservedKeys returns a list of reserved metadata keys for Message
+func (Message) GetReservedKeys() []string {
+	return []string{GeminiCallInfoKey}
+}
 
 type Part struct {
 	// "text" | "image" | "audio" | "video" | "file" | "tool-call" | "tool-result" | "data"

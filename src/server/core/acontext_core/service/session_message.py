@@ -3,7 +3,7 @@ from ..env import LOG, DEFAULT_CORE_CONFIG
 from ..infra.db import DB_CLIENT
 from ..infra.async_mq import (
     register_consumer,
-    MQ_CLIENT,
+    publish_mq,
     Message,
     ConsumerConfigData,
     SpecialHandler,
@@ -23,7 +23,7 @@ async def waiting_for_message_notify(wait_for_seconds: int, body: InsertNewMessa
         f"Session message buffer is not full, wait {wait_for_seconds} seconds for next turn/idle notify"
     )
     await asyncio.sleep(wait_for_seconds)
-    await MQ_CLIENT.publish(
+    await publish_mq(
         exchange_name=EX.session_message,
         routing_key=RK.session_message_buffer_process,
         body=body.model_dump_json(),
@@ -31,12 +31,11 @@ async def waiting_for_message_notify(wait_for_seconds: int, body: InsertNewMessa
 
 
 @register_consumer(
-    mq_client=MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.session_message,
         routing_key=RK.session_message_insert,
         queue_name="session.message.insert.entry",
-    ),
+    )
 )
 async def insert_new_message(body: InsertNewMessage, message: Message):
     LOG.debug(f"Insert new message {body.message_id}")
@@ -84,7 +83,7 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
             f"wait {DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds} seconds for next resend. "
             f"Message {body.message_id}"
         )
-        await MQ_CLIENT.publish(
+        await publish_mq(
             exchange_name=EX.session_message,
             routing_key=RK.session_message_insert_retry,
             body=body.model_dump_json(),
@@ -104,7 +103,7 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
                 f"(size: {pending_message_length} > {project_config.project_session_message_buffer_max_overflow} + {project_config.project_session_message_buffer_max_turns}), "
                 f"Truncate the buffer, the rest will be re-inserted in {DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds} seconds"
             )
-            await MQ_CLIENT.publish(
+            await publish_mq(
                 exchange_name=EX.session_message,
                 routing_key=RK.session_message_insert_retry,
                 body=body.model_dump_json(),
@@ -119,7 +118,6 @@ async def insert_new_message(body: InsertNewMessage, message: Message):
 
 
 register_consumer(
-    MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.session_message,
         routing_key=RK.session_message_insert_retry,
@@ -127,17 +125,16 @@ register_consumer(
         message_ttl_seconds=DEFAULT_CORE_CONFIG.session_message_session_lock_wait_seconds,
         need_dlx_queue=True,
         use_dlx_ex_rk=(EX.session_message, RK.session_message_insert),
-    ),
+    )
 )(SpecialHandler.NO_PROCESS)
 
 
 @register_consumer(
-    mq_client=MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.session_message,
         routing_key=RK.session_message_buffer_process,
         queue_name="session.message.buffer.process",
-    ),
+    )
 )
 async def buffer_new_message(body: InsertNewMessage, message: Message):
     async with DB_CLIENT.get_session_context() as session:
@@ -166,7 +163,7 @@ async def buffer_new_message(body: InsertNewMessage, message: Message):
         LOG.info(
             f"Current Session is locked, resend Message {body.message_id} to insert queue."
         )
-        await MQ_CLIENT.publish(
+        await publish_mq(
             exchange_name=EX.session_message,
             routing_key=RK.session_message_insert_retry,
             body=body.model_dump_json(),

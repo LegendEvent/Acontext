@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>Ingénierie de Contextes, Apprentissage de Compétences</h3>
+    <h4>Context Data Platform for Building Cloud-native AI Agents</h4>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -32,15 +32,11 @@
 
 
 
+Acontext peut vous aider à :
 
-
-Acontext est une **plateforme de données contextuelles** pour construire des Agents IA **cloud-native**. Elle peut :
-
-- **Stocker** les contextes et artefacts. 
-- Faire de l'**ingénierie de contexte** pour vous.
-- **Observer** les tâches des agents et les retours des utilisateurs.
-- Permettre l'**auto-apprentissage** des agents en distillant des compétences à partir des tâches complétées des agents.
-- Tout visualiser dans un **Tableau de bord**.
+- **Construire un agent évolutif avec une meilleure ingénierie contextuelle**
+- **Observer le taux de réussite de votre agent**
+- **Améliorer votre agent avec l'auto-apprentissage pour chaque utilisateur**
 
 
 
@@ -53,52 +49,36 @@ Acontext est une **plateforme de données contextuelles** pour construire des Ag
 
 
 
-
-
-Acontext peut vous aider à :
-
-- **Construire un produit d'agent plus évolutif avec une meilleure ingénierie contextuelle**
-- **Construire un produit Agent véritablement observable.**
-- **Améliorer automatiquement votre taux de réussite des agents**
-
-
-
 # 💡 Fonctionnalités Principales
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - Stockage de Messages Multi-modal
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - Agent TODO en arrière-plan qui collecte le statut, la progression et les préférences de la tâche
-  - [**Context Editing**](https://docs.acontext.io/store/editing) - Ingénierie de Contexte en un appel
-- [**Disk**](https://docs.acontext.io/store/disk) - Système de fichiers pour les artefacts
-- [**Space**](https://docs.acontext.io/learn/skill-space) - Notion pour les agents
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - Agents en arrière-plan qui distillent, sauvegardent et recherchent des compétences
-- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - Voir les messages, artefacts, compétences, taux de réussite et tout
+- Context Engineering
+  - [Session](https://docs.acontext.io/store/messages/multi-provider): Stockage de Messages LLM Multi-modal
+  - [Disk](https://docs.acontext.io/store/disk): Système de fichiers pour les artefacts
+  - [Context Editing](https://docs.acontext.io/store/editing) - Ingénierie de Contexte en un appel
 
-### Comment Ils Fonctionnent Ensemble
+<div align="center">
+    <picture>
+      <img alt="Acontext Learning" src="../../assets/acontext-context-engineering.png" width="80%">
+    </picture>
+  <p>Context Engineering dans Acontext</p>
+</div>
 
-```txt
-┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
-└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │ Observed Tasks  │
-                  │         └────────┬────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │   Learn Skills  │
-                  │         └────────┬────────┘
-                  └──────────────────┘
-                      Search skills
-```
+- **Observer les tâches des agents et les retours des utilisateurs**
+  - [Task Agent](https://docs.acontext.io/observe/agent_tasks) - Agent en arrière-plan qui collecte le statut, la progression et les préférences de la tâche
+- **Permettre l'auto-apprentissage des agents**
+  - [Experience Agent](https://docs.acontext.io/learn/advance/experience-agent) - Agents en arrière-plan qui distillent, sauvegardent et recherchent des compétences pour chaque utilisateur.
+- **Voir tout dans un [tableau de bord](https://docs.acontext.io/observe/dashboard)**
 
+<div align="center">
+    <picture>
+      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="80%">
+    </picture>
+  <p>Tableau de bord du Taux de Réussite de l'Agent et autres Métriques</p>
+</div>
 
 
 
-</details>
-
-
-
-# 🏗️ Architecture
+# 🏗️ Comment ça fonctionne ?
 
 <details>
 <summary>Cliquez pour ouvrir le diagramme d'architecture, si vous êtes intéressé.</summary>
@@ -127,7 +107,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3050"]
+        UI["Web Dashboard<br/>localhost:3000"]
     end
     
     PY -->|RESTFUL API| API
@@ -152,6 +132,26 @@ graph TB
     style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
     style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
 ```
+
+## Comment Ils Fonctionnent Ensemble
+
+```txt
+┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
+└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │ Observed Tasks  │
+                  │         └────────┬────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │   Learn Skills  │
+                  │         └────────┬────────┘
+                  └──────────────────┘
+                      Search skills
+```
+
+
 
 ## Structures de Données
 <details>
@@ -224,17 +224,14 @@ Nous avons un `acontext-cli` pour vous aider à faire une preuve de concept rapi
 curl -fsSL https://install.acontext.io | sh
 ```
 
-Vous devriez avoir [docker-compose](https://docs.docker.com/compose/install/) installé et une [OpenAI API Key](https://platform.openai.com/settings/organization/api-keys) pour démarrer un backend Acontext sur votre ordinateur :
+Vous devriez avoir [docker](https://www.docker.com/get-started/) installé et une OpenAI API Key pour démarrer un backend Acontext sur votre ordinateur :
 
 ```bash
 mkdir acontext_server && cd acontext_server
-
-# 1. cette commande démarrera une invite interactive
-# 2. Elle nécessite que vous saisissiez votre openai api key
-acontext docker up 
+acontext docker up
 ```
 
-> [📖 configuration locale](https://docs.acontext.io/local#start-acontext-server-locally) Acontext nécessite au moins une Clé API OpenAI. Nous recommandons `gpt-5.1` ou `gpt-4.1` comme modèle LLM
+> [📖 configuration locale](https://docs.acontext.io/local#start-acontext-server-locally) Nous recommandons `gpt-4.1` comme modèle LLM
 
 `acontext docker up` créera/utilisera `.env` et `config.yaml` pour Acontext, et créera un dossier `db` pour persister les données.
 
@@ -243,16 +240,7 @@ acontext docker up
 Une fois terminé, vous pouvez accéder aux endpoints suivants :
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3050/
-
-
-
-<div align="center">
-    <picture>
-      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="100%">
-    </picture>
-  <p>Tableau de bord du Taux de Réussite et autres Métriques</p>
-</div>
+- Acontext Dashboard: http://localhost:3000/
 
 
 
@@ -286,11 +274,15 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 
 
-Consultez notre dépôt d'exemples pour plus de modèles : [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+> [!NOTE]
+>
+> Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+>
+> We're cooking more full-stack Agent Applications! [Tell us what you want!](https://discord.acontext.io)
 
 
 
-## SDK Walk-through
+## Step-by-step Quickstart
 
 <details>
 <summary>Cliquez pour Ouvrir</summary>

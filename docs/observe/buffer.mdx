@@ -7,50 +7,199 @@ description: "Acontext will batch process the messages in the session to optimiz
 ## Wait until it's full
 Acontext will start to process the messages once the buffer is full (*i.e.* unprocessed message turns >= `PROJECT_SESSION_MESSAGE_BUFFER_MAX_TURNS`)
 
-
 So if your `PROJECT_SESSION_MESSAGE_BUFFER_MAX_TURNS` is 3:
-```python example
-# this storing won't be processed immediately
-client.sessions.store_message(
-    session_id="session-uuid",
-    blob=message1
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
 )
 
 # this storing won't be processed immediately
 client.sessions.store_message(
     session_id="session-uuid",
-    blob=message2
+    blob=message1,
+    format="openai"
+)
+
+# this storing won't be processed immediately
+client.sessions.store_message(
+    session_id="session-uuid",
+    blob=message2,
+    format="openai"
 )
 
 # will trigger the processing immediately
 client.sessions.store_message(
     session_id="session-uuid",
-    blob=message3
+    blob=message3,
+    format="openai"
 )
 ```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// this storing won't be processed immediately
+await client.sessions.storeMessage('session-uuid', {
+  blob: message1,
+  format: 'openai'
+});
+
+// this storing won't be processed immediately
+await client.sessions.storeMessage('session-uuid', {
+  blob: message2,
+  format: 'openai'
+});
+
+// will trigger the processing immediately
+await client.sessions.storeMessage('session-uuid', {
+  blob: message3,
+  format: 'openai'
+});
+```
+</CodeGroup>
 
 ## Wait until it's IDLE
 Acontext will start to process the messages once the buffer is IDLE for a while (*i.e.* no new messages for `PROJECT_SESSION_MESSAGE_BUFFER_TTL_SECONDS` seconds)
 
 So if your `PROJECT_SESSION_MESSAGE_BUFFER_TTL_SECONDS` is 3:
-```python example
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+import time
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
 # this storing won't be processed immediately
 client.sessions.store_message(
     session_id="session-uuid",
-    blob=message1
+    blob=message1,
+    format="openai"
 )
 
-sleep(3)
+time.sleep(3)
 # Acontext will start to process the messages in background.
 ```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// this storing won't be processed immediately
+await client.sessions.storeMessage('session-uuid', {
+  blob: message1,
+  format: 'openai'
+});
+
+await new Promise(resolve => setTimeout(resolve, 3000));
+// Acontext will start to process the messages in background.
+```
+</CodeGroup>
 
 
 ## Force Buffer Processing
 You can force the buffer processing by calling the `flush` method:
 
-```python flush
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
 client.sessions.flush(session_id="session-uuid")
 ```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+await client.sessions.flush('session-uuid');
+```
+</CodeGroup>
+
+## Monitor Message Processing Status
+
+You can check the observing status of messages in your session to understand how many are observed, in process, or pending:
+
+<CodeGroup>
+```python Python
+from acontext import AcontextClient
+
+client = AcontextClient(
+    api_key="sk-ac-your-root-api-bearer-token",
+    base_url="http://localhost:8029/api/v1"
+)
+
+# Get message observing status for a session
+status = client.sessions.messages_observing_status(session_id="session-uuid")
+
+print(f"Observed: {status.observed}")
+print(f"In Process: {status.in_process}")
+print(f"Pending: {status.pending}")
+print(f"Last Updated: {status.updated_at}")
+```
+
+```typescript TypeScript
+import { AcontextClient } from 'acontext';
+
+const client = new AcontextClient({
+  apiKey: 'sk-ac-your-root-api-bearer-token',
+  baseUrl: 'http://localhost:8029/api/v1'
+});
+
+// Get message observing status for a session
+const status = await client.sessions.messagesObservingStatus('session-uuid');
+
+console.log(`Observed: ${status.observed}`);
+console.log(`In Process: ${status.in_process}`);
+console.log(`Pending: ${status.pending}`);
+console.log(`Last Updated: ${status.updated_at}`);
+```
+</CodeGroup>
+
+### Status Meanings
+
+<AccordionGroup>
+<Accordion title="Observed">
+Messages that have been fully processed and observed by the system. These messages are complete and available for analysis.
+</Accordion>
+
+<Accordion title="In Process">
+Messages currently being processed by the system. These are actively being analyzed or transformed.
+</Accordion>
+
+<Accordion title="Pending">
+Messages waiting in the buffer to be processed. These will be processed once the buffer conditions are met (full buffer or TTL expired).
+</Accordion>
+</AccordionGroup>
+
+<Tip>
+Use `messages_observing_status()` to monitor buffer health and ensure messages are being processed as expected. A high number of pending messages may indicate you need to adjust buffer settings or call `flush()` manually.
+</Tip>
 
 ## Customization
 
