@@ -1,5 +1,5 @@
 import asyncio
-from ....infra.async_mq import MQ_CLIENT
+from ....infra.async_mq import publish_mq
 from ..base import Tool
 from ....schema.llm import ToolSchema
 from ....schema.result import Result
@@ -11,7 +11,7 @@ from .ctx import TaskCtx
 
 
 async def send_complete_new_task(body: NewTaskComplete):
-    await MQ_CLIENT.publish(
+    await publish_mq(
         exchange_name=EX.space_task,
         routing_key=RK.space_task_new_complete,
         body=body.model_dump_json(),

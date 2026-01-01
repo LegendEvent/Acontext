@@ -1,7 +1,7 @@
 from pydantic import ValidationError
 from ..base import Tool
 from ....service.constants import EX, RK
-from ....infra.async_mq import MQ_CLIENT
+from ....infra.async_mq import publish_mq
 from ....infra.db import DB_CLIENT
 from ....service.data import task as TD
 from ....service.data import space as SD
@@ -53,7 +53,7 @@ async def submit_sop_handler(ctx: SOPCtx, llm_arguments: dict) -> Result[str]:
         await set_space_digests(ctx)
         return Result.resolve("SOP submitted")
 
-    await MQ_CLIENT.publish(
+    await publish_mq(
         exchange_name=EX.space_task,
         routing_key=RK.space_task_sop_complete,
         body=sop_complete_message.model_dump_json(),

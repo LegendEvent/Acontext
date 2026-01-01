@@ -3,7 +3,7 @@
       <img alt="Show Acontext header banner" src="../../assets/Acontext-header-banner.png">
   </a>
   <p>
-    <h3>工程化上下文，学习技能</h3>
+    <h4>Context Data Platform for Building Cloud-native AI Agents</h4>
   </p>
   <p align="center">
     <a href="https://pypi.org/project/acontext/"><img src="https://img.shields.io/pypi/v/acontext.svg"></a>
@@ -32,15 +32,11 @@
 
 
 
+Acontext 可以帮助您：
 
-
-Acontext 是用于构建**云原生** AI Agents 的**上下文数据平台**。它可以：
-
-- **存储** 上下文和artifacts。 
-- 为您进行**上下文工程**。
-- **观察** Agent 任务和用户反馈。
-- 通过从Agent完成的任务中提取技能，实现Agent **自我学习**。
-- 在一个**仪表板**中查看一切。
+- **通过更好的上下文工程构建可扩展的Agent**
+- **观察您的Agent成功率**
+- **通过为每个用户自学习来改进您的Agent**
 
 
 
@@ -53,48 +49,32 @@ Acontext 是用于构建**云原生** AI Agents 的**上下文数据平台**。�
 
 
 
-
-
-Acontext 可以帮助您：
-
-- **通过更好的上下文工程构建更具可扩展性的Agent产品**
-- **构建真正可观察的Agent产品。**
-- **自动提高您的Agent成功率**
-
-
-
 # 💡 核心功能
 
-- [**Session**](https://docs.acontext.io/store/messages/multi-provider) - 多模态消息存储
-  - [**Task Agent**](https://docs.acontext.io/observe/agent_tasks) - 后台 TODO Agent，收集任务的状态、进度和偏好
-  - [**Context Editing**](https://docs.acontext.io/store/editing) - 一次调用完成上下文工程
-- [**Disk**](https://docs.acontext.io/store/disk) - Artifacts的文件系统
-- [**Space**](https://docs.acontext.io/learn/skill-space) - 为Agents设计的Notion
-  - [**Experience Agent**](https://docs.acontext.io/learn/advance/experience-agent) - 后台Agents，用于提炼、保存和搜索技能
-- [**Dashboard**](https://docs.acontext.io/observe/dashboard) - 查看消息、artifacts、技能、成功率和一切
+- Context Engineering
+  - [Session](https://docs.acontext.io/store/messages/multi-provider): 多模态 LLM 消息存储
+  - [Disk](https://docs.acontext.io/store/disk): Artifacts的文件系统
+  - [Context Editing](https://docs.acontext.io/store/editing) - 一次调用完成上下文工程
 
-### 它们如何协同工作
+<div align="center">
+    <picture>
+      <img alt="Acontext Learning" src="../../assets/acontext-context-engineering.png" width="80%">
+    </picture>
+  <p>Acontext 中的 Context Engineering</p>
+</div>
 
-```txt
-┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
-│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
-└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │ Observed Tasks  │
-                  │         └────────┬────────┘
-                  │                  │ # if enable
-                  │         ┌────────▼────────┐
-                  │         │   Learn Skills  │
-                  │         └────────┬────────┘
-                  └──────────────────┘
-                      Search skills
-```
+- **观察Agent任务和用户反馈**
+  - [Task Agent](https://docs.acontext.io/observe/agent_tasks) - 后台Agent，收集任务的状态、进度和偏好
+- **启用Agent自我学习**
+  - [Experience Agent](https://docs.acontext.io/learn/advance/experience-agent) - 后台Agent，为每个用户提炼、保存和搜索技能。
+- **在一个[仪表板](https://docs.acontext.io/observe/dashboard)中查看所有内容**
 
-
-
-
-</details>
+<div align="center">
+    <picture>
+      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="80%">
+    </picture>
+  <p>Agent 成功率和其他指标的仪表板</p>
+</div>
 
 
 
@@ -127,7 +107,7 @@ graph TB
     end
     
     subgraph "Dashboard"
-        UI["Web Dashboard<br/>localhost:3050"]
+        UI["Web Dashboard<br/>localhost:3000"]
     end
     
     PY -->|RESTFUL API| API
@@ -152,6 +132,26 @@ graph TB
     style REDIS fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
     style MQ fill:#ff6600,stroke:#fff,stroke-width:2px,color:#fff
 ```
+
+## 它们如何协同工作
+
+```txt
+┌──────┐    ┌────────────┐    ┌──────────────┐    ┌───────────────┐
+│ User │◄──►│ Your Agent │◄──►│   Session    │    │ Artifact Disk │
+└──────┘    └─────▲──────┘    └──────┬───────┘    └───────────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │ Observed Tasks  │
+                  │         └────────┬────────┘
+                  │                  │ # if enable
+                  │         ┌────────▼────────┐
+                  │         │   Learn Skills  │
+                  │         └────────┬────────┘
+                  └──────────────────┘
+                      Search skills
+```
+
+
 
 ## 数据结构
 <details>
@@ -224,17 +224,14 @@ graph TB
 curl -fsSL https://install.acontext.io | sh
 ```
 
-您应该安装 [docker-compose](https://docs.docker.com/compose/install/) 并拥有 [OpenAI API Key](https://platform.openai.com/settings/organization/api-keys)，以便在计算机上启动 Acontext 后端：
+您应该安装 [docker](https://www.docker.com/get-started/) 并拥有 OpenAI API Key，以便在计算机上启动 Acontext 后端：
 
 ```bash
 mkdir acontext_server && cd acontext_server
-
-# 1. 此命令将启动一个交互式提示
-# 2. 它需要您输入 openai api key
-acontext docker up 
+acontext docker up
 ```
 
-> [📖 本地设置](https://docs.acontext.io/local#start-acontext-server-locally) Acontext 至少需要一个 OpenAI API 密钥。我们推荐使用 `gpt-5.1` 或 `gpt-4.1` 作为 LLM 模型
+> [📖 本地设置](https://docs.acontext.io/local#start-acontext-server-locally) 我们推荐使用 `gpt-4.1` 作为 LLM 模型
 
 `acontext docker up` 将为 Acontext 创建/使用 `.env` 和 `config.yaml`，并创建 `db` 文件夹来持久化数据。
 
@@ -243,16 +240,7 @@ acontext docker up
 完成后，您可以访问以下端点：
 
 - Acontext API Base URL: http://localhost:8029/api/v1
-- Acontext Dashboard: http://localhost:3050/
-
-
-
-<div align="center">
-    <picture>
-      <img alt="Dashboard" src="../../docs/images/dashboard/BI.png" width="100%">
-    </picture>
-  <p>成功率和其他指标的仪表板</p>
-</div>
+- Acontext Dashboard: http://localhost:3000/
 
 
 
@@ -286,11 +274,15 @@ acontext create my-proj --template-path "typescript/openai-basic"
 
 
 
-查看我们的示例仓库以获取更多模板：[Acontext-Examples](https://github.com/memodb-io/Acontext-Examples)。
+> [!NOTE]
+>
+> Check our example repo for more templates: [Acontext-Examples](https://github.com/memodb-io/Acontext-Examples).
+>
+> We're cooking more full-stack Agent Applications! [Tell us what you want!](https://discord.acontext.io)
 
 
 
-## SDK Walk-through
+## Step-by-step Quickstart
 
 <details>
 <summary>点击打开</summary>

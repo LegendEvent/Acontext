@@ -1,6 +1,6 @@
 from ..env import LOG
 from ..infra.db import DB_CLIENT
-from ..infra.async_mq import register_consumer, MQ_CLIENT, Message, ConsumerConfigData
+from ..infra.async_mq import register_consumer, Message, ConsumerConfigData
 from ..schema.mq.space import NewTaskComplete
 from .constants import EX, RK
 from .data import project as PD
@@ -10,12 +10,11 @@ from .controller import space_task as STC
 
 
 @register_consumer(
-    mq_client=MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.space_task,
         routing_key=RK.space_task_new_complete,
         queue_name=RK.space_task_new_complete,
-    ),
+    )
 )
 async def space_complete_new_task(body: NewTaskComplete, message: Message):
     async with DB_CLIENT.get_session_context() as db_session:

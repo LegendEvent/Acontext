@@ -4,7 +4,7 @@ from typing import Optional, List
 from fastapi import FastAPI, Query, Path, Body
 from fastapi.exceptions import HTTPException
 from acontext_core.di import setup, cleanup
-from acontext_core.infra.async_mq import MQ_CLIENT
+from acontext_core.infra.async_mq import start_mq
 from acontext_core.infra.db import DB_CLIENT
 from acontext_core.env import LOG
 from acontext_core.telemetry.otel import (
@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
     await setup()
 
     # Run consumer in the background
-    asyncio.create_task(MQ_CLIENT.start())
+    asyncio.create_task(start_mq())
 
     yield
 

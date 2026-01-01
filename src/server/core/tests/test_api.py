@@ -50,7 +50,7 @@ def mock_lifespan():
 
     with patch("api.setup", side_effect=mock_setup), patch(
         "api.cleanup", side_effect=mock_cleanup
-    ), patch("api.MQ_CLIENT.start", side_effect=lambda: None):
+    ), patch("api.start_mq", side_effect=lambda: None):
         yield
 
 
@@ -304,7 +304,8 @@ class TestGetLearningStatusEndpoint:
         # Create test data
         async with db_client.get_session_context() as session:
             project = Project(
-                secret_key_hmac="test_key_hmac_api_invalid", secret_key_hash_phc="test_key_hash_api_invalid"
+                secret_key_hmac="test_key_hmac_api_invalid",
+                secret_key_hash_phc="test_key_hash_api_invalid",
             )
             session.add(project)
             await session.commit()

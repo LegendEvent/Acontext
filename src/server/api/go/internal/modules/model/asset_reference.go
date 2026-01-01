@@ -19,7 +19,7 @@ type AssetReference struct {
 
 	// Project ID for multi-tenant isolation
 	// Assets are isolated per project for security and access control
-	ProjectID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_project_sha256,priority:1" json:"project_id"`
+	ProjectID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_project_sha256,priority:1;index:idx_asset_ref_updated_at_project_id,priority:2" json:"project_id"`
 
 	// SHA256 hash as unique identifier for content-based deduplication
 	// Combined with ProjectID as composite unique key
@@ -38,7 +38,7 @@ type AssetReference struct {
 
 	// Timestamps
 	CreatedAt time.Time `gorm:"autoCreateTime;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime;not null;default:CURRENT_TIMESTAMP;index:idx_asset_ref_updated_at_project_id,priority:1" json:"updated_at"`
 
 	// Optional: Last referenced timestamp to help with garbage collection
 	LastReferencedAt time.Time `gorm:"type:timestamp;index" json:"last_referenced_at"`

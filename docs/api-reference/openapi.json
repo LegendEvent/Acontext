@@ -10,6 +10,252 @@
     "url" : "/api/v1"
   } ],
   "paths" : {
+    "/agent_skills" : {
+      "get" : {
+        "description" : "List all agent skills under a project",
+        "parameters" : [ {
+          "description" : "Limit of agent skills to return, default 20. Max 200.",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Cursor for pagination",
+          "in" : "query",
+          "name" : "cursor",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order by created_at descending if true",
+          "in" : "query",
+          "name" : "time_desc",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_agent_skills_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "List agent skills",
+        "tags" : [ "agent_skills" ]
+      },
+      "post" : {
+        "description" : "Upload a zip file containing agent skill and extract it to S3. The zip file must contain a SKILL.md file (case-insensitive) with YAML format containing 'name' and 'description' fields. The name and description will be extracted from SKILL.md.",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/_agent_skills_post_request"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_agent_skills_post_201_response"
+                }
+              }
+            },
+            "description" : "Returns agent skill with name and description extracted from SKILL.md"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Create agent skill",
+        "tags" : [ "agent_skills" ]
+      }
+    },
+    "/agent_skills/by_name" : {
+      "get" : {
+        "description" : "Get agent skill by its name (unique within project)",
+        "parameters" : [ {
+          "description" : "Agent skill name",
+          "in" : "query",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_agent_skills_post_201_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get agent skill by name",
+        "tags" : [ "agent_skills" ]
+      }
+    },
+    "/agent_skills/{id}" : {
+      "delete" : {
+        "description" : "Delete agent skill and all extracted files from S3",
+        "parameters" : [ {
+          "description" : "Agent skill UUID",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "content" : { },
+            "description" : ""
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Delete agent skill",
+        "tags" : [ "agent_skills" ]
+      },
+      "get" : {
+        "description" : "Get agent skill by its UUID",
+        "parameters" : [ {
+          "description" : "Agent skill UUID",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_agent_skills_post_201_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get agent skill by ID",
+        "tags" : [ "agent_skills" ]
+      },
+      "put" : {
+        "description" : "Update agent skill metadata (name, description, meta)",
+        "parameters" : [ {
+          "description" : "Agent skill UUID",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/handler.UpdateAgentSkillsReq"
+              }
+            }
+          },
+          "description" : "Update request",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_agent_skills_post_201_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Update agent skill",
+        "tags" : [ "agent_skills" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/agent_skills/{id}/file" : {
+      "get" : {
+        "description" : "Get a presigned URL to download a specific file from agent skill",
+        "parameters" : [ {
+          "description" : "Agent skill UUID",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "File path within the zip (e.g., 'github/GTM/find_trending_repos.json')",
+          "in" : "query",
+          "name" : "file_path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "URL expiration in seconds (default 900)",
+          "in" : "query",
+          "name" : "expire",
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/_agent_skills__id__file_get_200_response"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Get presigned URL for a file",
+        "tags" : [ "agent_skills" ]
+      }
+    },
     "/disk" : {
       "get" : {
         "description" : "List all disks under a project",
@@ -250,7 +496,7 @@
         } ]
       },
       "post" : {
-        "description" : "Upload a file and create or update an artifact record under a disk",
+        "description" : "Upload a file and create or update an artifact record under a disk. File size must not exceed the configured maximum upload size limit (default: 16MB).",
         "parameters" : [ {
           "description" : "Disk ID",
           "in" : "path",
@@ -281,6 +527,16 @@
               }
             },
             "description" : "Created"
+          },
+          "413" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/serializer.Response"
+                }
+              }
+            },
+            "description" : "File size exceeds maximum allowed size"
           }
         },
         "security" : [ {
@@ -777,7 +1033,7 @@
     },
     "/session/{session_id}/messages" : {
       "get" : {
-        "description" : "Get messages from session. Default format is openai. Can convert to acontext (original) or anthropic format.",
+        "description" : "Get messages from session. Default format is openai. Can convert to acontext (original), anthropic, or gemini format.",
         "parameters" : [ {
           "description" : "Session ID",
           "in" : "path",
@@ -809,11 +1065,11 @@
             "type" : "string"
           }
         }, {
-          "description" : "Format to convert messages to: acontext (original), openai (default), anthropic.",
+          "description" : "Format to convert messages to: acontext (original), openai (default), anthropic, gemini.",
           "in" : "query",
           "name" : "format",
           "schema" : {
-            "enum" : [ "acontext", "openai", "anthropic" ],
+            "enum" : [ "acontext", "openai", "anthropic", "gemini" ],
             "type" : "string"
           }
         }, {
@@ -1153,7 +1409,7 @@
     },
     "/space/{space_id}/block" : {
       "get" : {
-        "description" : "List blocks in a space. Use type query parameter to filter by block type (page, folder, text, sop, etc.). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.",
+        "description" : "List blocks in a space. Use type query parameter to filter by block type (page, folder, sop). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1168,7 +1424,7 @@
           "in" : "query",
           "name" : "type",
           "schema" : {
-            "enum" : [ "page", "folder", "text", "sop" ],
+            "enum" : [ "page", "folder", "sop" ],
             "type" : "string"
           }
         }, {
@@ -1208,7 +1464,7 @@
         } ]
       },
       "post" : {
-        "description" : "Create a new block (supports all types: page, folder, text, sop, etc.). For page and folder types, parent_id is optional. For other types, parent_id is required.",
+        "description" : "Create a new block (supports types: page, folder, sop). For page and folder types, parent_id is optional. For sop type, parent_id is required.",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1250,18 +1506,18 @@
         "x-code-samples" : [ {
           "label" : "Python",
           "lang" : "python",
-          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a page\npage = client.blocks.create(\n    space_id='space-uuid',\n    block_type='page',\n    title='My Page'\n)\n\n# Create a text block under the page\ntext_block = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=page['id'],\n    block_type='text',\n    title='Content',\n    props={\"text\": \"Block content here\"}\n)\n"
+          "source" : "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a folder\nfolder = client.blocks.create(\n    space_id='space-uuid',\n    block_type='folder',\n    title='My Folder'\n)\n\n# Create a page under the folder\npage = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=folder['id'],\n    block_type='page',\n    title='My Page',\n    props={\"description\": \"Page content here\"}\n)\n"
         }, {
           "label" : "JavaScript",
           "lang" : "javascript",
-          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a page\nconst page = await client.blocks.create('space-uuid', {\n  blockType: 'page',\n  title: 'My Page'\n});\n\n// Create a text block under the page\nconst textBlock = await client.blocks.create('space-uuid', {\n  parentId: page.id,\n  blockType: 'text',\n  title: 'Content',\n  props: { text: 'Block content here' }\n});\n"
+          "source" : "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a folder\nconst folder = await client.blocks.create('space-uuid', {\n  blockType: 'folder',\n  title: 'My Folder'\n});\n\n// Create a page under the folder\nconst page = await client.blocks.create('space-uuid', {\n  parentId: folder.id,\n  blockType: 'page',\n  title: 'My Page',\n  props: { description: 'Page content here' }\n});\n"
         } ],
         "x-codegen-request-body-name" : "payload"
       }
     },
     "/space/{space_id}/block/{block_id}" : {
       "delete" : {
-        "description" : "Delete a block by its ID (works for all block types: page, folder, text, sop, etc.)",
+        "description" : "Delete a block by its ID (works for block types: page, folder, sop)",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1311,7 +1567,7 @@
     },
     "/space/{space_id}/block/{block_id}/move" : {
       "put" : {
-        "description" : "Move block by updating its parent_id. Works for all block types (page, folder, text, sop, etc.). For page and folder types, parent_id can be null (root level).",
+        "description" : "Move block by updating its parent_id. Works for block types: page, folder, sop. For page and folder types, parent_id can be null (root level).",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1373,7 +1629,7 @@
     },
     "/space/{space_id}/block/{block_id}/properties" : {
       "get" : {
-        "description" : "Get a block's properties by its ID (works for all block types: page, folder, text, sop, etc.)",
+        "description" : "Get a block's properties by its ID (works for block types: page, folder, sop)",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1421,7 +1677,7 @@
         } ]
       },
       "put" : {
-        "description" : "Update a block's title and properties by its ID (works for all block types: page, folder, text, sop, etc.)",
+        "description" : "Update a block's title and properties by its ID (works for block types: page, folder, sop)",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1483,7 +1739,7 @@
     },
     "/space/{space_id}/block/{block_id}/sort" : {
       "put" : {
-        "description" : "Update block sort value (works for all block types: page, folder, text, sop, etc.)",
+        "description" : "Update block sort value (works for block types: page, folder, sop)",
         "parameters" : [ {
           "description" : "Space ID",
           "in" : "path",
@@ -1960,7 +2216,7 @@
             "type" : "string"
           },
           "type" : {
-            "example" : "text",
+            "example" : "page",
             "type" : "string"
           }
         },
@@ -2055,7 +2311,7 @@
             "type" : "object"
           },
           "format" : {
-            "enum" : [ "acontext", "openai", "anthropic" ],
+            "enum" : [ "acontext", "openai", "anthropic", "gemini" ],
             "example" : "openai",
             "type" : "string"
           }
@@ -2081,6 +2337,23 @@
           }
         },
         "required" : [ "new_name", "old_name" ],
+        "type" : "object"
+      },
+      "handler.UpdateAgentSkillsReq" : {
+        "properties" : {
+          "description" : {
+            "example" : "Updated description",
+            "type" : "string"
+          },
+          "meta" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          },
+          "name" : {
+            "example" : "updated-name",
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "handler.UpdateArtifactReq" : {
@@ -2215,6 +2488,38 @@
           },
           "sop_count" : {
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "model.AgentSkills" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "file_index" : {
+            "description" : "FileIndex contains relative paths of files from the skillName root directory\nExample: [\"pdf/SKILL.md\", \"pdf/scripts/extract_text.json\"]\nThese paths are relative to baseS3Key (which includes skillName)\nFull S3 key = baseS3Key + \"/\" + fileIndex[i]",
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "name" : {
+            "description" : "Name is unique within a project",
+            "type" : "string"
+          },
+          "updated_at" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -2521,6 +2826,23 @@
         },
         "type" : "object"
       },
+      "service.ListAgentSkillsOutput" : {
+        "properties" : {
+          "has_more" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/model.AgentSkills"
+            },
+            "type" : "array"
+          },
+          "next_cursor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "service.ListDisksOutput" : {
         "properties" : {
           "has_more" : {
@@ -2600,6 +2922,60 @@
         },
         "type" : "object"
       },
+      "_agent_skills_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/service.ListAgentSkillsOutput"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_agent_skills_post_request" : {
+        "properties" : {
+          "file" : {
+            "description" : "ZIP file containing agent skill. Must contain SKILL.md (case-insensitive) with YAML format: name and description fields.",
+            "format" : "binary",
+            "type" : "string"
+          },
+          "meta" : {
+            "description" : "Additional metadata (JSON string)",
+            "type" : "string"
+          }
+        },
+        "required" : [ "file" ],
+        "type" : "object"
+      },
+      "_agent_skills_post_201_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "$ref" : "#/components/schemas/model.AgentSkills"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
+      "_agent_skills__id__file_get_200_response" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/serializer.Response"
+        }, {
+          "properties" : {
+            "data" : {
+              "additionalProperties" : {
+                "type" : "string"
+              },
+              "type" : "object"
+            }
+          },
+          "type" : "object"
+        } ]
+      },
       "_disk_get_200_response" : {
         "allOf" : [ {
           "$ref" : "#/components/schemas/serializer.Response"
@@ -2655,7 +3031,7 @@
             "type" : "string"
           },
           "file" : {
-            "description" : "File to upload",
+            "description" : "File to upload (size must not exceed configured limit)",
             "format" : "binary",
             "type" : "string"
           },

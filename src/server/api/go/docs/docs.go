@@ -15,6 +15,370 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agent_skills": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "List all agent skills under a project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "List agent skills",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit of agent skills to return, default 20. Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Order by created_at descending if true",
+                        "name": "time_desc",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.ListAgentSkillsOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a zip file containing agent skill and extract it to S3. The zip file must contain a SKILL.md file (case-insensitive) with YAML format containing 'name' and 'description' fields. The name and description will be extracted from SKILL.md.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "Create agent skill",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "ZIP file containing agent skill. Must contain SKILL.md (case-insensitive) with YAML format: name and description fields.",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Additional metadata (JSON string)",
+                        "name": "meta",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Returns agent skill with name and description extracted from SKILL.md",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AgentSkills"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent_skills/by_name": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get agent skill by its name (unique within project)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "Get agent skill by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent skill name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AgentSkills"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent_skills/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get agent skill by its UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "Get agent skill by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent skill UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AgentSkills"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update agent skill metadata (name, description, meta)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "Update agent skill",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent skill UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateAgentSkillsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AgentSkills"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete agent skill and all extracted files from S3",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "Delete agent skill",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent skill UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/agent_skills/{id}/file": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a presigned URL to download a specific file from agent skill",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent_skills"
+                ],
+                "summary": "Get presigned URL for a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent skill UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File path within the zip (e.g., 'github/GTM/find_trending_repos.json')",
+                        "name": "file_path",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "URL expiration in seconds (default 900)",
+                        "name": "expire",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/serializer.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/disk": {
             "get": {
                 "security": [
@@ -356,7 +720,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload a file and create or update an artifact record under a disk",
+                "description": "Upload a file and create or update an artifact record under a disk. File size must not exceed the configured maximum upload size limit (default: 16MB).",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -385,7 +749,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "file",
-                        "description": "File to upload",
+                        "description": "File to upload (size must not exceed configured limit)",
                         "name": "file",
                         "in": "formData",
                         "required": true
@@ -414,6 +778,12 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "413": {
+                        "description": "File size exceeds maximum allowed size",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.Response"
                         }
                     }
                 },
@@ -1064,7 +1434,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get messages from session. Default format is openai. Can convert to acontext (original) or anthropic format.",
+                "description": "Get messages from session. Default format is openai. Can convert to acontext (original), anthropic, or gemini format.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1107,10 +1477,11 @@ const docTemplate = `{
                         "enum": [
                             "acontext",
                             "openai",
-                            "anthropic"
+                            "anthropic",
+                            "gemini"
                         ],
                         "type": "string",
-                        "description": "Format to convert messages to: acontext (original), openai (default), anthropic.",
+                        "description": "Format to convert messages to: acontext (original), openai (default), anthropic, gemini.",
                         "name": "format",
                         "in": "query"
                     },
@@ -1580,7 +1951,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List blocks in a space. Use type query parameter to filter by block type (page, folder, text, sop, etc.). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.",
+                "description": "List blocks in a space. Use type query parameter to filter by block type (page, folder, sop). Use parent_id query parameter to filter by parent. If both type and parent_id are empty, returns top-level pages and folders.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1604,7 +1975,6 @@ const docTemplate = `{
                         "enum": [
                             "page",
                             "folder",
-                            "text",
                             "sop"
                         ],
                         "type": "string",
@@ -1662,7 +2032,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new block (supports all types: page, folder, text, sop, etc.). For page and folder types, parent_id is optional. For other types, parent_id is required.",
+                "description": "Create a new block (supports types: page, folder, sop). For page and folder types, parent_id is optional. For sop type, parent_id is required.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1716,12 +2086,12 @@ const docTemplate = `{
                     {
                         "label": "Python",
                         "lang": "python",
-                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a page\npage = client.blocks.create(\n    space_id='space-uuid',\n    block_type='page',\n    title='My Page'\n)\n\n# Create a text block under the page\ntext_block = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=page['id'],\n    block_type='text',\n    title='Content',\n    props={\"text\": \"Block content here\"}\n)\n"
+                        "source": "from acontext import AcontextClient\n\nclient = AcontextClient(api_key='sk_project_token')\n\n# Create a folder\nfolder = client.blocks.create(\n    space_id='space-uuid',\n    block_type='folder',\n    title='My Folder'\n)\n\n# Create a page under the folder\npage = client.blocks.create(\n    space_id='space-uuid',\n    parent_id=folder['id'],\n    block_type='page',\n    title='My Page',\n    props={\"description\": \"Page content here\"}\n)\n"
                     },
                     {
                         "label": "JavaScript",
                         "lang": "javascript",
-                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a page\nconst page = await client.blocks.create('space-uuid', {\n  blockType: 'page',\n  title: 'My Page'\n});\n\n// Create a text block under the page\nconst textBlock = await client.blocks.create('space-uuid', {\n  parentId: page.id,\n  blockType: 'text',\n  title: 'Content',\n  props: { text: 'Block content here' }\n});\n"
+                        "source": "import { AcontextClient } from '@acontext/acontext';\n\nconst client = new AcontextClient({ apiKey: 'sk_project_token' });\n\n// Create a folder\nconst folder = await client.blocks.create('space-uuid', {\n  blockType: 'folder',\n  title: 'My Folder'\n});\n\n// Create a page under the folder\nconst page = await client.blocks.create('space-uuid', {\n  parentId: folder.id,\n  blockType: 'page',\n  title: 'My Page',\n  props: { description: 'Page content here' }\n});\n"
                     }
                 ]
             }
@@ -1733,7 +2103,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a block by its ID (works for all block types: page, folder, text, sop, etc.)",
+                "description": "Delete a block by its ID (works for block types: page, folder, sop)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1791,7 +2161,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Move block by updating its parent_id. Works for all block types (page, folder, text, sop, etc.). For page and folder types, parent_id can be null (root level).",
+                "description": "Move block by updating its parent_id. Works for block types: page, folder, sop. For page and folder types, parent_id can be null (root level).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1858,7 +2228,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a block's properties by its ID (works for all block types: page, folder, text, sop, etc.)",
+                "description": "Get a block's properties by its ID (works for block types: page, folder, sop)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1926,7 +2296,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update a block's title and properties by its ID (works for all block types: page, folder, text, sop, etc.)",
+                "description": "Update a block's title and properties by its ID (works for block types: page, folder, sop)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1993,7 +2363,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update block sort value (works for all block types: page, folder, text, sop, etc.)",
+                "description": "Update block sort value (works for block types: page, folder, sop)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2605,7 +2975,7 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string",
-                    "example": "text"
+                    "example": "page"
                 }
             }
         },
@@ -2705,7 +3075,8 @@ const docTemplate = `{
                     "enum": [
                         "acontext",
                         "openai",
-                        "anthropic"
+                        "anthropic",
+                        "gemini"
                     ],
                     "example": "openai"
                 }
@@ -2731,6 +3102,23 @@ const docTemplate = `{
                 },
                 "old_name": {
                     "type": "string"
+                }
+            }
+        },
+        "handler.UpdateAgentSkillsReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Updated description"
+                },
+                "meta": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "updated-name"
                 }
             }
         },
@@ -2870,6 +3258,37 @@ const docTemplate = `{
                 },
                 "sop_count": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.AgentSkills": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "file_index": {
+                    "description": "FileIndex contains relative paths of files from the skillName root directory\nExample: [\"pdf/SKILL.md\", \"pdf/scripts/extract_text.json\"]\nThese paths are relative to baseS3Key (which includes skillName)\nFull S3 key = baseS3Key + \"/\" + fileIndex[i]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "type": "object"
+                },
+                "name": {
+                    "description": "Name is unique within a project",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -3161,6 +3580,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.Task"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.ListAgentSkillsOutput": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AgentSkills"
                     }
                 },
                 "next_cursor": {

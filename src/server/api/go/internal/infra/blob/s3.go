@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/bytedance/sonic"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/memodb-io/Acontext/internal/config"
 	"github.com/memodb-io/Acontext/internal/modules/model"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
@@ -33,6 +34,56 @@ type S3Deps struct {
 	Presigner *s3.PresignClient
 	Bucket    string
 	SSE       *s3types.ServerSideEncryption
+}
+
+// extMimeMap maps file extensions to more specific MIME types for text-based files.
+// Used when content-based detection returns "text/plain" but extension suggests a specific format.
+var extMimeMap = map[string]string{
+	".md":       "text/markdown",
+	".markdown": "text/markdown",
+	".yaml":     "text/yaml",
+	".yml":      "text/yaml",
+	".csv":      "text/csv",
+	".json":     "application/json",
+	".xml":      "application/xml",
+	".html":     "text/html",
+	".htm":      "text/html",
+	".css":      "text/css",
+	".js":       "text/javascript",
+	".ts":       "text/typescript",
+	".go":       "text/x-go",
+	".py":       "text/x-python",
+	".rs":       "text/x-rust",
+	".rb":       "text/x-ruby",
+	".java":     "text/x-java",
+	".c":        "text/x-c",
+	".cpp":      "text/x-c++",
+	".h":        "text/x-c",
+	".hpp":      "text/x-c++",
+	".sh":       "text/x-shellscript",
+	".bash":     "text/x-shellscript",
+	".sql":      "text/x-sql",
+	".toml":     "text/x-toml",
+	".ini":      "text/x-ini",
+	".cfg":      "text/x-ini",
+	".conf":     "text/x-ini",
+}
+
+// detectMimeType detects the MIME type from file content, with extension-based refinement
+// for text files where content detection alone cannot distinguish formats.
+func detectMimeType(content []byte, ext string) string {
+	contentType := mimetype.Detect(content).String()
+
+	// For plain text, refine based on file extension since content detection
+	// cannot distinguish between markdown, yaml, code files, etc.
+	if strings.HasPrefix(contentType, "text/plain") {
+		if refined, ok := extMimeMap[ext]; ok {
+			// Replace "text/plain" with refined type, preserving charset parameters
+			result := strings.Replace(contentType, "text/plain", refined, 1)
+			return result
+		}
+	}
+	return contentType
 }
 
 func NewS3(ctx context.Context, cfg *config.Config) (*S3Deps, error) {
@@ -278,7 +329,9 @@ func (u *S3Deps) UploadFormFile(ctx context.Context, keyPrefix string, fh *multi
 	sumHex := hex.EncodeToString(h.Sum(nil))
 
 	ext := strings.ToLower(filepath.Ext(fh.Filename))
-	contentType := fh.Header.Get("Content-Type")
+
+	// Detect MIME type from file content, with extension-based refinement for text files
+	contentType := detectMimeType(fileContent, ext)
 
 	return u.uploadWithDedup(
 		ctx,
@@ -320,6 +373,46 @@ func (u *S3Deps) UploadJSON(ctx context.Context, keyPrefix string, data interfac
 			"sha256": sumHex,
 		},
 	)
+}
+
+// UploadFileDirect uploads a file directly to S3 at the specified key (no deduplication)
+// This is used when you need to preserve the exact file structure
+func (u *S3Deps) UploadFileDirect(ctx context.Context, key string, content []byte, contentType string) (*model.Asset, error) {
+	if key == "" {
+		return nil, errors.New("key is empty")
+	}
+
+	// Calculate SHA256
+	h := sha256.New()
+	h.Write(content)
+	sumHex := hex.EncodeToString(h.Sum(nil))
+
+	input := &s3.PutObjectInput{
+		Bucket:      aws.String(u.Bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(content),
+		ContentType: aws.String(contentType),
+		Metadata: map[string]string{
+			"sha256": sumHex,
+		},
+	}
+	if u.SSE != nil {
+		input.ServerSideEncryption = *u.SSE
+	}
+
+	out, err := u.Uploader.Upload(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Asset{
+		Bucket: u.Bucket,
+		S3Key:  key,
+		ETag:   cleanETag(*out.ETag),
+		SHA256: sumHex,
+		MIME:   contentType,
+		SizeB:  int64(len(content)),
+	}, nil
 }
 
 // DownloadJSON downloads JSON data from S3 and unmarshals it into the provided interface
@@ -428,6 +521,57 @@ func (u *S3Deps) DeleteObjects(ctx context.Context, keys []string) error {
 		if err != nil {
 			return fmt.Errorf("delete objects from S3: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// DeleteObjectsByPrefix recursively deletes all objects with the given prefix
+// This is equivalent to deleting an entire "directory" in S3
+func (u *S3Deps) DeleteObjectsByPrefix(ctx context.Context, prefix string) error {
+	if prefix == "" {
+		return errors.New("prefix is empty")
+	}
+
+	// Ensure prefix ends with "/" to list all objects under this directory
+	prefixWithSlash := prefix
+	if !strings.HasSuffix(prefix, "/") {
+		prefixWithSlash = prefix + "/"
+	}
+
+	// List all objects with pagination support
+	var allKeys []string
+	listInput := &s3.ListObjectsV2Input{
+		Bucket: &u.Bucket,
+		Prefix: &prefixWithSlash,
+	}
+
+	var continuationToken *string
+	for {
+		listInput.ContinuationToken = continuationToken
+		result, err := u.Client.ListObjectsV2(ctx, listInput)
+		if err != nil {
+			return fmt.Errorf("list objects from S3: %w", err)
+		}
+
+		if result.Contents != nil {
+			for _, obj := range result.Contents {
+				if obj.Key != nil {
+					allKeys = append(allKeys, *obj.Key)
+				}
+			}
+		}
+
+		// Check if there are more pages
+		if !aws.ToBool(result.IsTruncated) {
+			break
+		}
+		continuationToken = result.NextContinuationToken
+	}
+
+	// Delete all found objects in batches
+	if len(allKeys) > 0 {
+		return u.DeleteObjects(ctx, allKeys)
 	}
 
 	return nil

@@ -2,7 +2,7 @@ from ..env import LOG, DEFAULT_CORE_CONFIG
 from ..infra.db import DB_CLIENT
 from ..infra.async_mq import (
     register_consumer,
-    MQ_CLIENT,
+    publish_mq,
     Message,
     ConsumerConfigData,
     SpecialHandler,
@@ -16,7 +16,6 @@ from .controller import space_sop as SSC
 from .utils import check_redis_lock_or_set, release_redis_lock
 
 register_consumer(
-    MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.space_task,
         routing_key=RK.space_task_sop_complete_retry,
@@ -24,17 +23,16 @@ register_consumer(
         message_ttl_seconds=DEFAULT_CORE_CONFIG.space_task_sop_lock_wait_seconds,
         need_dlx_queue=True,
         use_dlx_ex_rk=(EX.space_task, RK.space_task_sop_complete),
-    ),
+    )
 )(SpecialHandler.NO_PROCESS)
 
 
 @register_consumer(
-    mq_client=MQ_CLIENT,
     config=ConsumerConfigData(
         exchange_name=EX.space_task,
         routing_key=RK.space_task_sop_complete,
         queue_name=RK.space_task_sop_complete,
-    ),
+    )
 )
 async def space_sop_complete_task(body: SOPComplete, message: Message):
     """
@@ -50,7 +48,7 @@ async def space_sop_complete_task(body: SOPComplete, message: Message):
             f"Current Space {body.space_id} is locked. "
             f"wait {DEFAULT_CORE_CONFIG.space_task_sop_lock_wait_seconds} seconds for next resend. "
         )
-        await MQ_CLIENT.publish(
+        await publish_mq(
             exchange_name=EX.space_task,
             routing_key=RK.space_task_sop_complete_retry,
             body=body.model_dump_json(),
