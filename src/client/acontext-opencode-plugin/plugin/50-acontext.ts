@@ -687,7 +687,7 @@ const AcontextPlugin: Plugin = async (ctx) => {
       const { text: outText } = truncateText(typeof output.output === "string" ? output.output : stableJson(output.output), 200_000);
 
       const msg: AcontextMessage = {
-        role: "user",
+        role: "assistant",
         parts: [
           {
             type: "tool-result",
