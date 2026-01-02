@@ -1,45 +1,119 @@
-# OpenCode Acontext Plugin
+# Overview
 
-File: `~/.config/opencode/plugin/50-acontext.ts`
+OpenCode Acontext Plugin connects the OpenCode runtime to an Acontext backend to:
 
-This plugin connects OpenCode to an Acontext server. It:
+- persist agent interactions (user, assistant, tool calls/results) into Acontext sessions
+- retrieve relevant “skill blocks” from Acontext via `experience_search`
+- inject those skills into OpenCode’s *system prompt* (not into the user message)
 
-- Creates/uses an Acontext **space** per worktree (`opencode:<repoName>`)
-- Creates an Acontext **session** per OpenCode session
-- Stores user messages to Acontext
-- Runs `experience_search` on each user message and injects the most relevant “skill blocks” into the prompt
+This README is intentionally written to be readable by both humans and LLM agents.
+
+## What it does (feature-level)
+
+### 1) Space & session lifecycle (automatic)
+
+- Creates/uses **one Acontext Space per worktree**.
+  - Space name: `opencode:<repoName>`
+  - Worktree keying: `sha256(worktree).slice(0, 16)`
+- Creates/uses **one Acontext Session per OpenCode session**.
+- Caches mappings locally to avoid re-creating resources every run.
+
+### 2) Stores runtime data to Acontext
+
+The plugin stores messages into the mapped Acontext session:
+
+- **User messages** from OpenCode’s `chat.message` hook
+- **Tool calls** from `tool.execute.before` (tool name + JSON arguments)
+- **Tool results** from `tool.execute.after`
+- **Assistant output** captured from OpenCode events:
+  - buffers streaming text from `message.part.updated`
+  - flushes once the assistant message completes (`message.updated` with `time.completed`) or when OpenCode becomes idle (`session.idle`)
+
+Stored message format:
+- Acontext API call: `POST /session/{sessionId}/messages`
+- Plugin stores with `format: "acontext"` and a `blob` containing `{ role, parts, meta }`.
+
+### 3) Skill search + system prompt injection
+
+On each non-background user message, the plugin:
+
+1. Calls Acontext `experience_search` for the current Space:
+   - `GET /space/{spaceId}/experience_search?query=...&mode=...&limit=...&max_iterations=...`
+2. Formats Acontext “cited blocks” into a compact skill reference text.
+3. Caches the produced skills text per `(spaceId, sessionID)` for a short TTL.
+4. Injects the skills into the OpenCode system prompt via:
+   - hook: `experimental.chat.system.transform`
+   - marker: `<!-- opencode-acontext:v1 -->`
+   - header: configurable via `injectHeader`
+
+Important note:
+- The plugin does **not** mutate `output.parts` for the user message.
+- Injection happens by appending a system block to `output.system`.
+
+### Background task messages are not injected
+
+If the user text starts with:
+
+- `[BACKGROUND TASK COMPLETED]`
+
+…the plugin stores the message as-is and skips experience search and injection. This prevents feedback loops from OpenCode agent status updates.
+
+# Usage
+
+## Install (OpenCode plugin file)
+
+OpenCode loads plugins from:
+
+- `~/.config/opencode/plugin/`
+
+Copy the plugin file:
+
+```bash
+cp src/client/acontext-opencode-plugin/plugin/50-acontext.ts \
+  ~/.config/opencode/plugin/50-acontext.ts
+```
+
+## Verify it’s working (required procedure)
+
+After copying the plugin, run:
+
+```bash
+timeout 30s bash -lc 'echo "test" | opencode run'
+```
+
+If you have debug enabled (see below), you should see HTTP request/response logs and stored messages being sent to Acontext.
 
 ## Configuration
 
-Configuration is loaded (in this order):
+Configuration is loaded in this order (later overrides earlier):
 
-1. Plugin defaults (see `DEFAULT_CONFIG` in `50-acontext.ts`)
+1. Plugin defaults (`DEFAULT_CONFIG` in `50-acontext.ts`)
 2. User config: `~/.config/opencode/acontext.json`
 3. Project config: `<repo>/.opencode/acontext.json`
-4. Environment variables (override everything)
+4. Environment variables
 
 ### `acontext.json` fields
 
 ```json
 {
   "baseUrl": "http://127.0.0.1:8029/api/v1",
-  "apiKey": "Bearer sk-ac-your-root-api-bearer-token",
+  "apiKey": "sk-ac-your-root-api-bearer-token",
 
-  "searchBaseUrl": "https://acontext.example.com:8443/api/v1",
-  "searchApiKey": "Bearer <proxy-bearer-token>",
+  "searchBaseUrl": "http://127.0.0.1:8029/api/v1",
+  "searchApiKey": "sk-ac-your-root-api-bearer-token",
 
   "mode": "fast",
   "limit": 5,
   "maxIterations": 4,
   "maxDistance": 0.8,
+
   "injectHeader": "SKILLS REFERENCES:"
 }
 ```
 
 Notes:
-- `apiKey`/`searchApiKey` can be either `Bearer <token>` or just `<token>`; the plugin will normalize it to `Bearer <token>`.
-- If you don’t set `searchBaseUrl`/`searchApiKey`, search uses `baseUrl`/`apiKey`.
-- `maxIterations` is sent to Acontext as `max_iterations` (only relevant in `agentic` mode).
+- `apiKey` / `searchApiKey`: can be either `Bearer <token>` or just `<token>`; the plugin normalizes to `Bearer <token>`.
+- If `searchBaseUrl` / `searchApiKey` aren’t provided, search uses `baseUrl` / `apiKey`.
 
 ### Environment variables
 
@@ -54,18 +128,18 @@ Notes:
 
 ## State files
 
-The plugin caches created IDs in:
+The plugin stores IDs in:
 
 - `~/.config/opencode/acontext-state.json`
 
-This maps:
+It contains two maps:
 
-- worktree hash → `spaceId`
-- OpenCode session ID → `acontextSessionId`
+- `spaces`: worktree-hash → `spaceId`
+- `sessions`: opencodeSessionId → `acontextSessionId`
 
 ## Debug logging
 
-Enable debug logging:
+Enable debug logs:
 
 - `ACONTEXT_PLUGIN_DEBUG=1` (or `OPENCODE_PLUGIN_DEBUG=1`)
 
@@ -73,48 +147,4 @@ Optional log file path:
 
 - `ACONTEXT_PLUGIN_DEBUG_FILE=/tmp/opencode-acontext.log` (or `OPENCODE_PLUGIN_DEBUG_FILE=...`)
 
-Logs are JSON lines and attempt to redact bearer tokens and API keys.
-
-## Network / Firewall notes (ACME + IP allowlist)
-
-A common deployment is:
-
-- Public entry: Caddy on `:8443` (TLS + bearer token + path allowlist)
-- ACME HTTP-01 validation: Caddy on `:80`
-- Internal Acontext API: `127.0.0.1:8029`
-- Optional nftables allowlist for `:8443` via set `inet acontext_fw dynamic_allowed4`
-
-### Manually allow an IP (nftables)
-
-Add an IPv4 address to the allowlist set:
-
-```bash
-sudo nft add element inet acontext_fw dynamic_allowed4 { 1.2.3.4 timeout 1d }
-```
-
-Use the set’s default timeout:
-
-```bash
-sudo nft add element inet acontext_fw dynamic_allowed4 { 1.2.3.4 }
-```
-
-Remove an IP again:
-
-```bash
-sudo nft delete element inet acontext_fw dynamic_allowed4 { 1.2.3.4 }
-```
-
-Show current allowlisted IPs:
-
-```bash
-sudo nft list set inet acontext_fw dynamic_allowed4
-```
-
-## Allowed HTTP paths (Caddy)
-
-If you’re using the recommended proxy setup described above, the Caddyfile typically allowlists only:
-
-- `GET /api/v1/ping`
-- `GET /api/v1/space/<spaceId>/experience_search`
-
-`/` will return `404` by design.
+Logs are JSON Lines and include HTTP request/response metadata plus failure details.

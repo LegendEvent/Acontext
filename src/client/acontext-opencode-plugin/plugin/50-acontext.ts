@@ -443,6 +443,95 @@ const AcontextPlugin: Plugin = async (ctx) => {
 
   const searchCache = new Map<string, { ts: number; cited_blocks: any[] }>();
 
+  const systemSkillsCache = new Map<
+    string,
+    { ts: number; spaceId: string; sessionID: string; userText: string; skillsText: string; usedBlocksCount: number; wasCacheHit: boolean }
+  >();
+
+  const lastSessionForSpace = new Map<string, string>();
+
+  const SYSTEM_SKILLS_TTL_MS = 60 * 1000;
+
+  async function updateSystemSkillsForSession(input: { sessionID: string }, spaceId: string, userText: string): Promise<void> {
+    const now = Date.now();
+    const key = `${spaceId}|${input.sessionID}`;
+
+    const cached = systemSkillsCache.get(key);
+    if (cached && now - cached.ts < SYSTEM_SKILLS_TTL_MS) {
+      lastSessionForSpace.set(spaceId, input.sessionID);
+      return;
+    }
+
+    const cacheKey = `${spaceId}|${userText}`;
+    let citedBlocks: any[] = [];
+    let wasCacheHit = false;
+
+    const hit = searchCache.get(cacheKey);
+    if (hit && now - hit.ts < 90_000) {
+      citedBlocks = hit.cited_blocks;
+      wasCacheHit = true;
+    } else {
+      try {
+        const result = await api.experienceSearch(
+          spaceId,
+          userText,
+          config.mode ?? "fast",
+          config.limit ?? 5,
+          config.maxIterations,
+        );
+        citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
+        searchCache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
+      } catch (e) {
+        citedBlocks = [];
+        await debug.log("search.failed", {
+          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+        });
+      }
+    }
+
+    const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
+    const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
+
+    systemSkillsCache.set(key, {
+      ts: now,
+      spaceId,
+      sessionID: input.sessionID,
+      userText,
+      skillsText,
+      usedBlocksCount,
+      wasCacheHit,
+    });
+
+    lastSessionForSpace.set(spaceId, input.sessionID);
+
+    ctx.client.tui
+      .showToast({
+        body: {
+          title: "Acontext",
+          message: skillsText
+            ? `Injected ${usedBlocksCount} skill${usedBlocksCount === 1 ? "" : "s"}${wasCacheHit ? " (cache)" : ""}`
+            : "No skills injected",
+          variant: "success",
+          duration: 1500,
+        },
+      })
+      .catch(async (e) => {
+        await debug.log("tui.toast_failed", {
+          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
+        });
+      });
+  }
+
+  function buildSystemSkillsBlock(skillsText: string): string {
+    if (!skillsText.trim()) return "";
+
+    const marker = "<!-- opencode-acontext:v1 -->";
+    const header = config.injectHeader ?? "SKILLS REFERENCES:";
+
+    return `${marker}\n${header}\n${skillsText}`;
+  }
+
+
   // For assistant response capture.
   const messageRoles = new Map<string, "user" | "assistant">();
   const pendingAssistantText = new Map<string, Map<string, string>>(); // sessionID -> (messageID -> latest text)
@@ -746,61 +835,10 @@ const AcontextPlugin: Plugin = async (ctx) => {
         return;
       }
 
-      // Search then inject.
-      const cacheKey = `${spaceId}|${userText}`;
-      const now = Date.now();
-      let citedBlocks: any[] = [];
-      let wasCacheHit = false;
-      const hit = searchCache.get(cacheKey);
-      if (hit && now - hit.ts < 90_000) {
-        citedBlocks = hit.cited_blocks;
-        wasCacheHit = true;
-      } else {
-        try {
-          const result = await api.experienceSearch(
-            spaceId,
-            userText,
-            config.mode ?? "fast",
-            config.limit ?? 5,
-            config.maxIterations,
-          );
-          citedBlocks = Array.isArray(result?.cited_blocks) ? result.cited_blocks : [];
-          searchCache.set(cacheKey, { ts: now, cited_blocks: citedBlocks });
-        } catch (e) {
-          citedBlocks = [];
-          await debug.log("search.failed", {
-            error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-          });
-        }
-      }
+      await updateSystemSkillsForSession(input, spaceId, userText);
 
-      const skillsText = formatSkillBlocks(citedBlocks, config.maxDistance ?? 0.8);
-      const usedBlocksCount = skillsText ? skillsText.split("\n---\n").filter(Boolean).length : 0;
 
-      const marker = "<!-- opencode-acontext:v1 -->";
-      const injectedSkills = skillsText ? `${marker}\n${config.injectHeader ?? "SKILLS REFERENCES:"}\n${skillsText}` : "";
-
-      const alreadyInjected = (output.parts as any[]).some(
-        (p) => p?.type === "text" && typeof p.text === "string" && p.text.includes(marker),
-      );
-
-      let storeParts: OutputPart[] = parts;
-
-      if (!alreadyInjected && skillsText) {
-        const newParts: any[] = [];
-        let inserted = false;
-        for (const p of output.parts as any[]) {
-          if (!inserted && p?.type === "text" && typeof p.text === "string") {
-            newParts.push({ type: "text", text: injectedSkills, synthetic: true });
-            inserted = true;
-          }
-          newParts.push(p);
-        }
-        if (inserted) {
-          output.parts = newParts;
-          storeParts = newParts as OutputPart[];
-        }
-      }
+      const storeParts = parts;
 
       const finalUserTextParts: string[] = [];
       for (const p of storeParts) {
@@ -815,31 +853,38 @@ const AcontextPlugin: Plugin = async (ctx) => {
         plugin_loaded_at: PLUGIN_LOADED_AT,
         opencode_session_id: input.sessionID,
         hook: "chat.message",
-        injected_skills: Boolean(skillsText),
-        used_blocks_count: usedBlocksCount,
-        was_cache_hit: wasCacheHit,
       });
 
       await storeAcontextMessage(input.sessionID, msg);
 
-      ctx.client.tui
-        .showToast({
-          body: {
-            title: "Acontext",
-            message: skillsText
-              ? `Injected ${usedBlocksCount} skill${usedBlocksCount === 1 ? "" : "s"}${wasCacheHit ? " (cache)" : ""}`
-              : "No skills injected",
-            variant: "success",
-            duration: 1500,
-          },
-        })
-        .catch(async (e) => {
-          await debug.log("tui.toast_failed", {
-            error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
-          });
+    },
+
+    "experimental.chat.system.transform": async (_input, output) => {
+      const spaceId = await ensureSpaceId().catch(async (e) => {
+        await debug.log("space.ensure_failed", {
+          error: e instanceof Error ? { name: e.name, message: e.message, stack: e.stack } : String(e),
         });
+        return "";
+      });
+      if (!isUuid(spaceId)) return;
+
+      const sessionID = lastSessionForSpace.get(spaceId);
+      if (!sessionID) return;
+
+      const entry = systemSkillsCache.get(`${spaceId}|${sessionID}`);
+      if (!entry) return;
+      if (Date.now() - entry.ts >= SYSTEM_SKILLS_TTL_MS) return;
+
+      const block = buildSystemSkillsBlock(entry.skillsText);
+      if (!block) return;
+
+      const alreadyInjected = output.system.some((s) => typeof s === "string" && s.includes("<!-- opencode-acontext:v1 -->"));
+      if (alreadyInjected) return;
+
+      output.system.push(block);
     },
   };
 };
+
 
 export default AcontextPlugin;
