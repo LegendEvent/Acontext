@@ -80,27 +80,37 @@ func BuildContainer() *do.Injector {
 		return cache.New(cfg)
 	})
 
-	// RabbitMQ Connection
-	do.Provide(inj, func(i *do.Injector) (*amqp.Connection, error) {
+	// RabbitMQ DialFunc for connection and reconnection
+	do.Provide(inj, func(i *do.Injector) (mq.DialFunc, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 
-		// Check if TLS is enabled via config or URL protocol
-		useTLS := cfg.RabbitMQ.EnableTLS || strings.HasPrefix(cfg.RabbitMQ.URL, "amqps://")
+		dialFn := func() (*amqp.Connection, error) {
+			// Check if TLS is enabled via config or URL protocol
+			useTLS := cfg.RabbitMQ.EnableTLS || strings.HasPrefix(cfg.RabbitMQ.URL, "amqps://")
 
-		if useTLS {
-			// Use TLS configuration with minimum TLS 1.2
-			tlsConfig := &tls.Config{
-				MinVersion: tls.VersionTLS12,
+			if useTLS {
+				// Use TLS configuration with minimum TLS 1.2
+				tlsConfig := &tls.Config{
+					MinVersion: tls.VersionTLS12,
+				}
+				// Convert amqp:// to amqps:// if needed
+				url := cfg.RabbitMQ.URL
+				if strings.HasPrefix(url, "amqp://") {
+					url = strings.Replace(url, "amqp://", "amqps://", 1)
+				}
+				return amqp.DialTLS(url, tlsConfig)
 			}
-			// Convert amqp:// to amqps:// if needed
-			url := cfg.RabbitMQ.URL
-			if strings.HasPrefix(url, "amqp://") {
-				url = strings.Replace(url, "amqp://", "amqps://", 1)
-			}
-			return amqp.DialTLS(url, tlsConfig)
+
+			return amqp.Dial(cfg.RabbitMQ.URL)
 		}
 
-		return amqp.Dial(cfg.RabbitMQ.URL)
+		return dialFn, nil
+	})
+
+	// RabbitMQ Connection
+	do.Provide(inj, func(i *do.Injector) (*amqp.Connection, error) {
+		dialFn := do.MustInvoke[mq.DialFunc](i)
+		return dialFn()
 	})
 
 	// RabbitMQ Publisher
@@ -108,7 +118,8 @@ func BuildContainer() *do.Injector {
 		cfg := do.MustInvoke[*config.Config](i)
 		conn := do.MustInvoke[*amqp.Connection](i)
 		log := do.MustInvoke[*zap.Logger](i)
-		return mq.NewPublisher(conn, log, cfg)
+		dialFn := do.MustInvoke[mq.DialFunc](i)
+		return mq.NewPublisher(conn, log, cfg, dialFn)
 	})
 
 	// S3

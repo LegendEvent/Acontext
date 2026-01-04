@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/bytedance/sonic"
@@ -42,10 +43,17 @@ func (c tableCarrier) Keys() []string {
 	return keys
 }
 
+// DialFunc is a function type for establishing RabbitMQ connections
+type DialFunc func() (*amqp.Connection, error)
+
 type Publisher struct {
-	ch  *amqp.Channel
-	log *zap.Logger
-	cfg *config.Config
+	conn   *amqp.Connection
+	ch     *amqp.Channel
+	log    *zap.Logger
+	cfg    *config.Config
+	dialFn DialFunc
+	mu     sync.RWMutex
+	closed bool
 }
 
 type Consumer struct {
@@ -55,7 +63,7 @@ type Consumer struct {
 	cfg *config.Config
 }
 
-func NewPublisher(conn *amqp.Connection, log *zap.Logger, cfg *config.Config) (*Publisher, error) {
+func NewPublisher(conn *amqp.Connection, log *zap.Logger, cfg *config.Config, dialFn DialFunc) (*Publisher, error) {
 	ch, err := conn.Channel()
 	if err != nil {
 		return nil, err
@@ -63,10 +71,135 @@ func NewPublisher(conn *amqp.Connection, log *zap.Logger, cfg *config.Config) (*
 	if err := ch.Qos(0, 0, false); err != nil {
 		return nil, err
 	}
-	return &Publisher{ch: ch, log: log, cfg: cfg}, nil
+
+	p := &Publisher{
+		conn:   conn,
+		ch:     ch,
+		log:    log,
+		cfg:    cfg,
+		dialFn: dialFn,
+	}
+
+	// Start connection watcher for auto-reconnection
+	go p.watchConnection()
+
+	return p, nil
 }
 
-func (p *Publisher) Close() error { return p.ch.Close() }
+// watchConnection monitors the connection and triggers reconnection when closed
+func (p *Publisher) watchConnection() {
+	for {
+		p.mu.RLock()
+		if p.closed {
+			p.mu.RUnlock()
+			return
+		}
+		conn := p.conn
+		p.mu.RUnlock()
+
+		if conn == nil {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// Wait for connection close notification
+		notifyClose := conn.NotifyClose(make(chan *amqp.Error, 1))
+		amqpErr := <-notifyClose
+
+		p.mu.RLock()
+		if p.closed {
+			p.mu.RUnlock()
+			return
+		}
+		p.mu.RUnlock()
+
+		if amqpErr != nil {
+			p.log.Warn("RabbitMQ connection closed", zap.Error(amqpErr))
+		} else {
+			p.log.Warn("RabbitMQ connection closed gracefully")
+		}
+
+		// Attempt to reconnect
+		p.reconnect()
+	}
+}
+
+// reconnect attempts to re-establish the RabbitMQ connection with exponential backoff
+func (p *Publisher) reconnect() {
+	backoff := time.Second
+	maxBackoff := 30 * time.Second
+
+	for {
+		p.mu.RLock()
+		if p.closed {
+			p.mu.RUnlock()
+			return
+		}
+		p.mu.RUnlock()
+
+		p.log.Info("Attempting to reconnect to RabbitMQ", zap.Duration("backoff", backoff))
+
+		conn, err := p.dialFn()
+		if err != nil {
+			p.log.Error("Failed to reconnect to RabbitMQ", zap.Error(err))
+			time.Sleep(backoff)
+			backoff = min(backoff*2, maxBackoff)
+			continue
+		}
+
+		ch, err := conn.Channel()
+		if err != nil {
+			p.log.Error("Failed to create channel after reconnect", zap.Error(err))
+			conn.Close()
+			time.Sleep(backoff)
+			backoff = min(backoff*2, maxBackoff)
+			continue
+		}
+
+		if err := ch.Qos(0, 0, false); err != nil {
+			p.log.Error("Failed to set QoS after reconnect", zap.Error(err))
+			ch.Close()
+			conn.Close()
+			time.Sleep(backoff)
+			backoff = min(backoff*2, maxBackoff)
+			continue
+		}
+
+		p.mu.Lock()
+		p.conn = conn
+		p.ch = ch
+		p.mu.Unlock()
+
+		p.log.Info("Successfully reconnected to RabbitMQ")
+		return
+	}
+}
+
+// getChannel safely returns the current channel
+func (p *Publisher) getChannel() (*amqp.Channel, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	if p.closed {
+		return nil, errors.New("publisher is closed")
+	}
+	if p.ch == nil {
+		return nil, errors.New("channel is not available")
+	}
+	return p.ch, nil
+}
+
+func (p *Publisher) Close() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.closed = true
+	var err error
+	if p.ch != nil {
+		err = p.ch.Close()
+	}
+	return err
+}
 
 func (p *Publisher) PublishJSON(ctx context.Context, exchangeName string, routingKey string, body any) error {
 	b, err := sonic.Marshal(body)
@@ -98,7 +231,14 @@ func (p *Publisher) PublishJSON(ctx context.Context, exchangeName string, routin
 		Headers:      headers,
 	}
 
-	err = p.ch.PublishWithContext(ctx, exchangeName, routingKey, false, false, publishing)
+	// Get channel safely
+	ch, err := p.getChannel()
+	if err != nil {
+		span.RecordError(err)
+		return fmt.Errorf("failed to get channel: %w", err)
+	}
+
+	err = ch.PublishWithContext(ctx, exchangeName, routingKey, false, false, publishing)
 	if err != nil {
 		span.RecordError(err)
 		return err
