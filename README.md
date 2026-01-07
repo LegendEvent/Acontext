@@ -61,7 +61,7 @@
 
 
 
-To solve those problems at once, Acontext becomses the **Context Data Platform**:
+To solve those problems at once, Acontext becomes the **Context Data Platform**:
 
 <div align="center">
     <picture>
