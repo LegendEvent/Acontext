@@ -49,11 +49,11 @@
 
 **👀 Problem 3: observing the agent's performance**. 
 
-> Do you know how satisfied your users are with your agent? Acontext will count the agent tasks in each session and tell you what your agent's success rate is. 
+> Do you know how satisfied your users with your agent? Acontext will count the agent tasks in each session and tell you what your agent's success rate is. 
 >
 > Don't just focus on token costs, look for PMF.
 
-**🧠 Problem 4: agent sometimes succeeds and sometimes fails.**. 
+**🧠 Problem 4: agent sometimes succeeds and sometimes fails.**
 
 > Can your agent recall previous successful runs? Acontext has a built-in experience agent to learn from the positive sessions and form into tool-use SOPs.
 >
