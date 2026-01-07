@@ -33,23 +33,31 @@
 
 >  Everyone is telling you how to use their agents.
 >
->  But imagine you need to build an agent for 100,000 users, how would you start?
+>  But imagine YOU need to build an agent for 100,000 users, how would you start?
 
 **📦 Problem 1: 99% of the data stored in your DB are LLM messages**. 
 
-If you don't design the schema well, it will lead to your most important data being expensive and slow, and supporting multi-modal and multi-provider will become a disaster. Acontext supports context storage and retrieval with two APIs, allowing you to not worry about this aspect at all through the combination of PG, Redis, and S3.
+> If you don't design the schema well, it will lead to your most important data being expensive and slow. Acontext supports context storage and retrieval with two APIs with PG, Redis and S3. 
+>
+> ChatGPT, Gemini, Anthropic, Image, Audio, File... You got it.
 
-**⏰ Problem 2: the long-running problem of the agent**. 
+**⏰ Problem 2: long-running problem of the agent**. 
 
-You know how to do context engineering, but you always have to start writing from scratch. Acontext has built-in methods for editing context and a built-in todo agent to help you maintain the agent's state for a long time without causing the context window to explode.
+> You know how to do context engineering, but you always have to start writing from scratch. Acontext has built-in methods for editing context and a built-in todo agent.
+>
+> Maintain the agent state? Piece of cake.
 
 **👀 Problem 3: observing the agent's performance**. 
 
-Do you know how satisfied your users are with your agent? Acontext will count the agent tasks in each session and tell you what your agent's success rate is.
+> Do you know how satisfied your users are with your agent? Acontext will count the agent tasks in each session and tell you what your agent's success rate is. 
+>
+> Don't just focus on token costs, look for PMF.
 
 **🧠 Problem 4: agent sometimes succeeds and sometimes fails.**. 
 
-Can your agent recall previous successful runs? Acontext has a built-in experience agent to learn from the positive sessions and form into tool-use SOPs.
+> Can your agent recall previous successful runs? Acontext has a built-in experience agent to learn from the positive sessions and form into tool-use SOPs.
+>
+> The success of your agent is everything.
 
 
 
