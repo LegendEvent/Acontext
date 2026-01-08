@@ -31,9 +31,7 @@
 </div>
 
 
-> Everyone is telling you how to use their agents.
-> 
-> But what if YOU need to build an agent for 100,000 users, how would you start?
+*Everyone is telling you how to use their agents. But what if YOU need to build an agent for 100,000 users, how would you start?*
 
 **📦 Problem 1: 99% of your DB is just LLM messages.** 
 
@@ -88,7 +86,7 @@ To solve those problems at once, Acontext becomes the **Context Data Platform**:
 - **Observe agent tasks and user feedback**
   - [Task](https://docs.acontext.io/observe/agent_tasks): collect agent's working status, progress and preferences in near real-time.
 - **Agent self-learning**
-  - [Experience](https://docs.acontext.io/learn/advance/experience-agent): let agent learns SOPs for each user.
+  - [Experience](https://docs.acontext.io/learn/advance/experience-agent): let agent learn SOPs for each user.
 - **View everything in one [dashboard](https://docs.acontext.io/observe/dashboard)**
 
 <div align="center">
@@ -302,7 +300,7 @@ acontext create my-proj --template-path "python/openai-basic"
 > More examples on Python:
 >
 > - `python/openai-agent-basic`: self-learning agent in openai agent sdk.
-> - `python/agno-basic`: self-learning agent in agno frameworkd.
+> - `python/agno-basic`: self-learning agent in agno framework.
 > - `python/openai-agent-artifacts`: agent that can edit and download artifacts.
 
 **Typescript**
