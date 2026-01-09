@@ -566,12 +566,20 @@ func (h *SessionHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
+	// Calculate token count for the returned messages
+	thisTimeTokens, err := tokenizer.CountMessagePartsTokens(c.Request.Context(), out.Items)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, serializer.DBErr("failed to count tokens", err))
+		return
+	}
+
 	convertedOut, err := converter.GetConvertedMessagesOutput(
 		out.Items,
 		format,
 		out.PublicURLs,
 		out.NextCursor,
 		out.HasMore,
+		thisTimeTokens,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.DBErr("failed to convert messages", err))

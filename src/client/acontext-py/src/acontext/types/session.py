@@ -41,7 +41,6 @@ class RemoveToolCallParamsParams(TypedDict, total=False):
     keep_recent_n_tool_calls: NotRequired[int]
 
 
-
 class RemoveToolCallParamsStrategy(TypedDict):
     """Edit strategy to remove parameters from old tool-call parts.
 
@@ -55,7 +54,6 @@ class RemoveToolCallParamsStrategy(TypedDict):
 
     type: Literal["remove_tool_call_params"]
     params: RemoveToolCallParamsParams
-
 
 
 class TokenLimitParams(TypedDict):
@@ -87,7 +85,9 @@ class TokenLimitStrategy(TypedDict):
 
 # Union type for all edit strategies
 # When adding new strategies, add them to this Union: EditStrategy = Union[RemoveToolResultStrategy, OtherStrategy, ...]
-EditStrategy = Union[RemoveToolResultStrategy, RemoveToolCallParamsStrategy, TokenLimitStrategy]
+EditStrategy = Union[
+    RemoveToolResultStrategy, RemoveToolCallParamsStrategy, TokenLimitStrategy
+]
 
 
 class Asset(BaseModel):
@@ -216,11 +216,15 @@ class GetMessagesOutput(BaseModel):
         description="List of messages in the requested format (Message, OpenAI format, or Anthropic format)",
     )
     ids: list[str] = Field(
-	...,
-	description="List of message UUIDs corresponding to each item in the same order",
+        ...,
+        description="List of message UUIDs corresponding to each item in the same order",
     )
     next_cursor: str | None = Field(None, description="Cursor for pagination")
     has_more: bool = Field(..., description="Whether there are more items")
+    this_time_tokens: int = Field(
+        ...,
+        description="Total token count of the returned messages",
+    )
     public_urls: dict[str, PublicURL] | None = Field(
         None,
         description="Map of SHA256 hash to PublicURL (only included when format='acontext')",
@@ -254,18 +258,13 @@ class TokenCounts(BaseModel):
         description="Total token count for all text and tool-call parts in a session",
     )
 
+
 class MessageObservingStatus(BaseModel):
     """Response model for message observing status."""
-    
-    observed: int = Field(
-        ..., description="Number of messages with observed status"
-    )
+
+    observed: int = Field(..., description="Number of messages with observed status")
     in_process: int = Field(
         ..., description="Number of messages with in_process status"
     )
-    pending: int = Field(
-        ..., description="Number of messages with pending status"
-    )
-    updated_at: str = Field(
-        ..., description="Timestamp when the status was retrieved"
-    )
+    pending: int = Field(..., description="Number of messages with pending status")
+    updated_at: str = Field(..., description="Timestamp when the status was retrieved")

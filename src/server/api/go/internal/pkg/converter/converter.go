@@ -63,6 +63,7 @@ func GetConvertedMessagesOutput(
 	publicURLs map[string]service.PublicURL,
 	nextCursor string,
 	hasMore bool,
+	thisTimeTokens int,
 ) (map[string]interface{}, error) {
 	convertedData, err := ConvertMessages(ConvertMessagesInput{
 		Messages:   messages,
@@ -80,9 +81,10 @@ func GetConvertedMessagesOutput(
 	}
 
 	result := map[string]interface{}{
-		"items":    convertedData,
-		"ids":      messageIDs,
-		"has_more": hasMore,
+		"items":            convertedData,
+		"ids":              messageIDs,
+		"has_more":         hasMore,
+		"this_time_tokens": thisTimeTokens,
 	}
 
 	if nextCursor != "" {

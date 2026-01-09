@@ -101,6 +101,8 @@ export const GetMessagesOutputSchema = z.object({
   ids: z.array(z.string()),
   next_cursor: z.string().nullable().optional(),
   has_more: z.boolean(),
+  /** Total token count of the returned messages */
+  this_time_tokens: z.number(),
   public_urls: z.record(z.string(), PublicURLSchema).nullable().optional(),
 });
 
