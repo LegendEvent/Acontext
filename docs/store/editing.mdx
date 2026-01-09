@@ -5,7 +5,7 @@ description: "Acontext offers few context editing methods for your agent context
 
 Context Editing is a crucial part of context engineering. If you have questions about what is context editing, please refer to the [Context Engineering](#context-engineering-and-editing) section.
 
-## Count the Session Current Tokens
+## Count the Session Raw Messages Tokens
 
 Before performing context editing, it's essential to know the current token count of your session. This helps you understand how much context is being consumed and when you need to apply editing strategies.
 
@@ -67,6 +67,19 @@ Please do not use the token count to calculate the cost of LLM, as the actual to
 Acontext supports to edit the session context when you obtain the current messages.
 
 The basic usage is to pass the `edit_strategies` to the `get_messages` method to get the edited session messages without modifying the original session storage:
+
+<Tip>
+The `get_messages` response includes a `this_time_tokens` field that returns the total token count of the returned messages. 
+This is particularly useful when applying edit strategies to verify how many tokens remain after editing.
+
+```python
+result = client.sessions.get_messages(
+    session_id="session-uuid",
+    edit_strategies=[{"type": "token_limit", "params": {"limit_tokens": 20000}}]
+)
+print(f"Returned {len(result.items)} messages with {result.this_time_tokens} tokens")
+```
+</Tip>
 
 <CodeGroup>
 ```python Python
