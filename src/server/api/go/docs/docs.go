@@ -1562,6 +1562,13 @@ const docTemplate = `{
                         "description": "JSON array of edit strategies to apply before format conversion",
                         "name": "edit_strategies",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "",
+                        "description": "Message ID to pin editing strategies at. When provided, strategies are only applied to messages up to and including this message ID, keeping subsequent messages unchanged. This helps maintain prompt cache stability by preserving a stable prefix. The response will include edit_at_message_id indicating where strategies were applied.",
+                        "name": "pin_editing_strategies_at_message",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3715,6 +3722,9 @@ const docTemplate = `{
         "service.GetMessagesOutput": {
             "type": "object",
             "properties": {
+                "edit_at_message_id": {
+                    "type": "string"
+                },
                 "has_more": {
                     "type": "boolean"
                 },

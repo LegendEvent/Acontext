@@ -1132,6 +1132,13 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "description" : "Message ID to pin editing strategies at. When provided, strategies are only applied to messages up to and including this message ID, keeping subsequent messages unchanged. This helps maintain prompt cache stability by preserving a stable prefix. The response will include edit_at_message_id indicating where strategies were applied.",
+          "in" : "query",
+          "name" : "pin_editing_strategies_at_message",
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -2914,6 +2921,9 @@
       },
       "service.GetMessagesOutput" : {
         "properties" : {
+          "edit_at_message_id" : {
+            "type" : "string"
+          },
           "has_more" : {
             "type" : "boolean"
           },
