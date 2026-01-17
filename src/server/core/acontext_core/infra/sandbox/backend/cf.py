@@ -64,10 +64,13 @@ class CloudflareSandboxBackend(SandboxBackend):
         )
 
     @classmethod
-    def from_default(cls: Type["CloudflareSandboxBackend"]) -> "CloudflareSandboxBackend":
+    def from_default(
+        cls: Type["CloudflareSandboxBackend"],
+    ) -> "CloudflareSandboxBackend":
         """Create an instance using default configuration from CoreConfig."""
         return cls(
-            worker_url=DEFAULT_CORE_CONFIG.cloudflare_worker_url or "http://localhost:8787",
+            worker_url=DEFAULT_CORE_CONFIG.cloudflare_worker_url
+            or "http://localhost:8787",
             auth_token=DEFAULT_CORE_CONFIG.cloudflare_worker_auth_token,
         )
 
@@ -90,11 +93,14 @@ class CloudflareSandboxBackend(SandboxBackend):
             Runtime information about the created sandbox.
         """
         additional_configs = dict(create_config.additional_configs)
-        sandbox_id = additional_configs.pop("sandbox_id", None) or f"sandbox-{os.urandom(8).hex()}"
+        sandbox_id = (
+            additional_configs.pop("sandbox_id", None)
+            or f"sandbox-{os.urandom(8).hex()}"
+        )
 
         request_body = {
             "sandbox_id": sandbox_id,
-            "keepalive_seconds": create_config.keepalive_seconds,
+            "keepalive_seconds": DEFAULT_CORE_CONFIG.sandbox_default_keepalive_seconds,
             "additional_configs": additional_configs,
         }
 
@@ -108,9 +114,13 @@ class CloudflareSandboxBackend(SandboxBackend):
             data = response.json()
 
             # Parse response
-            created_at = datetime.fromisoformat(data["sandbox_created_at"].replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(
+                data["sandbox_created_at"].replace("Z", "+00:00")
+            )
             expires_at = (
-                datetime.fromisoformat(data["sandbox_expires_at"].replace("Z", "+00:00"))
+                datetime.fromisoformat(
+                    data["sandbox_expires_at"].replace("Z", "+00:00")
+                )
                 if data.get("sandbox_expires_at")
                 else None
             )
@@ -122,7 +132,9 @@ class CloudflareSandboxBackend(SandboxBackend):
                 sandbox_expires_at=expires_at or created_at,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to create sandbox: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Failed to create sandbox: {e.response.status_code} - {e.response.text}"
+            )
             raise ValueError(f"Failed to create sandbox: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Failed to create sandbox: {e}")
@@ -146,7 +158,9 @@ class CloudflareSandboxBackend(SandboxBackend):
             data = response.json()
             return data.get("success", False)
         except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to kill sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Failed to kill sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
+            )
             return False
         except Exception as e:
             logger.error(f"Failed to kill sandbox {sandbox_id}: {e}")
@@ -173,9 +187,13 @@ class CloudflareSandboxBackend(SandboxBackend):
             data = response.json()
 
             # Parse response
-            created_at = datetime.fromisoformat(data["sandbox_created_at"].replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(
+                data["sandbox_created_at"].replace("Z", "+00:00")
+            )
             expires_at = (
-                datetime.fromisoformat(data["sandbox_expires_at"].replace("Z", "+00:00"))
+                datetime.fromisoformat(
+                    data["sandbox_expires_at"].replace("Z", "+00:00")
+                )
                 if data.get("sandbox_expires_at")
                 else None
             )
@@ -189,7 +207,9 @@ class CloudflareSandboxBackend(SandboxBackend):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ValueError(f"Sandbox with ID {sandbox_id} not found")
-            logger.error(f"Failed to get sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Failed to get sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
+            )
             raise ValueError(f"Failed to get sandbox: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Failed to get sandbox {sandbox_id}: {e}")
@@ -221,9 +241,13 @@ class CloudflareSandboxBackend(SandboxBackend):
             data = response.json()
 
             # Parse response
-            created_at = datetime.fromisoformat(data["sandbox_created_at"].replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(
+                data["sandbox_created_at"].replace("Z", "+00:00")
+            )
             expires_at = (
-                datetime.fromisoformat(data["sandbox_expires_at"].replace("Z", "+00:00"))
+                datetime.fromisoformat(
+                    data["sandbox_expires_at"].replace("Z", "+00:00")
+                )
                 if data.get("sandbox_expires_at")
                 else None
             )
@@ -235,7 +259,9 @@ class CloudflareSandboxBackend(SandboxBackend):
                 sandbox_expires_at=expires_at or created_at,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to update sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Failed to update sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
+            )
             raise ValueError(f"Failed to update sandbox: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Failed to update sandbox {sandbox_id}: {e}")
@@ -268,7 +294,9 @@ class CloudflareSandboxBackend(SandboxBackend):
                 exit_code=data.get("exit_code", 0),
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to execute command in sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Failed to execute command in sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
+            )
             raise ValueError(f"Failed to execute command: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Failed to execute command in sandbox {sandbox_id}: {e}")
@@ -300,7 +328,7 @@ class CloudflareSandboxBackend(SandboxBackend):
             content_base64 = data.get("content", "")
             if not content_base64:
                 raise ValueError("Empty content received from sandbox")
-            
+
             try:
                 content_bytes = base64.b64decode(content_base64, validate=True)
             except Exception as decode_error:
