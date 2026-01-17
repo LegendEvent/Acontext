@@ -1,8 +1,9 @@
 import os
 import base64
 from datetime import datetime
-from typing import Type
+from typing import Type, Literal
 import httpx
+from pydantic import BaseModel, field_validator
 
 from .base import SandboxBackend
 from ....schema.sandbox import (
@@ -16,8 +17,53 @@ from ....env import DEFAULT_CORE_CONFIG, LOG as logger
 from ...s3 import S3_CLIENT
 
 
+class _CFSandboxInfoResponse(BaseModel):
+    sandbox_id: str
+    sandbox_status: str
+    sandbox_created_at: datetime
+    sandbox_expires_at: datetime | None = None
+
+    @field_validator("sandbox_created_at", "sandbox_expires_at", mode="before")
+    @classmethod
+    def parse_datetime(cls, v: str | None) -> datetime | None:
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v
+        return datetime.fromisoformat(v.replace("Z", "+00:00"))
+
+    def to_runtime_info(self) -> SandboxRuntimeInfo:
+        return SandboxRuntimeInfo(
+            sandbox_id=self.sandbox_id,
+            sandbox_status=_convert_status(self.sandbox_status),
+            sandbox_created_at=self.sandbox_created_at,
+            sandbox_expires_at=self.sandbox_expires_at or self.sandbox_created_at,
+        )
+
+
+class _CFExecResponse(BaseModel):
+    stdout: str = ""
+    stderr: str = ""
+    exit_code: int = 0
+
+    def to_command_output(self) -> SandboxCommandOutput:
+        return SandboxCommandOutput(
+            stdout=self.stdout,
+            stderr=self.stderr,
+            exit_code=self.exit_code,
+        )
+
+
+class _CFFileDownloadResponse(BaseModel):
+    content: str
+    encoding: Literal["base64"] = "base64"
+
+
+class _CFSuccessResponse(BaseModel):
+    success: bool = False
+
+
 def _convert_status(status_str: str) -> SandboxStatus:
-    """Convert Cloudflare Sandbox status string to SandboxStatus enum."""
     status_lower = status_str.lower()
     if status_lower == "running":
         return SandboxStatus.RUNNING
@@ -58,6 +104,7 @@ class CloudflareSandboxBackend(SandboxBackend):
         self.__worker_url = worker_url.rstrip("/")
         self.__auth_token = auth_token
         self.__timeout = timeout
+        self.__keepalive_seconds = DEFAULT_CORE_CONFIG.sandbox_default_keepalive_seconds
         self.__client = httpx.AsyncClient(
             timeout=httpx.Timeout(self.__timeout),
             follow_redirects=True,
@@ -100,7 +147,7 @@ class CloudflareSandboxBackend(SandboxBackend):
 
         request_body = {
             "sandbox_id": sandbox_id,
-            "keepalive_seconds": DEFAULT_CORE_CONFIG.sandbox_default_keepalive_seconds,
+            "keepalive_seconds": self.__keepalive_seconds,
             "additional_configs": additional_configs,
         }
 
@@ -111,26 +158,8 @@ class CloudflareSandboxBackend(SandboxBackend):
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
-
-            # Parse response
-            created_at = datetime.fromisoformat(
-                data["sandbox_created_at"].replace("Z", "+00:00")
-            )
-            expires_at = (
-                datetime.fromisoformat(
-                    data["sandbox_expires_at"].replace("Z", "+00:00")
-                )
-                if data.get("sandbox_expires_at")
-                else None
-            )
-
-            return SandboxRuntimeInfo(
-                sandbox_id=data["sandbox_id"],
-                sandbox_status=_convert_status(data["sandbox_status"]),
-                sandbox_created_at=created_at,
-                sandbox_expires_at=expires_at or created_at,
-            )
+            cf_response = _CFSandboxInfoResponse.model_validate(response.json())
+            return cf_response.to_runtime_info()
         except httpx.HTTPStatusError as e:
             logger.error(
                 f"Failed to create sandbox: {e.response.status_code} - {e.response.text}"
@@ -155,8 +184,8 @@ class CloudflareSandboxBackend(SandboxBackend):
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
-            return data.get("success", False)
+            cf_response = _CFSuccessResponse.model_validate(response.json())
+            return cf_response.success
         except httpx.HTTPStatusError as e:
             logger.error(
                 f"Failed to kill sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
@@ -181,29 +210,12 @@ class CloudflareSandboxBackend(SandboxBackend):
         try:
             response = await self.__client.get(
                 f"{self.__worker_url}/sandbox/{sandbox_id}",
+                params={"keepalive_seconds": self.__keepalive_seconds},
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
-
-            # Parse response
-            created_at = datetime.fromisoformat(
-                data["sandbox_created_at"].replace("Z", "+00:00")
-            )
-            expires_at = (
-                datetime.fromisoformat(
-                    data["sandbox_expires_at"].replace("Z", "+00:00")
-                )
-                if data.get("sandbox_expires_at")
-                else None
-            )
-
-            return SandboxRuntimeInfo(
-                sandbox_id=data["sandbox_id"],
-                sandbox_status=_convert_status(data["sandbox_status"]),
-                sandbox_created_at=created_at,
-                sandbox_expires_at=expires_at or created_at,
-            )
+            cf_response = _CFSandboxInfoResponse.model_validate(response.json())
+            return cf_response.to_runtime_info()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ValueError(f"Sandbox with ID {sandbox_id} not found")
@@ -238,26 +250,8 @@ class CloudflareSandboxBackend(SandboxBackend):
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
-
-            # Parse response
-            created_at = datetime.fromisoformat(
-                data["sandbox_created_at"].replace("Z", "+00:00")
-            )
-            expires_at = (
-                datetime.fromisoformat(
-                    data["sandbox_expires_at"].replace("Z", "+00:00")
-                )
-                if data.get("sandbox_expires_at")
-                else None
-            )
-
-            return SandboxRuntimeInfo(
-                sandbox_id=data["sandbox_id"],
-                sandbox_status=_convert_status(data["sandbox_status"]),
-                sandbox_created_at=created_at,
-                sandbox_expires_at=expires_at or created_at,
-            )
+            cf_response = _CFSandboxInfoResponse.model_validate(response.json())
+            return cf_response.to_runtime_info()
         except httpx.HTTPStatusError as e:
             logger.error(
                 f"Failed to update sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
@@ -278,7 +272,10 @@ class CloudflareSandboxBackend(SandboxBackend):
             The command output including stdout, stderr, and exit code.
         """
         try:
-            request_body = {"command": command}
+            request_body = {
+                "command": command,
+                "keepalive_seconds": self.__keepalive_seconds,
+            }
 
             response = await self.__client.post(
                 f"{self.__worker_url}/sandbox/{sandbox_id}/exec",
@@ -286,13 +283,8 @@ class CloudflareSandboxBackend(SandboxBackend):
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
-
-            return SandboxCommandOutput(
-                stdout=data.get("stdout", ""),
-                stderr=data.get("stderr", ""),
-                exit_code=data.get("exit_code", 0),
-            )
+            cf_response = _CFExecResponse.model_validate(response.json())
+            return cf_response.to_command_output()
         except httpx.HTTPStatusError as e:
             logger.error(
                 f"Failed to execute command in sandbox {sandbox_id}: {e.response.status_code} - {e.response.text}"
@@ -316,25 +308,25 @@ class CloudflareSandboxBackend(SandboxBackend):
             True if the download and upload were successful, False otherwise.
         """
         try:
-            request_body = {"file_path": from_sandbox_file, "encoding": "base64"}
+            request_body = {
+                "file_path": from_sandbox_file,
+                "encoding": "base64",
+                "keepalive_seconds": self.__keepalive_seconds,
+            }
             response = await self.__client.post(
                 f"{self.__worker_url}/sandbox/{sandbox_id}/download",
                 json=request_body,
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
-
-            content_base64 = data.get("content", "")
-            if not content_base64:
-                raise ValueError("Empty content received from sandbox")
+            cf_response = _CFFileDownloadResponse.model_validate(response.json())
 
             try:
-                content_bytes = base64.b64decode(content_base64, validate=True)
+                content_bytes = base64.b64decode(cf_response.content, validate=True)
             except Exception as decode_error:
                 logger.error(
-                    f"Base64 decode failed. Content length: {len(content_base64)}, "
-                    f"First 50 chars: {content_base64[:50]}, error: {decode_error}"
+                    f"Base64 decode failed. Content length: {len(cf_response.content)}, "
+                    f"First 50 chars: {cf_response.content[:50]}, error: {decode_error}"
                 )
                 raise
 
@@ -383,6 +375,7 @@ class CloudflareSandboxBackend(SandboxBackend):
                 "file_path": sandbox_file_path,
                 "content": content_base64,
                 "encoding": "base64",
+                "keepalive_seconds": self.__keepalive_seconds,
             }
 
             response = await self.__client.post(
@@ -391,9 +384,9 @@ class CloudflareSandboxBackend(SandboxBackend):
                 headers=self._get_headers(),
             )
             response.raise_for_status()
-            data = response.json()
+            cf_response = _CFSuccessResponse.model_validate(response.json())
 
-            if not data.get("success", False):
+            if not cf_response.success:
                 raise ValueError("Upload to sandbox failed")
 
             logger.info(
