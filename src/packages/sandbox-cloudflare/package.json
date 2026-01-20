@@ -1,5 +1,5 @@
 {
-	"name": "@acontext/sandbox-cloudflare",
+	"name": "@acontext/create-sandbox-cloudflare",
 	"version": "0.1.0",
 	"description": "Create a new Acontext Cloudflare Sandbox Worker project",
 	"type": "module",

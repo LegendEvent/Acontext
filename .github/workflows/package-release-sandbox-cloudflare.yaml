@@ -65,7 +65,7 @@ jobs:
         id: check_version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          if npm view @acontext/sandbox-cloudflare@$VERSION version > /dev/null 2>&1; then
+          if npm view @acontext/create-sandbox-cloudflare@$VERSION version > /dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "Version $VERSION already exists on npm"
           else
@@ -103,14 +103,14 @@ jobs:
         run: |
           echo "# Package Sandbox Cloudflare v${{ steps.version.outputs.version }}" > ${{ github.workspace }}-CHANGELOG.txt
           echo "" >> ${{ github.workspace }}-CHANGELOG.txt
-          echo "Published to npm as @acontext/sandbox-cloudflare@${{ steps.version.outputs.version }}" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "Published to npm as @acontext/create-sandbox-cloudflare@${{ steps.version.outputs.version }}" >> ${{ github.workspace }}-CHANGELOG.txt
           echo "" >> ${{ github.workspace }}-CHANGELOG.txt
           echo "## Usage" >> ${{ github.workspace }}-CHANGELOG.txt
           echo "" >> ${{ github.workspace }}-CHANGELOG.txt
           echo "\`\`\`bash" >> ${{ github.workspace }}-CHANGELOG.txt
-          echo "npx @acontext/sandbox-cloudflare@${{ steps.version.outputs.version }} my-app" >> ${{ github.workspace }}-CHANGELOG.txt
-          echo "# or" >> ${{ github.workspace }}-CHANGELOG.txt
           echo "npm create @acontext/sandbox-cloudflare@${{ steps.version.outputs.version }} my-app" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "# or" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "npx @acontext/create-sandbox-cloudflare@${{ steps.version.outputs.version }} my-app" >> ${{ github.workspace }}-CHANGELOG.txt
           echo "\`\`\`" >> ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Create Release

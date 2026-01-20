@@ -44,8 +44,8 @@ function validateProjectName(name) {
 	if (!name) {
 		console.error('❌ Error: Project name is required');
 		console.log('\nUsage:');
-		console.log('  npx @acontext/sandbox-cloudflare@latest <project-name> [options]');
-		console.log('  # or: npm create @acontext/sandbox-cloudflare@latest <project-name> [options]');
+		console.log('  npm create @acontext/sandbox-cloudflare@latest <project-name> [options]');
+		console.log('  # or: npx @acontext/create-sandbox-cloudflare@latest <project-name> [options]');
 		console.log('\nOptions:');
 		console.log('  --yes, -y           Skip prompts and use defaults');
 		console.log('  --skip-install      Skip installing dependencies');
